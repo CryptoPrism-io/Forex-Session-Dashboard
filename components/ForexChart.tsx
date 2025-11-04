@@ -1,17 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-} from 'recharts';
 import { SESSIONS } from '../constants';
-import { ChartBarDetails } from '../types';
+import { ChartBarDetails, TooltipInfo } from '../types';
 import { SessionStatus } from '../App';
-import ChartTooltip from './ChartTooltip';
 
 interface ForexChartProps {
   nowLine: number;
@@ -20,256 +10,277 @@ interface ForexChartProps {
   sessionStatus: { [key: string]: SessionStatus };
 }
 
-const CustomYAxisTick: React.FC<any> = ({ x, y, payload, sessionStatus }) => {
-  const sessionName = payload.value;
-  const status: SessionStatus = sessionStatus[sessionName];
+interface TimeBlock {
+  key: string;
+  sessionName: string;
+  details: ChartBarDetails;
+  left: number; // percentage
+  width: number; // percentage
+  yLevel: number; // 0 for session, 1 for overlap, 2 for killzone
+  tooltip: TooltipInfo;
+  range: [number, number];
+}
 
-  const statusConfig = {
-    OPEN: { color: 'hsl(120, 70%, 55%)', glow: 'hsl(120, 70%, 55%)', animation: 'none' },
-    CLOSED: { color: 'hsl(0, 60%, 45%)', glow: 'transparent', animation: 'none' },
-    WARNING: { color: 'hsl(35, 100%, 60%)', glow: 'hsl(35, 100%, 60%)', animation: 'pulse 1.5s infinite' },
+const formatTime = (hour: number, offset: number): string => {
+  const localHour = hour + offset;
+  const finalHour = (Math.floor(localHour) % 24 + 24) % 24;
+  const minutes = Math.round((localHour - Math.floor(localHour)) * 60);
+  return `${String(finalHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+};
+
+const ChartTooltip: React.FC<{
+  block: TimeBlock | null;
+  position: { x: number; y: number };
+  timezoneOffset: number;
+  timezoneLabel: string;
+  chartRef?: React.RefObject<HTMLDivElement>;
+}> = ({ block, position, timezoneOffset, timezoneLabel, chartRef }) => {
+  if (!block) return null;
+
+  const tooltipData = block.tooltip;
+  const range = block.range;
+
+  const [startUTC, endUTC] = range;
+  const startTimeLocal = formatTime(startUTC, timezoneOffset);
+  const endTimeLocal = formatTime(endUTC, timezoneOffset);
+
+  // Calculate current hover time based on cursor position
+  let hoverTimeLocal = '';
+  if (chartRef?.current) {
+    const rect = chartRef.current.getBoundingClientRect();
+    const relativeX = position.x - rect.left;
+    const chartWidth = rect.width;
+    const hoverHour = (relativeX / chartWidth) * 24;
+    const displayHour = (hoverHour + timezoneOffset) % 24;
+    const hours = Math.floor(displayHour);
+    const minutes = Math.round((displayHour - hours) * 60);
+    hoverTimeLocal = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  // Position tooltip always on top of cursor
+  const offsetX = 0;
+  const offsetY = 10;
+  const tooltipWidth = 300; // approximate width
+
+  let left = position.x + offsetX;
+  let top = position.y - offsetY; // Always position above
+
+  // Keep within viewport bounds horizontally
+  if (left + tooltipWidth > window.innerWidth) {
+    left = position.x - tooltipWidth;
+  }
+
+  const style: React.CSSProperties = {
+    position: 'fixed',
+    top: Math.max(10, top),
+    left: Math.max(10, left),
+    pointerEvents: 'none',
+    zIndex: 50,
   };
 
-  const { color, glow, animation } = statusConfig[status] || { color: '#64748b', glow: 'transparent', animation: 'none' };
-  
   return (
-    <g transform={`translate(${x},${y})`}>
-      <style>
-        {`
-          @keyframes pulse {
-            0%, 100% {
-              filter: drop-shadow(0 0 3px ${glow});
-            }
-            50% {
-              filter: drop-shadow(0 0 8px ${glow});
-            }
-          }
-        `}
-      </style>
-      <circle
-        cx={-75}
-        cy={4}
-        r={5}
-        fill={color}
-        style={{
-          animation,
-          filter: status === 'OPEN' ? `drop-shadow(0 0 5px ${glow})` : 'none',
-        }}
-      />
-      <text
-        x={-10}
-        y={0}
-        dy={4}
-        textAnchor="end"
-        fill="#cbd5e1"
-        fontSize="10.5px"
-        fontWeight="600"
-        letterSpacing="0.75px"
-      >
-        {payload.value}
-      </text>
-    </g>
+    <div style={style} className="p-4 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl text-sm text-slate-200 w-72 transition-all duration-100">
+      <h3 className="font-bold text-base mb-2 text-white">{tooltipData.title}</h3>
+      {hoverTimeLocal && (
+        <div className="text-xs text-yellow-300 mb-2 font-semibold">
+          {`Hover Time (${timezoneLabel}): ${hoverTimeLocal}`}
+        </div>
+      )}
+      <div className="text-xs text-cyan-300 mb-3 font-semibold">
+        {`Hours (${timezoneLabel}): ${startTimeLocal} - ${endTimeLocal}`}
+      </div>
+      <p><strong className="font-semibold text-slate-400">Volatility:</strong> {tooltipData.volatility}</p>
+      <p><strong className="font-semibold text-slate-400">Best Pairs:</strong> {tooltipData.bestPairs}</p>
+      <p className="mt-2 pt-2 border-t border-slate-700"><strong className="font-semibold text-slate-400">Strategy:</strong> {tooltipData.strategy}</p>
+    </div>
   );
 };
 
-
-// This component creates a layered effect by deriving the full row height from the props Recharts provides.
-const CustomBarShape = (props: any) => {
-    const { 
-      x, 
-      y,
-      width, 
-      height,
-      fill, 
-      isHovered, 
-      baseOpacity, 
-      dataKey, 
-      payload
-    } = props;
-  
-    // If the bar has no width or height, don't render it.
-    if (width <= 0 || !payload || height <= 0) return null;
-  
-    const isMainSession = dataKey.includes('_session');
-    const isKillzone = dataKey.includes('killzone');
-    
-    // Infer the full height of the category row based on the bar's height and the chart's gap setting.
-    const gapPercentage = 0.05; // This must match `barCategoryGap` on the BarChart component.
-    const fullCategoryHeight = height / (1 - gapPercentage);
-    const categoryY = y - (fullCategoryHeight - height) / 2;
-  
-    let finalY;
-    let finalHeight;
-
-    // New logic for much thicker bars.
-    const mainSessionHeight = fullCategoryHeight * 0.9; // Set main session height to 90% of the row.
-  
-    if (isMainSession) {
-      // Main session is thick and centered in its row.
-      finalHeight = mainSessionHeight;
-      finalY = categoryY + (fullCategoryHeight - finalHeight) / 2;
-    } else {
-      // Overlaps and killzones are smaller and centered for a layered effect.
-      const newHeight = mainSessionHeight * 0.4; // 40% of the main session bar height.
-      finalHeight = newHeight;
-      finalY = categoryY + (fullCategoryHeight - newHeight) / 2;
-    }
-  
-    // Hover effect logic
-    let finalOpacity = isHovered ? Math.min(1, baseOpacity + 0.3) : baseOpacity;
-    
-    // Apply special visual treatment for Killzones
-    if (isKillzone) {
-      // Reduce opacity slightly to differentiate from solid overlaps, but make it pop on hover
-      finalOpacity = isHovered ? 0.95 : baseOpacity - 0.1;
-    }
-  
-    return (
-      <rect
-        x={x}
-        y={finalY}
-        width={width}
-        height={finalHeight}
-        fill={fill}
-        fillOpacity={finalOpacity}
-        rx={6} // Increased radius for thicker bars
-        // Add a subtle glowing stroke to killzones to make them stand out
-        stroke={isKillzone ? 'hsl(0, 100%, 80%)' : 'none'}
-        strokeWidth={isKillzone ? 1 : 0}
-        strokeOpacity={isHovered ? 0.7 : 0.3}
-        style={{ 
-          transition: 'fill-opacity 0.2s ease-in-out, stroke-opacity 0.2s ease-in-out' 
-        }}
-      />
-    );
-  };
-
-
 const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, timezoneOffset, sessionStatus }) => {
-  const [hoveredBarKey, setHoveredBarKey] = useState<string | null>(null);
+  const [hoveredBlock, setHoveredBlock] = useState<TimeBlock | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const chartContainerRef = React.useRef<HTMLDivElement>(null);
 
-  const { chartData, allBars } = useMemo(() => {
-    const processedBars: (ChartBarDetails & { dataKey: string })[] = [];
-    const data = SESSIONS.map(s => ({ name: s.name })).reverse();
-    const dataMap = new Map<string, any>(data.map(d => [d.name, d]));
+  const timeBlocks = useMemo(() => {
+    const blocks: TimeBlock[] = [];
+
+    const processBar = (session: typeof SESSIONS[0], bar: (ChartBarDetails & { range: [number, number] }) | undefined, yLevel: number) => {
+      if (!bar || !bar.key) return;
+
+      const duration = bar.range[1] - bar.range[0];
+      const adjustedStart = bar.range[0] + timezoneOffset;
+      const startPos = (adjustedStart % 24 + 24) % 24;
+      const endPos = startPos + duration;
+
+      if (endPos <= 24) {
+        blocks.push({
+          key: `${bar.key}_1`,
+          sessionName: session.name,
+          details: bar,
+          left: (startPos / 24) * 100,
+          width: (duration / 24) * 100,
+          yLevel,
+          tooltip: bar.tooltip,
+          range: bar.range,
+        });
+      } else {
+        const width1 = 24 - startPos;
+        blocks.push({
+          key: `${bar.key}_1`,
+          sessionName: session.name,
+          details: bar,
+          left: (startPos / 24) * 100,
+          width: (width1 / 24) * 100,
+          yLevel,
+          tooltip: bar.tooltip,
+          range: bar.range,
+        });
+
+        const width2 = endPos - 24;
+        if (width2 > 0.001) {
+          blocks.push({
+            key: `${bar.key}_2`,
+            sessionName: session.name,
+            details: bar,
+            left: 0,
+            width: (width2 / 24) * 100,
+            yLevel,
+            tooltip: bar.tooltip,
+            range: bar.range,
+          });
+        }
+      }
+    };
 
     SESSIONS.forEach(session => {
-      const sessionRow = dataMap.get(session.name);
-      if (!sessionRow) return;
-
-      Object.values(session).forEach(prop => {
-        if (typeof prop === 'object' && prop !== null && 'key' in prop) {
-          const bar = prop as ChartBarDetails & { range: [number, number] };
-          
-          const duration = bar.range[1] - bar.range[0];
-          const adjustedStart = bar.range[0] + timezoneOffset;
-          const adjustedEnd = adjustedStart + duration;
-
-          const startDayBoundary = Math.floor(adjustedStart / 24);
-          const endDayBoundary = Math.floor((adjustedEnd - 0.00001) / 24);
-
-          if (startDayBoundary === endDayBoundary) {
-            const displayStart = (adjustedStart % 24 + 24) % 24;
-            let displayEnd = (adjustedEnd % 24 + 24) % 24;
-            if (displayEnd === 0 && duration > 0) displayEnd = 24;
-
-            const dataKey = `${bar.key}_p1`;
-            sessionRow[dataKey] = [displayStart, displayEnd];
-            processedBars.push({ ...bar, dataKey });
-          } else {
-            const part1End = (startDayBoundary + 1) * 24;
-            const displayStart1 = (adjustedStart % 24 + 24) % 24;
-            const dataKey1 = `${bar.key}_p1`;
-            sessionRow[dataKey1] = [displayStart1, 24];
-            processedBars.push({ ...bar, dataKey: dataKey1 });
-            
-            const displayEnd2 = (adjustedEnd % 24 + 24) % 24;
-            if (displayEnd2 > 0) {
-              const dataKey2 = `${bar.key}_p2`;
-              sessionRow[dataKey2] = [0, displayEnd2];
-              processedBars.push({ ...bar, dataKey: dataKey2 });
-            }
-          }
-        }
-      });
-    });
-    
-    // Sort bars to ensure correct render layering: sessions -> overlaps -> killzones
-    processedBars.sort((a, b) => {
-        const order = { session: 1, overlap: 2, killzone: 3 };
-        const aType = a.key.includes('session') ? order.session : a.key.includes('overlap') ? order.overlap : order.killzone;
-        const bType = b.key.includes('session') ? order.session : b.key.includes('overlap') ? order.overlap : order.killzone;
-        return aType - bType;
+      processBar(session, session.main, 0); // Main session
+      processBar(session, session.overlapAsia, 1); // Overlap
+      processBar(session, session.overlapLondon, 1); // Overlap
+      processBar(session, session.killzone, 2); // Killzone
+      processBar(session, session.killzoneAM, 2); // Killzone
+      processBar(session, session.killzonePM, 2); // Killzone
     });
 
-    return { chartData: Array.from(dataMap.values()), allBars: processedBars };
+    return blocks;
   }, [timezoneOffset]);
 
-  const ticks = useMemo(() => Array.from({ length: 25 }, (_, i) => i), []);
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, block: TimeBlock) => {
+    setHoveredBlock(block);
+    setTooltipPosition({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredBlock(null);
+  };
+
+  const getStatusColor = (status: SessionStatus) => {
+    const statusConfig = {
+      OPEN: { color: 'hsl(120, 70%, 55%)', glow: 'hsl(120, 70%, 55%)' },
+      CLOSED: { color: 'hsl(0, 60%, 45%)', glow: 'transparent' },
+      WARNING: { color: 'hsl(35, 100%, 60%)', glow: 'hsl(35, 100%, 60%)' },
+    };
+    return statusConfig[status];
+  };
+
+  const ticks = Array.from({ length: 24 }, (_, i) => i); // Every hour
+  const majorTicks = Array.from({ length: 24 }, (_, i) => i); // All 24 hours for labels
 
   return (
-    <div className="w-full h-[400px] bg-slate-900/40 backdrop-blur-lg border border-slate-700/50 p-4 rounded-lg shadow-2xl">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={chartData}
-          layout="vertical"
-          margin={{ top: 0, right: 40, left: 30, bottom: 20 }}
-          barCategoryGap="5%"
-          onMouseLeave={() => setHoveredBarKey(null)}
-        >
-          <XAxis
-            type="number"
-            domain={[0, 24]}
-            ticks={ticks}
-            tick={{ fill: '#94a3b8', fontSize: 12 }}
-            axisLine={{ stroke: '#475569' }}
-            tickLine={{ stroke: '#475569' }}
-            label={{ value: `Time (${currentTimezoneLabel})`, position: 'insideBottom', offset: -5, fill: '#cbd5e1' }}
-          />
-          <YAxis
-            type="category"
-            dataKey="name"
-            tickLine={false}
-            axisLine={false}
-            tick={<CustomYAxisTick sessionStatus={sessionStatus} />}
-            width={90}
-          />
-          <Tooltip 
-            content={<ChartTooltip timezoneOffset={timezoneOffset} timezoneLabel={currentTimezoneLabel} />} 
-            cursor={{ fill: 'rgba(100, 116, 139, 0.1)' }} 
-           />
-          
-          <ReferenceLine
-            x={nowLine}
-            stroke="hsl(53, 98%, 52%)"
-            strokeWidth={2}
-            strokeDasharray="4 4"
-            label={{ value: 'Now', position: 'top', fill: 'hsl(53, 98%, 52%)', fontSize: 12, fontWeight: 'bold' }}
-          />
-          
-          {allBars.map(bar => {
-            const isHovered = hoveredBarKey === bar.dataKey;
+    <div ref={chartContainerRef} className="w-full bg-slate-900/40 backdrop-blur-lg border border-slate-700/50 p-6 rounded-lg shadow-2xl">
+      <h3 className="text-lg font-bold text-slate-200 mb-4">Session Timeline</h3>
 
-            return (
-              <Bar
-                key={bar.dataKey}
-                dataKey={bar.dataKey}
-                fill={bar.color}
-                shape={(props) => (
-                  <CustomBarShape
-                    {...props}
-                    baseOpacity={bar.opacity}
-                    isHovered={isHovered}
-                  />
-                )}
-                isAnimationActive={false}
-                onMouseEnter={() => setHoveredBarKey(bar.dataKey)}
-                style={{ cursor: 'pointer' }}
-              />
-            );
-          })}
-        </BarChart>
-      </ResponsiveContainer>
+      {[SESSIONS[3], SESSIONS[2], SESSIONS[0], SESSIONS[1]].map(session => {
+        const status = sessionStatus[session.name];
+        const statusColors = getStatusColor(status);
+
+        return (
+          <div key={session.name} className="mb-6 last:mb-0">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-24 flex items-center gap-2">
+                <div
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{
+                    backgroundColor: statusColors.color,
+                    boxShadow: `0 0 6px ${statusColors.glow}`,
+                    animation: status === 'WARNING' ? 'pulse-glow 1.5s infinite' : 'none',
+                  }}
+                />
+                <span className="text-sm font-semibold text-slate-300">{session.name}</span>
+              </div>
+            </div>
+
+            <div className="relative w-full h-20 bg-slate-800/50 rounded-md overflow-hidden">
+              {/* Vertical hour grid lines */}
+              {ticks.map(hour => (
+                <div
+                  key={`grid-${hour}`}
+                  className="absolute top-0 bottom-0 border-l border-slate-700/30"
+                  style={{ left: `${(hour / 24) * 100}%` }}
+                />
+              ))}
+
+              {timeBlocks
+                .filter(block => block.sessionName === session.name)
+                .map(block => {
+                  const yPositions = ['60%', '40%', '10%'];
+                  const heights = ['35%', '25%', '20%'];
+
+                  return (
+                    <div
+                      key={block.key}
+                      className="absolute rounded transition-all duration-200 ease-in-out hover:scale-y-125 cursor-pointer"
+                      style={{
+                        left: `${block.left}%`,
+                        width: `${block.width}%`,
+                        top: yPositions[block.yLevel],
+                        height: heights[block.yLevel],
+                        backgroundColor: block.details.color,
+                        opacity: block.details.opacity,
+                      }}
+                      onMouseMove={(e) => handleMouseMove(e, block)}
+                      onMouseLeave={handleMouseLeave}
+                      aria-label={block.details.name}
+                      title={block.details.name}
+                    />
+                  );
+                })}
+
+              <div
+                className="absolute top-0 bottom-0 w-0.5 bg-yellow-400"
+                style={{ left: `${(nowLine / 24) * 100}%` }}
+              >
+                <div className="absolute -top-5 -translate-x-1/2 text-xs text-yellow-300 font-bold whitespace-nowrap">
+                  Now
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      <div className="relative w-full mt-6 px-2" style={{ height: '40px' }}>
+        {majorTicks.map(tick => (
+          <div
+            key={tick}
+            className="absolute text-xs text-slate-400 font-medium"
+            style={{
+              left: `${(tick / 24) * 100}%`,
+              transform: 'translateX(-50%) rotate(270deg)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {String(tick).padStart(2, '0')}:00
+          </div>
+        ))}
+      </div>
+
+      <ChartTooltip
+        block={hoveredBlock}
+        position={tooltipPosition}
+        timezoneOffset={timezoneOffset}
+        timezoneLabel={currentTimezoneLabel}
+        chartRef={chartContainerRef}
+      />
     </div>
   );
 };

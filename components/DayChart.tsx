@@ -30,7 +30,8 @@ const DayChartTooltip: React.FC<{
   position: { x: number, y: number },
   timezoneOffset: number,
   timezoneLabel: string,
-}> = ({ block, position, timezoneOffset, timezoneLabel }) => {
+  chartRef?: React.RefObject<HTMLDivElement>,
+}> = ({ block, position, timezoneOffset, timezoneLabel, chartRef }) => {
   if (!block) return null;
 
   const tooltipData = block.tooltip;
@@ -40,24 +41,40 @@ const DayChartTooltip: React.FC<{
   const startTimeLocal = formatTime(startUTC, timezoneOffset);
   const endTimeLocal = formatTime(endUTC, timezoneOffset);
 
+  // Calculate current hover time based on cursor position
+  let hoverTimeLocal = '';
+  if (chartRef?.current) {
+    const rect = chartRef.current.getBoundingClientRect();
+    const relativeX = position.x - rect.left;
+    const chartWidth = rect.width;
+    const hoverHour = (relativeX / chartWidth) * 24;
+    const displayHour = (hoverHour + timezoneOffset) % 24;
+    const hours = Math.floor(displayHour);
+    const minutes = Math.round((displayHour - hours) * 60);
+    hoverTimeLocal = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
   const style: React.CSSProperties = {
     position: 'fixed',
     top: position.y,
     left: position.x,
-    transform: 'translate(15px, 15px)', // Position away from cursor
     pointerEvents: 'none',
     zIndex: 50,
   };
 
   return (
-    <div style={style} className="p-4 bg-slate-900/80 backdrop-blur-lg border border-slate-700/50 rounded-lg shadow-xl text-sm text-slate-200 max-w-xs transition-all duration-200">
-      <h3 className="font-bold text-base mb-2 text-white">{tooltipData.title}</h3>
-      <div className="text-xs text-cyan-300 mb-3 font-semibold">
-        {`Hours (${timezoneLabel}): ${startTimeLocal} - ${endTimeLocal}`}
+    <div style={style} className="px-3 py-2 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded shadow-xl text-xs text-slate-200 transition-all duration-100">
+      <h3 className="font-bold text-sm text-white mb-1">{tooltipData.title}</h3>
+      {hoverTimeLocal && (
+        <div className="text-yellow-300 font-semibold mb-0.5">
+          {`${hoverTimeLocal}`}
+        </div>
+      )}
+      <div className="text-cyan-300 font-semibold mb-1">
+        {`${startTimeLocal} - ${endTimeLocal}`}
       </div>
-      <p><strong className="font-semibold text-slate-400">Volatility:</strong> {tooltipData.volatility}</p>
-      <p><strong className="font-semibold text-slate-400">Best Pairs:</strong> {tooltipData.bestPairs}</p>
-      <p className="mt-2 pt-2 border-t border-slate-700"><strong className="font-semibold text-slate-400">Strategy:</strong> {tooltipData.strategy}</p>
+      <p className="text-slate-400 leading-tight"><strong>Vol:</strong> {tooltipData.volatility}</p>
+      <p className="text-slate-400 leading-tight"><strong>Pairs:</strong> {tooltipData.bestPairs}</p>
     </div>
   );
 };
@@ -65,6 +82,7 @@ const DayChartTooltip: React.FC<{
 const DayChart: React.FC<DayChartProps> = ({ nowLine, timezoneOffset, currentTimezoneLabel }) => {
   const [hoveredBlock, setHoveredBlock] = useState<TimeBlock | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const chartContainerRef = React.useRef<HTMLDivElement>(null);
 
   const timeBlocks = useMemo(() => {
     const blocks: TimeBlock[] = [];
@@ -136,10 +154,10 @@ const DayChart: React.FC<DayChartProps> = ({ nowLine, timezoneOffset, currentTim
     setHoveredBlock(null);
   };
   
-  const ticks = Array.from({ length: 8 }, (_, i) => i * 3); // Every 3 hours from 00 to 21
+  const ticks = Array.from({ length: 24 }, (_, i) => i); // All 24 hours
 
   return (
-    <div className="w-full bg-slate-900/40 backdrop-blur-lg border border-slate-700/50 p-6 rounded-lg shadow-2xl mt-8">
+    <div ref={chartContainerRef} className="w-full bg-slate-900/40 backdrop-blur-lg border border-slate-700/50 p-6 rounded-lg shadow-2xl mt-8">
       <h3 className="text-lg font-bold text-slate-200 mb-4">24-Hour Timeline</h3>
       <div className="relative w-full h-24 bg-slate-800/50 rounded-md overflow-hidden">
         {timeBlocks.map(block => {
@@ -173,9 +191,17 @@ const DayChart: React.FC<DayChartProps> = ({ nowLine, timezoneOffset, currentTim
         </div>
       </div>
       
-      <div className="relative w-full flex text-xs text-slate-400 mt-2">
+      <div className="relative w-full mt-6 px-2" style={{ height: '40px' }}>
         {ticks.map((tick) => (
-          <div key={tick} style={{ width: `${(3 / 24) * 100}%` }}>
+          <div
+            key={tick}
+            className="absolute text-xs text-slate-400 font-medium"
+            style={{
+              left: `${(tick / 24) * 100}%`,
+              transform: 'translateX(-50%) rotate(270deg)',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {String(tick).padStart(2, '0')}:00
           </div>
         ))}
@@ -186,6 +212,7 @@ const DayChart: React.FC<DayChartProps> = ({ nowLine, timezoneOffset, currentTim
         position={tooltipPosition}
         timezoneOffset={timezoneOffset}
         timezoneLabel={currentTimezoneLabel}
+        chartRef={chartContainerRef}
       />
     </div>
   );
