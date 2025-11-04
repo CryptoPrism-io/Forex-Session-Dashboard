@@ -239,8 +239,8 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
           const statusColors = getStatusColor(status);
 
           return (
-            <div key={session.name} className="mb-6 last:mb-0">
-              <div className="flex items-center gap-3 mb-2">
+            <div key={session.name} className="mb-5 last:mb-0">
+              <div className="flex items-center gap-3 mb-1.5">
                 <div className="w-24 flex items-center gap-2">
                   <div
                     className="w-2.5 h-2.5 rounded-full"
@@ -254,7 +254,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                 </div>
               </div>
 
-              <div className="relative w-full h-20 bg-slate-800/50 rounded-md overflow-hidden">
+              <div className="relative w-full h-16 bg-slate-800/50 rounded-md overflow-hidden">
                 {/* Vertical hour grid lines */}
                 {ticks.map(hour => (
                   <div
@@ -304,8 +304,8 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
         </div>
       ) : viewMode === 'unified' ? (
         // Unified view - all sessions on one timeline
-        <div className="mb-6">
-          <div className="relative w-full h-40 bg-slate-800/50 rounded-md overflow-hidden">
+        <div className="mb-5">
+          <div className="relative w-full h-32 bg-slate-800/50 rounded-md overflow-hidden">
             {/* Vertical hour grid lines */}
             {ticks.map(hour => (
               <div
