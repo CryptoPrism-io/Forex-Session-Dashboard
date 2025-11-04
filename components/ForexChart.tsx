@@ -2,14 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { SESSIONS } from '../constants';
 import { ChartBarDetails, TooltipInfo } from '../types';
 import { SessionStatus } from '../App';
+import { IconChevronDown } from './icons';
 
 interface ForexChartProps {
   nowLine: number;
   currentTimezoneLabel: string;
   timezoneOffset: number;
   sessionStatus: { [key: string]: SessionStatus };
-  showGuideSection?: boolean;
-  onGuideToggle?: (show: boolean) => void;
 }
 
 interface TimeBlock {
@@ -98,16 +97,11 @@ const ChartTooltip: React.FC<{
   );
 };
 
-const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, timezoneOffset, sessionStatus, showGuideSection = true, onGuideToggle }) => {
+const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, timezoneOffset, sessionStatus }) => {
   const [hoveredBlock, setHoveredBlock] = useState<TimeBlock | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const [viewMode, setViewMode] = useState<'unified' | 'separate'>('separate');
+  const [viewMode, setViewMode] = useState<'unified' | 'separate' | 'guide'>('separate');
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
-
-  const handleGuideToggle = () => {
-    const newValue = !showGuideSection;
-    onGuideToggle?.(newValue);
-  };
 
   const timeBlocks = useMemo(() => {
     const blocks: TimeBlock[] = [];
@@ -219,9 +213,9 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
             Unified
           </button>
           <button
-            onClick={handleGuideToggle}
+            onClick={() => setViewMode('guide')}
             className={`px-3 py-1.5 text-xs font-semibold rounded transition-all duration-200 ${
-              showGuideSection
+              viewMode === 'guide'
                 ? 'bg-indigo-500 text-white shadow-lg'
                 : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
             }`}
@@ -233,7 +227,8 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
 
       {viewMode === 'separate' ? (
         // Separate view - individual rows per session
-        [SESSIONS[3], SESSIONS[2], SESSIONS[0], SESSIONS[1]].map(session => {
+        <div>
+        {[SESSIONS[3], SESSIONS[2], SESSIONS[0], SESSIONS[1]].map(session => {
           const status = sessionStatus[session.name];
           const statusColors = getStatusColor(status);
 
@@ -299,8 +294,9 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
               </div>
             </div>
           );
-        })
-      ) : (
+        })}
+        </div>
+      ) : viewMode === 'unified' ? (
         // Unified view - all sessions on one timeline
         <div className="mb-6">
           <div className="relative w-full h-40 bg-slate-800/50 rounded-md overflow-hidden">
@@ -372,8 +368,34 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
             })}
           </div>
         </div>
+      ) : (
+        // Guide view - Trading Session Guide
+        <section className="w-full bg-slate-900/40 border border-slate-700/50 rounded-lg shadow-2xl overflow-hidden transition-all duration-300">
+          <div className="p-6 text-sm">
+            <h3 className="text-lg font-bold text-slate-200 mb-6">Trading Session Guide</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-slate-800/50 p-4 rounded-lg">
+                <h4 className="font-semibold text-base mb-2 flex items-center"><span className="w-3 h-3 rounded-full bg-cyan-400 mr-2.5"></span> Main Session</h4>
+                <p className="text-slate-400 pl-5">The main trading blocks for Sydney, Tokyo, London, and New York.</p>
+              </div>
+              <div className="bg-slate-800/50 p-4 rounded-lg">
+                <h4 className="font-semibold text-base mb-2 flex items-center"><span className="w-3 h-3 rounded-full bg-orange-400 mr-2.5"></span> Session Overlap</h4>
+                <p className="text-slate-400 pl-5">Periods where two major sessions are open simultaneously, typically leading to higher liquidity and volatility.</p>
+              </div>
+              <div className="bg-slate-800/50 p-4 rounded-lg">
+                <h4 className="font-semibold text-base mb-2 flex items-center"><span className="w-3 h-3 rounded-full bg-red-500 mr-2.5"></span> Killzone</h4>
+                <p className="text-slate-400 pl-5">Specific, volatile windows used by institutional traders to engineer liquidity. Prime time for ICT concepts.</p>
+              </div>
+              <div className="bg-slate-800/50 p-4 rounded-lg">
+                <h4 className="font-semibold text-base mb-2 flex items-center text-yellow-300">"Now" Line</h4>
+                <p className="text-slate-400">The dashed yellow line indicates the current time in your selected timezone, helping you orient yourself in the market day.</p>
+              </div>
+            </div>
+          </div>
+        </section>
       )}
 
+      {viewMode !== 'guide' && (
       <div className="relative w-full mt-6 px-2" style={{ height: '40px' }}>
         {majorTicks.map(tick => (
           <div
@@ -389,6 +411,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
           </div>
         ))}
       </div>
+      )}
 
       <ChartTooltip
         block={hoveredBlock}
