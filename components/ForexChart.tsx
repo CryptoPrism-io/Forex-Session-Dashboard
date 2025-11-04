@@ -396,10 +396,14 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                 className="w-full flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
               >
                 <IconChevronDown
-                  className={`w-4 h-4 text-cyan-300 transition-transform ${collapsedSections.mainSessions ? '-rotate-90' : ''}`}
+                  className={`w-4 h-4 transition-transform ${collapsedSections.mainSessions ? '-rotate-90' : ''}`}
+                  style={{ color: 'hsl(195, 74%, 62%)', textShadow: '0 0 8px hsl(195, 74%, 62%)' }}
                 />
-                <h4 className="font-semibold text-base flex items-center text-cyan-300">
-                  <span className="w-3 h-3 rounded-full bg-cyan-400 mr-2.5"></span>
+                <h4
+                  className="font-semibold text-base flex items-center"
+                  style={{ color: 'hsl(195, 74%, 72%)', textShadow: `0 0 10px hsl(195, 74%, 62%)` }}
+                >
+                  <span className="w-3 h-3 rounded-full mr-2.5" style={{ backgroundColor: 'hsl(195, 74%, 62%)', boxShadow: '0 0 8px hsl(195, 74%, 62%)' }}></span>
                   Main Sessions
                 </h4>
               </button>
@@ -468,10 +472,14 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                 className="w-full flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
               >
                 <IconChevronDown
-                  className={`w-4 h-4 text-orange-300 transition-transform ${collapsedSections.overlaps ? '-rotate-90' : ''}`}
+                  className={`w-4 h-4 transition-transform`}
+                  style={{ color: 'hsl(30, 100%, 60%)', textShadow: '0 0 8px hsl(30, 100%, 60%)' }}
                 />
-                <h4 className="font-semibold text-base flex items-center text-orange-300">
-                  <span className="w-3 h-3 rounded-full bg-orange-400 mr-2.5"></span>
+                <h4
+                  className="font-semibold text-base flex items-center"
+                  style={{ color: 'hsl(30, 100%, 70%)', textShadow: `0 0 10px hsl(30, 100%, 60%)` }}
+                >
+                  <span className="w-3 h-3 rounded-full mr-2.5" style={{ backgroundColor: 'hsl(30, 100%, 60%)', boxShadow: '0 0 8px hsl(30, 100%, 60%)' }}></span>
                   Session Overlaps
                 </h4>
               </button>
@@ -518,10 +526,14 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                 className="w-full flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
               >
                 <IconChevronDown
-                  className={`w-4 h-4 text-red-300 transition-transform ${collapsedSections.killzones ? '-rotate-90' : ''}`}
+                  className={`w-4 h-4 transition-transform ${collapsedSections.killzones ? '-rotate-90' : ''}`}
+                  style={{ color: 'hsl(0, 100%, 65%)', textShadow: '0 0 8px hsl(0, 100%, 65%)' }}
                 />
-                <h4 className="font-semibold text-base flex items-center text-red-300">
-                  <span className="w-3 h-3 rounded-full bg-red-500 mr-2.5"></span>
+                <h4
+                  className="font-semibold text-base flex items-center"
+                  style={{ color: 'hsl(0, 100%, 75%)', textShadow: `0 0 10px hsl(0, 100%, 65%)` }}
+                >
+                  <span className="w-3 h-3 rounded-full mr-2.5" style={{ backgroundColor: 'hsl(0, 100%, 65%)', boxShadow: '0 0 8px hsl(0, 100%, 65%)' }}></span>
                   Killzones
                 </h4>
               </button>
