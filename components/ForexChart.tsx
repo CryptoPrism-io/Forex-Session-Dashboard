@@ -369,48 +369,168 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
           </div>
         </div>
       ) : (
-        // Guide view - Trading Session Guide
+        // Guide view - Trading Session Guide with Mini Tables
         <section className="w-full bg-slate-900/40 border border-slate-700/50 rounded-lg shadow-2xl overflow-hidden transition-all duration-300">
-          <div className="p-6 text-sm">
-            <h3 className="text-lg font-bold text-slate-200 mb-6">Trading Session Guide</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-slate-800/50 p-4 rounded-lg">
-                <h4 className="font-semibold text-base mb-2 flex items-center"><span className="w-3 h-3 rounded-full bg-cyan-400 mr-2.5"></span> Main Session</h4>
-                <p className="text-slate-400 pl-5">The main trading blocks for Sydney, Tokyo, London, and New York.</p>
+          <div className="p-6 text-sm space-y-6">
+            <h3 className="text-lg font-bold text-slate-200">Trading Session Guide ({currentTimezoneLabel})</h3>
+
+            {/* Main Sessions Table */}
+            <div>
+              <h4 className="font-semibold text-base mb-3 flex items-center text-cyan-300">
+                <span className="w-3 h-3 rounded-full bg-cyan-400 mr-2.5"></span>
+                Main Sessions
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-700/50">
+                      <th className="text-left p-2 text-slate-300 font-semibold">Session</th>
+                      <th className="text-left p-2 text-slate-300 font-semibold">Start ({currentTimezoneLabel})</th>
+                      <th className="text-left p-2 text-slate-300 font-semibold">End ({currentTimezoneLabel})</th>
+                      <th className="text-left p-2 text-slate-300 font-semibold">Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[SESSIONS[0], SESSIONS[1], SESSIONS[2], SESSIONS[3]].map((session, idx) => (
+                      <tr key={session.name} className={idx % 2 === 0 ? 'bg-slate-800/30' : ''}>
+                        <td className="p-2 text-slate-300 font-medium">{session.name}</td>
+                        <td className="p-2 text-slate-400">{formatTime(session.main.range[0], timezoneOffset)}</td>
+                        <td className="p-2 text-slate-400">{formatTime(session.main.range[1], timezoneOffset)}</td>
+                        <td className="p-2 text-slate-400">{session.main.range[1] - session.main.range[0]}h</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="bg-slate-800/50 p-4 rounded-lg">
-                <h4 className="font-semibold text-base mb-2 flex items-center"><span className="w-3 h-3 rounded-full bg-orange-400 mr-2.5"></span> Session Overlap</h4>
-                <p className="text-slate-400 pl-5">Periods where two major sessions are open simultaneously, typically leading to higher liquidity and volatility.</p>
+            </div>
+
+            {/* Session Overlaps Table */}
+            <div>
+              <h4 className="font-semibold text-base mb-3 flex items-center text-orange-300">
+                <span className="w-3 h-3 rounded-full bg-orange-400 mr-2.5"></span>
+                Session Overlaps
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-700/50">
+                      <th className="text-left p-2 text-slate-300 font-semibold">Overlap</th>
+                      <th className="text-left p-2 text-slate-300 font-semibold">Start ({currentTimezoneLabel})</th>
+                      <th className="text-left p-2 text-slate-300 font-semibold">End ({currentTimezoneLabel})</th>
+                      <th className="text-left p-2 text-slate-300 font-semibold">Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const overlaps = [];
+                      if (SESSIONS[2].overlapAsia) {
+                        overlaps.push({ name: SESSIONS[2].overlapAsia.name, range: SESSIONS[2].overlapAsia.range });
+                      }
+                      if (SESSIONS[3].overlapLondon) {
+                        overlaps.push({ name: SESSIONS[3].overlapLondon.name, range: SESSIONS[3].overlapLondon.range });
+                      }
+                      return overlaps.map((overlap, idx) => (
+                        <tr key={overlap.name} className={idx % 2 === 0 ? 'bg-slate-800/30' : ''}>
+                          <td className="p-2 text-slate-300 font-medium">{overlap.name}</td>
+                          <td className="p-2 text-slate-400">{formatTime(overlap.range[0], timezoneOffset)}</td>
+                          <td className="p-2 text-slate-400">{formatTime(overlap.range[1], timezoneOffset)}</td>
+                          <td className="p-2 text-slate-400">{overlap.range[1] - overlap.range[0]}h</td>
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
               </div>
-              <div className="bg-slate-800/50 p-4 rounded-lg">
-                <h4 className="font-semibold text-base mb-2 flex items-center"><span className="w-3 h-3 rounded-full bg-red-500 mr-2.5"></span> Killzone</h4>
-                <p className="text-slate-400 pl-5">Specific, volatile windows used by institutional traders to engineer liquidity. Prime time for ICT concepts.</p>
+            </div>
+
+            {/* Killzones Table */}
+            <div>
+              <h4 className="font-semibold text-base mb-3 flex items-center text-red-300">
+                <span className="w-3 h-3 rounded-full bg-red-500 mr-2.5"></span>
+                Killzones
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-700/50">
+                      <th className="text-left p-2 text-slate-300 font-semibold">Killzone</th>
+                      <th className="text-left p-2 text-slate-300 font-semibold">Start ({currentTimezoneLabel})</th>
+                      <th className="text-left p-2 text-slate-300 font-semibold">End ({currentTimezoneLabel})</th>
+                      <th className="text-left p-2 text-slate-300 font-semibold">Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const killzones = [];
+                      if (SESSIONS[2].killzone) {
+                        killzones.push({ name: SESSIONS[2].killzone.name, range: SESSIONS[2].killzone.range });
+                      }
+                      if (SESSIONS[3].killzoneAM) {
+                        killzones.push({ name: SESSIONS[3].killzoneAM.name, range: SESSIONS[3].killzoneAM.range });
+                      }
+                      if (SESSIONS[3].killzonePM) {
+                        killzones.push({ name: SESSIONS[3].killzonePM.name, range: SESSIONS[3].killzonePM.range });
+                      }
+                      return killzones.map((kz, idx) => (
+                        <tr key={kz.name} className={idx % 2 === 0 ? 'bg-slate-800/30' : ''}>
+                          <td className="p-2 text-slate-300 font-medium">{kz.name}</td>
+                          <td className="p-2 text-slate-400">{formatTime(kz.range[0], timezoneOffset)}</td>
+                          <td className="p-2 text-slate-400">{formatTime(kz.range[1], timezoneOffset)}</td>
+                          <td className="p-2 text-slate-400">{kz.range[1] - kz.range[0]}h</td>
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
               </div>
-              <div className="bg-slate-800/50 p-4 rounded-lg">
-                <h4 className="font-semibold text-base mb-2 flex items-center text-yellow-300">"Now" Line</h4>
-                <p className="text-slate-400">The dashed yellow line indicates the current time in your selected timezone, helping you orient yourself in the market day.</p>
-              </div>
+            </div>
+
+            {/* Legend Info */}
+            <div className="pt-4 border-t border-slate-700/50 text-xs text-slate-400">
+              <p><span className="text-yellow-300 font-semibold">"Now" Line:</span> The dashed yellow line in the charts indicates the current time in your selected timezone.</p>
             </div>
           </div>
         </section>
       )}
 
       {viewMode !== 'guide' && (
-      <div className="relative w-full mt-6 px-2" style={{ height: '40px' }}>
-        {majorTicks.map(tick => (
-          <div
-            key={tick}
-            className="absolute text-xs text-slate-400 font-medium"
-            style={{
-              left: `${(tick / 24) * 100}%`,
-              transform: 'translateX(-50%) rotate(270deg)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {String(tick).padStart(2, '0')}:00
+        <>
+          <div className="relative w-full mt-6 px-2" style={{ height: '40px' }}>
+            {majorTicks.map(tick => (
+              <div
+                key={tick}
+                className="absolute text-xs text-slate-400 font-medium"
+                style={{
+                  left: `${(tick / 24) * 100}%`,
+                  transform: 'translateX(-50%) rotate(270deg)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {String(tick).padStart(2, '0')}:00
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+
+          {/* Legend Footer */}
+          <div className="w-full mt-4 pt-3 border-t border-slate-700/30 flex flex-wrap gap-4 text-xs text-slate-300">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+              <span>Main Session</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-orange-400"></span>
+              <span>Session Overlap</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-500"></span>
+              <span>Killzone</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-yellow-400" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}></span>
+              <span>"Now" Line</span>
+            </div>
+          </div>
+        </>
       )}
 
       <ChartTooltip
