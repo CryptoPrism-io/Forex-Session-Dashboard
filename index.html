@@ -46,6 +46,20 @@
           opacity: 0.6;
         }
       }
+      /* Glassmorphic smooth transitions */
+      * {
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      /* Enhanced backdrop filter support */
+      @supports (backdrop-filter: blur(1px)) {
+        .backdrop-blur-lg,
+        .backdrop-blur-md,
+        .backdrop-blur-xl,
+        .backdrop-blur-2xl {
+          -webkit-backdrop-filter: var(--tw-backdrop-filter);
+          backdrop-filter: var(--tw-backdrop-filter);
+        }
+      }
     </style>
   <script type="importmap">
 {

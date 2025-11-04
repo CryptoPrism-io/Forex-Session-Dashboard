@@ -194,37 +194,37 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
   const majorTicks = Array.from({ length: 24 }, (_, i) => i); // All 24 hours for labels
 
   return (
-    <div ref={chartContainerRef} className="w-full bg-slate-900/40 backdrop-blur-lg border border-slate-700/50 p-6 rounded-lg shadow-2xl">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+    <div ref={chartContainerRef} className="w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 p-6 rounded-2xl shadow-2xl shadow-black/30 hover:border-slate-600/50 transition-all duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-bold text-slate-200">Session Timeline</h3>
+          <h3 className="text-lg font-semibold text-slate-100">Session Timeline</h3>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode('separate')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded transition-all duration-200 ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
                 viewMode === 'separate'
-                  ? 'bg-cyan-500 text-white shadow-lg'
-                  : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
+                  ? 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
+                  : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
               }`}
             >
               Individual
             </button>
             <button
               onClick={() => setViewMode('unified')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded transition-all duration-200 ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
                 viewMode === 'unified'
-                  ? 'bg-cyan-500 text-white shadow-lg'
-                  : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
+                  ? 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
+                  : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
               }`}
             >
               Unified
             </button>
             <button
               onClick={() => setViewMode('guide')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded transition-all duration-200 ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
                 viewMode === 'guide'
-                  ? 'bg-indigo-500 text-white shadow-lg'
-                  : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
+                  ? 'bg-indigo-500/30 border-indigo-400/50 text-indigo-100 shadow-lg shadow-indigo-500/20'
+                  : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
               }`}
             >
               Guide
@@ -256,7 +256,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                 </div>
               </div>
 
-              <div className="relative w-full h-16 bg-slate-800/50 rounded-md overflow-hidden">
+              <div className="relative w-full h-16 bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
                 {/* Vertical hour grid lines */}
                 {ticks.map(hour => (
                   <div
@@ -307,7 +307,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
       ) : viewMode === 'unified' ? (
         // Unified view - all sessions on one timeline
         <div className="mb-5">
-          <div className="relative w-full h-32 bg-slate-800/50 rounded-md overflow-hidden">
+          <div className="relative w-full h-32 bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
             {/* Vertical hour grid lines */}
             {ticks.map(hour => (
               <div
@@ -378,13 +378,13 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
         </div>
       ) : (
         // Guide view - Trading Session Guide with Master Table and Collapsible Sections
-        <section className="w-full bg-slate-900/40 border border-slate-700/50 rounded-lg shadow-2xl overflow-hidden transition-all duration-300">
+        <section className="w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 rounded-2xl shadow-2xl shadow-black/30 overflow-hidden transition-all duration-300 hover:border-slate-600/50">
           <div className="p-6 text-sm space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-200">Trading Session Guide ({currentTimezoneLabel})</h3>
+              <h3 className="text-lg font-semibold text-slate-100">Trading Session Guide ({currentTimezoneLabel})</h3>
               <button
                 onClick={() => setChartsVisible(!chartsVisible)}
-                className="px-3 py-1 text-xs font-semibold rounded bg-slate-700/50 hover:bg-slate-600/70 text-slate-300 transition-all"
+                className="px-3 py-1 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 transition-all duration-300"
                 title={chartsVisible ? "Hide charts" : "Show charts"}
               >
                 {chartsVisible ? '▼ Charts' : '▶ Charts'}
@@ -411,10 +411,10 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
               </button>
               <p className="text-xs text-slate-400 mb-3 ml-6">The primary trading blocks when each major market is actively trading. Each session has its own volatility profile and best trading pairs.</p>
               {!collapsedSections.mainSessions && (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-4">
                   <table className="w-full text-xs border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-700/50">
+                      <tr className="border-b border-slate-700/40">
                         <th className="text-left p-2 text-slate-300 font-semibold">Session</th>
                         <th className="text-left p-2 text-slate-300 font-semibold">Start</th>
                         <th className="text-left p-2 text-slate-300 font-semibold">End</th>
@@ -487,10 +487,10 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
               </button>
               <p className="text-xs text-slate-400 mb-3 ml-6">Times when two major sessions overlap, offering increased liquidity and volatility. Ideal for breakout strategies and trend-following.</p>
               {!collapsedSections.overlaps && (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-4">
                   <table className="w-full text-xs border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-700/50">
+                      <tr className="border-b border-slate-700/40">
                         <th className="text-left p-2 text-slate-300 font-semibold">Overlap</th>
                         <th className="text-left p-2 text-slate-300 font-semibold">Start</th>
                         <th className="text-left p-2 text-slate-300 font-semibold">End</th>
@@ -541,10 +541,10 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
               </button>
               <p className="text-xs text-slate-400 mb-3 ml-6">High-volatility institutional trading windows designed for liquidity manipulation. Prime time for ICT-style stop hunts and seek & destroy patterns.</p>
               {!collapsedSections.killzones && (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-4">
                   <table className="w-full text-xs border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-700/50">
+                      <tr className="border-b border-slate-700/40">
                         <th className="text-left p-2 text-slate-300 font-semibold">Killzone</th>
                         <th className="text-left p-2 text-slate-300 font-semibold">Start</th>
                         <th className="text-left p-2 text-slate-300 font-semibold">End</th>

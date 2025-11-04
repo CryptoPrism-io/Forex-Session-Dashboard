@@ -103,13 +103,21 @@ const App: React.FC = () => {
   });
 
   return (
-    <div className="bg-slate-950 text-slate-200 min-h-screen font-sans p-4 sm:p-8 flex flex-col items-center">
-      <main className="w-full max-w-7xl mx-auto">
-        <header className="text-center mb-3">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-cyan-400 mb-1 tracking-wide">
+    <div className="min-h-screen font-sans text-slate-200" style={{
+      background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%)',
+      backdropFilter: 'blur(10px)'
+    }}>
+      <main className="w-full max-w-7xl mx-auto p-4 sm:p-8 flex flex-col items-center">
+        <header className="text-center mb-8">
+          <h1 className="text-3xl sm:text-4xl font-semibold mb-2 tracking-tight" style={{
+            background: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
             Forex Session Map
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500">
+          <p className="text-sm text-slate-400 font-light">
             Global market session timings and liquidity windows
           </p>
         </header>
@@ -125,31 +133,33 @@ const App: React.FC = () => {
               <button
                 key={tz.label}
                 onClick={() => handleTimezoneChange(tz)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-300 backdrop-blur-md ${
                   selectedTimezone.label === tz.label
-                    ? 'bg-cyan-500 text-white shadow-lg'
-                    : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
+                    ? 'bg-cyan-500/30 border border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
+                    : 'bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
                 }`}
               >
                 {tz.label}
               </button>
             ))}
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setIsMoreTimezonesOpen(!isMoreTimezonesOpen)}
-                className="w-8 h-8 flex items-center justify-center bg-slate-700/50 hover:bg-slate-600/70 rounded-full transition-all duration-200"
+                className="w-8 h-8 flex items-center justify-center bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 rounded-lg transition-all duration-300 backdrop-blur-md"
                 aria-label="More timezones"
               >
-                ...
+                <span className="text-slate-300 font-light">⋯</span>
               </button>
               {isMoreTimezonesOpen && (
-                <div className="absolute top-full mt-2 left-0 sm:left-auto sm:right-0 bg-slate-800 border border-slate-700 rounded-lg shadow-xl p-2 z-10 w-28">
+                <div className="absolute top-full mt-2 left-0 sm:left-auto sm:right-0 bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 p-2 z-10 w-32">
                   {moreTimezones.map(tz => (
                      <button
                         key={tz.label}
                         onClick={() => handleTimezoneChange(tz)}
-                        className={`w-full text-left px-3 py-1.5 text-xs rounded-md transition-colors duration-150 ${
-                            selectedTimezone.label === tz.label ? 'bg-cyan-600 text-white' : 'hover:bg-slate-700'
+                        className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-all duration-150 ${
+                            selectedTimezone.label === tz.label
+                              ? 'bg-cyan-500/30 text-cyan-100 border border-cyan-400/50'
+                              : 'hover:bg-slate-700/40 text-slate-300'
                         }`}
                       >
                        {tz.label}
@@ -162,13 +172,13 @@ const App: React.FC = () => {
 
           <SocialLinks />
 
-          <div className="bg-slate-900/40 backdrop-blur-lg border border-slate-700/50 rounded-lg p-3 flex items-center gap-4 shadow-xl">
+          <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 rounded-2xl p-4 flex items-center gap-6 shadow-2xl shadow-black/30 hover:border-slate-600/50 transition-all duration-300">
              <div className="text-center">
-                <div className="text-3xl font-bold text-green-400 tracking-wider">{timeFormatted}</div>
-                <div className="text-xs text-slate-400">{selectedTimezone.label}</div>
+                <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-green-400 bg-clip-text text-transparent tracking-wider">{timeFormatted}</div>
+                <div className="text-xs text-slate-400 font-light mt-1">{selectedTimezone.label}</div>
             </div>
-            {activeSessions.length > 0 && <div className="w-px h-10 bg-slate-700"></div>}
-            <div className="flex flex-col gap-1.5 pr-2">
+            {activeSessions.length > 0 && <div className="w-px h-12 bg-gradient-to-b from-slate-700/50 to-transparent"></div>}
+            <div className="flex flex-col gap-2.5">
                 {activeSessions.map(session => {
                   let textStyle: React.CSSProperties = {};
                   let indicatorStyle: React.CSSProperties = {};
@@ -208,7 +218,7 @@ const App: React.FC = () => {
           sessionStatus={sessionStatus}
         />
 
-        <footer className="text-center mt-12 text-slate-500 text-xs">
+        <footer className="text-center mt-12 text-slate-500 text-xs font-light">
           <p>Data is illustrative. Always verify times with your broker. Not financial advice.</p>
         </footer>
       </main>

@@ -69,7 +69,7 @@ const PWAInstall: React.FC = () => {
   return (
     <button
       onClick={handleInstallClick}
-      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 hover:border-cyan-400 text-cyan-300 transition-all duration-200"
+      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 hover:border-cyan-300/60 text-cyan-300 transition-all duration-300 backdrop-blur-md shadow-lg shadow-cyan-500/10"
       title="Install app on your device"
     >
       <IconDownload className="w-4 h-4" />

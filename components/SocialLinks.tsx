@@ -29,7 +29,7 @@ const SocialLinks: React.FC = () => {
   ];
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
       {socials.map((social) => (
         <a
           key={social.name}
@@ -37,7 +37,7 @@ const SocialLinks: React.FC = () => {
           target="_blank"
           rel="noopener noreferrer"
           title={social.label}
-          className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/40 hover:bg-slate-600/60 text-slate-300 hover:text-cyan-300 transition-all duration-200 text-lg"
+          className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 hover:text-cyan-300 transition-all duration-300 backdrop-blur-md text-lg shadow-lg shadow-black/10"
           aria-label={social.label}
         >
           {social.icon}
