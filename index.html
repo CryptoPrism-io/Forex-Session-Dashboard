@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Forex Session Trading Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        background-color: hsl(222, 47%, 11%);
+        background-image: radial-gradient(
+          circle at top,
+          hsl(215, 40%, 18%),
+          hsl(222, 47%, 11%)
+        );
+      }
+      /* Custom scrollbar for a better look in dark mode */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #1e293b; /* slate-800 */
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #475569; /* slate-600 */
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #64748b; /* slate-500 */
+      }
+      /* Add transition for bar hover effect */
+      .recharts-bar-rectangle {
+        transition: fill-opacity 0.2s ease-in-out;
+      }
+      @keyframes pulse-glow {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "recharts/": "https://aistudiocdn.com/recharts@^3.3.0/",
+    "recharts": "https://aistudiocdn.com/recharts@^3.3.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+</head>
+  <body class="text-slate-200">
+    <div id="root"></div>
+  </body>
+</html>

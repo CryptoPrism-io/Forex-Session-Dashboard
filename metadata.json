@@ -1,0 +1,5 @@
+{
+  "name": "Forex Session Trading Dashboard",
+  "description": "An interactive, real-time dashboard for visualizing global Forex trading sessions, overlaps, and killzones. Features a dynamic timeline chart, timezone support, and strategic insights for traders.",
+  "requestFramePermissions": []
+}
