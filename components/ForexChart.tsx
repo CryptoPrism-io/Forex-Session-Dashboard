@@ -101,7 +101,13 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
   const [hoveredBlock, setHoveredBlock] = useState<TimeBlock | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [viewMode, setViewMode] = useState<'unified' | 'separate' | 'guide'>('separate');
+  const [chartsVisible, setChartsVisible] = useState(true);
+  const [collapsedSections, setCollapsedSections] = useState({ mainSessions: false, overlaps: false, killzones: false });
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
+
+  const toggleSection = (section: 'mainSessions' | 'overlaps' | 'killzones') => {
+    setCollapsedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
 
   const timeBlocks = useMemo(() => {
     const blocks: TimeBlock[] = [];
@@ -369,120 +375,193 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
           </div>
         </div>
       ) : (
-        // Guide view - Trading Session Guide with Mini Tables
+        // Guide view - Trading Session Guide with Master Table and Collapsible Sections
         <section className="w-full bg-slate-900/40 border border-slate-700/50 rounded-lg shadow-2xl overflow-hidden transition-all duration-300">
           <div className="p-6 text-sm space-y-6">
-            <h3 className="text-lg font-bold text-slate-200">Trading Session Guide ({currentTimezoneLabel})</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-200">Trading Session Guide ({currentTimezoneLabel})</h3>
+              <button
+                onClick={() => setChartsVisible(!chartsVisible)}
+                className="px-3 py-1 text-xs font-semibold rounded bg-slate-700/50 hover:bg-slate-600/70 text-slate-300 transition-all"
+                title={chartsVisible ? "Hide charts" : "Show charts"}
+              >
+                {chartsVisible ? '▼ Charts' : '▶ Charts'}
+              </button>
+            </div>
 
-            {/* Main Sessions Table */}
+            {/* Main Sessions Master Table */}
             <div>
-              <h4 className="font-semibold text-base mb-3 flex items-center text-cyan-300">
-                <span className="w-3 h-3 rounded-full bg-cyan-400 mr-2.5"></span>
-                Main Sessions
-              </h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-700/50">
-                      <th className="text-left p-2 text-slate-300 font-semibold">Session</th>
-                      <th className="text-left p-2 text-slate-300 font-semibold">Start ({currentTimezoneLabel})</th>
-                      <th className="text-left p-2 text-slate-300 font-semibold">End ({currentTimezoneLabel})</th>
-                      <th className="text-left p-2 text-slate-300 font-semibold">Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[SESSIONS[0], SESSIONS[1], SESSIONS[2], SESSIONS[3]].map((session, idx) => (
-                      <tr key={session.name} className={idx % 2 === 0 ? 'bg-slate-800/30' : ''}>
-                        <td className="p-2 text-slate-300 font-medium">{session.name}</td>
-                        <td className="p-2 text-slate-400">{formatTime(session.main.range[0], timezoneOffset)}</td>
-                        <td className="p-2 text-slate-400">{formatTime(session.main.range[1], timezoneOffset)}</td>
-                        <td className="p-2 text-slate-400">{session.main.range[1] - session.main.range[0]}h</td>
+              <button
+                onClick={() => toggleSection('mainSessions')}
+                className="w-full flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
+              >
+                <IconChevronDown
+                  className={`w-4 h-4 text-cyan-300 transition-transform ${collapsedSections.mainSessions ? '-rotate-90' : ''}`}
+                />
+                <h4 className="font-semibold text-base flex items-center text-cyan-300">
+                  <span className="w-3 h-3 rounded-full bg-cyan-400 mr-2.5"></span>
+                  Main Sessions
+                </h4>
+              </button>
+              <p className="text-xs text-slate-400 mb-3 ml-6">The primary trading blocks when each major market is actively trading. Each session has its own volatility profile and best trading pairs.</p>
+              {!collapsedSections.mainSessions && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-700/50">
+                        <th className="text-left p-2 text-slate-300 font-semibold">Session</th>
+                        <th className="text-left p-2 text-slate-300 font-semibold">Start</th>
+                        <th className="text-left p-2 text-slate-300 font-semibold">End</th>
+                        <th className="text-left p-2 text-slate-300 font-semibold">Dur.</th>
+                        <th className="text-left p-2 text-slate-300 font-semibold">Has Overlap</th>
+                        <th className="text-left p-2 text-slate-300 font-semibold">OL Hours</th>
+                        <th className="text-left p-2 text-slate-300 font-semibold">Has KZ</th>
+                        <th className="text-left p-2 text-slate-300 font-semibold">KZ Hours</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {[SESSIONS[0], SESSIONS[1], SESSIONS[2], SESSIONS[3]].map((session, idx) => {
+                        const hasOverlap = (session.overlapAsia || session.overlapLondon) ? 'Yes' : 'No';
+                        const overlapHours = (() => {
+                          let hours = 0;
+                          if (session.overlapAsia) hours += session.overlapAsia.range[1] - session.overlapAsia.range[0];
+                          if (session.overlapLondon) hours += session.overlapLondon.range[1] - session.overlapLondon.range[0];
+                          return hours > 0 ? hours : '-';
+                        })();
+                        const hasKillzone = (session.killzone || session.killzoneAM || session.killzonePM) ? 'Yes' : 'No';
+                        const killzoneHours = (() => {
+                          let hours = 0;
+                          if (session.killzone) hours += session.killzone.range[1] - session.killzone.range[0];
+                          if (session.killzoneAM) hours += session.killzoneAM.range[1] - session.killzoneAM.range[0];
+                          if (session.killzonePM) hours += session.killzonePM.range[1] - session.killzonePM.range[0];
+                          return hours > 0 ? hours : '-';
+                        })();
+                        return (
+                          <tr key={session.name} className={idx % 2 === 0 ? 'bg-slate-800/30' : ''}>
+                            <td className="p-2 text-slate-300 font-medium flex items-center gap-2">
+                              <span
+                                className="w-3 h-3 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: session.main.color }}
+                              />
+                              {session.name}
+                            </td>
+                            <td className="p-2 text-slate-400">{formatTime(session.main.range[0], timezoneOffset)}</td>
+                            <td className="p-2 text-slate-400">{formatTime(session.main.range[1], timezoneOffset)}</td>
+                            <td className="p-2 text-slate-400">{session.main.range[1] - session.main.range[0]}h</td>
+                            <td className="p-2 text-slate-400">{hasOverlap}</td>
+                            <td className="p-2 text-slate-400">{overlapHours}</td>
+                            <td className="p-2 text-slate-400">{hasKillzone}</td>
+                            <td className="p-2 text-slate-400">{killzoneHours}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             {/* Session Overlaps Table */}
             <div>
-              <h4 className="font-semibold text-base mb-3 flex items-center text-orange-300">
-                <span className="w-3 h-3 rounded-full bg-orange-400 mr-2.5"></span>
-                Session Overlaps
-              </h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-700/50">
-                      <th className="text-left p-2 text-slate-300 font-semibold">Overlap</th>
-                      <th className="text-left p-2 text-slate-300 font-semibold">Start ({currentTimezoneLabel})</th>
-                      <th className="text-left p-2 text-slate-300 font-semibold">End ({currentTimezoneLabel})</th>
-                      <th className="text-left p-2 text-slate-300 font-semibold">Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(() => {
-                      const overlaps = [];
-                      if (SESSIONS[2].overlapAsia) {
-                        overlaps.push({ name: SESSIONS[2].overlapAsia.name, range: SESSIONS[2].overlapAsia.range });
-                      }
-                      if (SESSIONS[3].overlapLondon) {
-                        overlaps.push({ name: SESSIONS[3].overlapLondon.name, range: SESSIONS[3].overlapLondon.range });
-                      }
-                      return overlaps.map((overlap, idx) => (
-                        <tr key={overlap.name} className={idx % 2 === 0 ? 'bg-slate-800/30' : ''}>
-                          <td className="p-2 text-slate-300 font-medium">{overlap.name}</td>
-                          <td className="p-2 text-slate-400">{formatTime(overlap.range[0], timezoneOffset)}</td>
-                          <td className="p-2 text-slate-400">{formatTime(overlap.range[1], timezoneOffset)}</td>
-                          <td className="p-2 text-slate-400">{overlap.range[1] - overlap.range[0]}h</td>
-                        </tr>
-                      ));
-                    })()}
-                  </tbody>
-                </table>
-              </div>
+              <button
+                onClick={() => toggleSection('overlaps')}
+                className="w-full flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
+              >
+                <IconChevronDown
+                  className={`w-4 h-4 text-orange-300 transition-transform ${collapsedSections.overlaps ? '-rotate-90' : ''}`}
+                />
+                <h4 className="font-semibold text-base flex items-center text-orange-300">
+                  <span className="w-3 h-3 rounded-full bg-orange-400 mr-2.5"></span>
+                  Session Overlaps
+                </h4>
+              </button>
+              <p className="text-xs text-slate-400 mb-3 ml-6">Times when two major sessions overlap, offering increased liquidity and volatility. Ideal for breakout strategies and trend-following.</p>
+              {!collapsedSections.overlaps && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-700/50">
+                        <th className="text-left p-2 text-slate-300 font-semibold">Overlap</th>
+                        <th className="text-left p-2 text-slate-300 font-semibold">Start</th>
+                        <th className="text-left p-2 text-slate-300 font-semibold">End</th>
+                        <th className="text-left p-2 text-slate-300 font-semibold">Duration</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const overlaps = [];
+                        if (SESSIONS[2].overlapAsia) {
+                          overlaps.push({ name: SESSIONS[2].overlapAsia.name, range: SESSIONS[2].overlapAsia.range });
+                        }
+                        if (SESSIONS[3].overlapLondon) {
+                          overlaps.push({ name: SESSIONS[3].overlapLondon.name, range: SESSIONS[3].overlapLondon.range });
+                        }
+                        return overlaps.map((overlap, idx) => (
+                          <tr key={overlap.name} className={idx % 2 === 0 ? 'bg-slate-800/30' : ''}>
+                            <td className="p-2 text-slate-300 font-medium">{overlap.name}</td>
+                            <td className="p-2 text-slate-400">{formatTime(overlap.range[0], timezoneOffset)}</td>
+                            <td className="p-2 text-slate-400">{formatTime(overlap.range[1], timezoneOffset)}</td>
+                            <td className="p-2 text-slate-400">{overlap.range[1] - overlap.range[0]}h</td>
+                          </tr>
+                        ));
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             {/* Killzones Table */}
             <div>
-              <h4 className="font-semibold text-base mb-3 flex items-center text-red-300">
-                <span className="w-3 h-3 rounded-full bg-red-500 mr-2.5"></span>
-                Killzones
-              </h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-700/50">
-                      <th className="text-left p-2 text-slate-300 font-semibold">Killzone</th>
-                      <th className="text-left p-2 text-slate-300 font-semibold">Start ({currentTimezoneLabel})</th>
-                      <th className="text-left p-2 text-slate-300 font-semibold">End ({currentTimezoneLabel})</th>
-                      <th className="text-left p-2 text-slate-300 font-semibold">Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(() => {
-                      const killzones = [];
-                      if (SESSIONS[2].killzone) {
-                        killzones.push({ name: SESSIONS[2].killzone.name, range: SESSIONS[2].killzone.range });
-                      }
-                      if (SESSIONS[3].killzoneAM) {
-                        killzones.push({ name: SESSIONS[3].killzoneAM.name, range: SESSIONS[3].killzoneAM.range });
-                      }
-                      if (SESSIONS[3].killzonePM) {
-                        killzones.push({ name: SESSIONS[3].killzonePM.name, range: SESSIONS[3].killzonePM.range });
-                      }
-                      return killzones.map((kz, idx) => (
-                        <tr key={kz.name} className={idx % 2 === 0 ? 'bg-slate-800/30' : ''}>
-                          <td className="p-2 text-slate-300 font-medium">{kz.name}</td>
-                          <td className="p-2 text-slate-400">{formatTime(kz.range[0], timezoneOffset)}</td>
-                          <td className="p-2 text-slate-400">{formatTime(kz.range[1], timezoneOffset)}</td>
-                          <td className="p-2 text-slate-400">{kz.range[1] - kz.range[0]}h</td>
-                        </tr>
-                      ));
-                    })()}
-                  </tbody>
-                </table>
-              </div>
+              <button
+                onClick={() => toggleSection('killzones')}
+                className="w-full flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
+              >
+                <IconChevronDown
+                  className={`w-4 h-4 text-red-300 transition-transform ${collapsedSections.killzones ? '-rotate-90' : ''}`}
+                />
+                <h4 className="font-semibold text-base flex items-center text-red-300">
+                  <span className="w-3 h-3 rounded-full bg-red-500 mr-2.5"></span>
+                  Killzones
+                </h4>
+              </button>
+              <p className="text-xs text-slate-400 mb-3 ml-6">High-volatility institutional trading windows designed for liquidity manipulation. Prime time for ICT-style stop hunts and seek & destroy patterns.</p>
+              {!collapsedSections.killzones && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-700/50">
+                        <th className="text-left p-2 text-slate-300 font-semibold">Killzone</th>
+                        <th className="text-left p-2 text-slate-300 font-semibold">Start</th>
+                        <th className="text-left p-2 text-slate-300 font-semibold">End</th>
+                        <th className="text-left p-2 text-slate-300 font-semibold">Duration</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const killzones = [];
+                        if (SESSIONS[2].killzone) {
+                          killzones.push({ name: SESSIONS[2].killzone.name, range: SESSIONS[2].killzone.range });
+                        }
+                        if (SESSIONS[3].killzoneAM) {
+                          killzones.push({ name: SESSIONS[3].killzoneAM.name, range: SESSIONS[3].killzoneAM.range });
+                        }
+                        if (SESSIONS[3].killzonePM) {
+                          killzones.push({ name: SESSIONS[3].killzonePM.name, range: SESSIONS[3].killzonePM.range });
+                        }
+                        return killzones.map((kz, idx) => (
+                          <tr key={kz.name} className={idx % 2 === 0 ? 'bg-slate-800/30' : ''}>
+                            <td className="p-2 text-slate-300 font-medium">{kz.name}</td>
+                            <td className="p-2 text-slate-400">{formatTime(kz.range[0], timezoneOffset)}</td>
+                            <td className="p-2 text-slate-400">{formatTime(kz.range[1], timezoneOffset)}</td>
+                            <td className="p-2 text-slate-400">{kz.range[1] - kz.range[0]}h</td>
+                          </tr>
+                        ));
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             {/* Legend Info */}
@@ -493,7 +572,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
         </section>
       )}
 
-      {viewMode !== 'guide' && (
+      {chartsVisible && viewMode !== 'guide' && (
         <>
           <div className="relative w-full mt-6 px-2" style={{ height: '40px' }}>
             {majorTicks.map(tick => (
