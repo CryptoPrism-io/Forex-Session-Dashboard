@@ -103,12 +103,12 @@ const App: React.FC = () => {
   return (
     <div className="bg-slate-950 text-slate-200 min-h-screen font-sans p-4 sm:p-8 flex flex-col items-center">
       <main className="w-full max-w-7xl mx-auto">
-        <header className="text-center mb-6">
-          <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500 mb-2">
+        <header className="text-center mb-3">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-cyan-400 mb-1 tracking-wide">
             Forex Session Map
           </h1>
-          <p className="text-slate-400 max-w-2xl mx-auto">
-            Visualize global market session overlaps and killzones to identify high-probability trading windows.
+          <p className="text-xs sm:text-sm text-slate-500">
+            Global market session timings and liquidity windows
           </p>
         </header>
 
