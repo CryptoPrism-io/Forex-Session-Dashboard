@@ -1,14 +1,14 @@
 import { Timezone, SessionData } from './types';
 
 export const TIMEZONES: Timezone[] = [
-  // Primary display
+  // Fixed display
   { label: "UTC", offset: 0 },
+  { label: "GMT", offset: 0 },
+  { label: "IST", offset: 5.5 },
+  // In dropdown
   { label: "BST", offset: 1 },
   { label: "EST", offset: -5 },
   { label: "JST", offset: 9 },
-  // In dropdown
-  { label: "GMT", offset: 0 },
-  { label: "IST", offset: 5.5 },
   { label: "PST", offset: -8 },
   { label: "CET", offset: 1 },
   { label: "SGT", offset: 8 },

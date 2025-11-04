@@ -18,6 +18,7 @@ const App: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
   const [isLegendOpen, setIsLegendOpen] = useState(false);
+  const [showGuide, setShowGuide] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 30); // Update every 30 seconds for responsiveness
@@ -93,8 +94,8 @@ const App: React.FC = () => {
     setIsMoreTimezonesOpen(false);
   };
 
-  const displayedTimezones = TIMEZONES.slice(0, 4);
-  const moreTimezones = TIMEZONES.slice(4);
+  const displayedTimezones = TIMEZONES.slice(0, 3);
+  const moreTimezones = TIMEZONES.slice(3);
   const timeFormatted = currentTime.toLocaleTimeString([], {
     timeZone: selectedTimezone.label,
     hour: '2-digit',
@@ -201,6 +202,8 @@ const App: React.FC = () => {
           currentTimezoneLabel={selectedTimezone.label}
           timezoneOffset={selectedTimezone.offset}
           sessionStatus={sessionStatus}
+          showGuideSection={showGuide}
+          onGuideToggle={setShowGuide}
         />
 
         <DayChart
@@ -209,50 +212,54 @@ const App: React.FC = () => {
           currentTimezoneLabel={selectedTimezone.label}
         />
 
-        <section className="mt-8 w-full bg-slate-900/40 border border-slate-700/50 rounded-lg shadow-2xl overflow-hidden transition-all duration-300">
-          <button
-            onClick={() => setIsLegendOpen(!isLegendOpen)}
-            className="w-full p-4 flex justify-between items-center cursor-pointer hover:bg-slate-800/50 transition-colors"
-            aria-expanded={isLegendOpen}
-            aria-controls="session-legend-content"
-          >
-            <h3 className="text-lg font-bold text-slate-200">Trading Session Guide</h3>
-            <IconChevronDown className={`w-6 h-6 text-slate-400 transition-transform duration-300 ${isLegendOpen ? 'rotate-180' : ''}`} />
-          </button>
-          <div
-            id="session-legend-content"
-            className={`transition-all duration-500 ease-in-out grid ${
-              isLegendOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-            }`}
-          >
-            <div className="overflow-hidden">
-              <div className="p-6 pt-2 text-sm border-t border-slate-700/50">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-slate-800/50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-base mb-2 flex items-center"><span className="w-3 h-3 rounded-full bg-cyan-400 mr-2.5"></span> Main Session</h4>
-                    <p className="text-slate-400 pl-5">The main trading blocks for Sydney, Tokyo, London, and New York.</p>
-                  </div>
-                  <div className="bg-slate-800/50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-base mb-2 flex items-center"><span className="w-3 h-3 rounded-full bg-orange-400 mr-2.5"></span> Session Overlap</h4>
-                    <p className="text-slate-400 pl-5">Periods where two major sessions are open simultaneously, typically leading to higher liquidity and volatility.</p>
-                  </div>
-                  <div className="bg-slate-800/50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-base mb-2 flex items-center"><span className="w-3 h-3 rounded-full bg-red-500 mr-2.5"></span> Killzone</h4>
-                    <p className="text-slate-400 pl-5">Specific, volatile windows used by institutional traders to engineer liquidity. Prime time for ICT concepts.</p>
-                  </div>
-                  <div className="bg-slate-800/50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-base mb-2 flex items-center text-yellow-300">"Now" Line</h4>
-                    <p className="text-slate-400">The dashed yellow line indicates the current time in your selected timezone, helping you orient yourself in the market day.</p>
+        <>
+          {showGuide && (
+            <section className="mt-8 w-full bg-slate-900/40 border border-slate-700/50 rounded-lg shadow-2xl overflow-hidden transition-all duration-300">
+              <button
+                onClick={() => setIsLegendOpen(!isLegendOpen)}
+                className="w-full p-4 flex justify-between items-center cursor-pointer hover:bg-slate-800/50 transition-colors"
+                aria-expanded={isLegendOpen}
+                aria-controls="session-legend-content"
+              >
+                <h3 className="text-lg font-bold text-slate-200">Trading Session Guide</h3>
+                <IconChevronDown className={`w-6 h-6 text-slate-400 transition-transform duration-300 ${isLegendOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <div
+                id="session-legend-content"
+                className={`transition-all duration-500 ease-in-out grid ${
+                  isLegendOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div className="p-6 pt-2 text-sm border-t border-slate-700/50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-slate-800/50 p-4 rounded-lg">
+                        <h4 className="font-semibold text-base mb-2 flex items-center"><span className="w-3 h-3 rounded-full bg-cyan-400 mr-2.5"></span> Main Session</h4>
+                        <p className="text-slate-400 pl-5">The main trading blocks for Sydney, Tokyo, London, and New York.</p>
+                      </div>
+                      <div className="bg-slate-800/50 p-4 rounded-lg">
+                        <h4 className="font-semibold text-base mb-2 flex items-center"><span className="w-3 h-3 rounded-full bg-orange-400 mr-2.5"></span> Session Overlap</h4>
+                        <p className="text-slate-400 pl-5">Periods where two major sessions are open simultaneously, typically leading to higher liquidity and volatility.</p>
+                      </div>
+                      <div className="bg-slate-800/50 p-4 rounded-lg">
+                        <h4 className="font-semibold text-base mb-2 flex items-center"><span className="w-3 h-3 rounded-full bg-red-500 mr-2.5"></span> Killzone</h4>
+                        <p className="text-slate-400 pl-5">Specific, volatile windows used by institutional traders to engineer liquidity. Prime time for ICT concepts.</p>
+                      </div>
+                      <div className="bg-slate-800/50 p-4 rounded-lg">
+                        <h4 className="font-semibold text-base mb-2 flex items-center text-yellow-300">"Now" Line</h4>
+                        <p className="text-slate-400">The dashed yellow line indicates the current time in your selected timezone, helping you orient yourself in the market day.</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
+            </section>
+          )}
 
-        <footer className="text-center mt-12 text-slate-500 text-xs">
-          <p>Data is illustrative. Always verify times with your broker. Not financial advice.</p>
-        </footer>
+          <footer className="text-center mt-12 text-slate-500 text-xs">
+            <p>Data is illustrative. Always verify times with your broker. Not financial advice.</p>
+          </footer>
+        </>
       </main>
     </div>
   );

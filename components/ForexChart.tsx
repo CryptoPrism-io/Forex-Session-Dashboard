@@ -8,6 +8,8 @@ interface ForexChartProps {
   currentTimezoneLabel: string;
   timezoneOffset: number;
   sessionStatus: { [key: string]: SessionStatus };
+  showGuideSection?: boolean;
+  onGuideToggle?: (show: boolean) => void;
 }
 
 interface TimeBlock {
@@ -96,10 +98,16 @@ const ChartTooltip: React.FC<{
   );
 };
 
-const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, timezoneOffset, sessionStatus }) => {
+const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, timezoneOffset, sessionStatus, showGuideSection = true, onGuideToggle }) => {
   const [hoveredBlock, setHoveredBlock] = useState<TimeBlock | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [viewMode, setViewMode] = useState<'unified' | 'separate'>('separate');
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
+
+  const handleGuideToggle = () => {
+    const newValue = !showGuideSection;
+    onGuideToggle?.(newValue);
+  };
 
   const timeBlocks = useMemo(() => {
     const blocks: TimeBlock[] = [];
@@ -187,75 +195,184 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
 
   return (
     <div ref={chartContainerRef} className="w-full bg-slate-900/40 backdrop-blur-lg border border-slate-700/50 p-6 rounded-lg shadow-2xl">
-      <h3 className="text-lg font-bold text-slate-200 mb-4">Session Timeline</h3>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h3 className="text-lg font-bold text-slate-200">Session Timeline</h3>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode('separate')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded transition-all duration-200 ${
+              viewMode === 'separate'
+                ? 'bg-cyan-500 text-white shadow-lg'
+                : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
+            }`}
+          >
+            Separate
+          </button>
+          <button
+            onClick={() => setViewMode('unified')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded transition-all duration-200 ${
+              viewMode === 'unified'
+                ? 'bg-cyan-500 text-white shadow-lg'
+                : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
+            }`}
+          >
+            Unified
+          </button>
+          <button
+            onClick={handleGuideToggle}
+            className={`px-3 py-1.5 text-xs font-semibold rounded transition-all duration-200 ${
+              showGuideSection
+                ? 'bg-indigo-500 text-white shadow-lg'
+                : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
+            }`}
+          >
+            Guide
+          </button>
+        </div>
+      </div>
 
-      {[SESSIONS[3], SESSIONS[2], SESSIONS[0], SESSIONS[1]].map(session => {
-        const status = sessionStatus[session.name];
-        const statusColors = getStatusColor(status);
+      {viewMode === 'separate' ? (
+        // Separate view - individual rows per session
+        [SESSIONS[3], SESSIONS[2], SESSIONS[0], SESSIONS[1]].map(session => {
+          const status = sessionStatus[session.name];
+          const statusColors = getStatusColor(status);
 
-        return (
-          <div key={session.name} className="mb-6 last:mb-0">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-24 flex items-center gap-2">
-                <div
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{
-                    backgroundColor: statusColors.color,
-                    boxShadow: `0 0 6px ${statusColors.glow}`,
-                    animation: status === 'WARNING' ? 'pulse-glow 1.5s infinite' : 'none',
-                  }}
-                />
-                <span className="text-sm font-semibold text-slate-300">{session.name}</span>
+          return (
+            <div key={session.name} className="mb-6 last:mb-0">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-24 flex items-center gap-2">
+                  <div
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{
+                      backgroundColor: statusColors.color,
+                      boxShadow: `0 0 6px ${statusColors.glow}`,
+                      animation: status === 'WARNING' ? 'pulse-glow 1.5s infinite' : 'none',
+                    }}
+                  />
+                  <span className="text-sm font-semibold text-slate-300">{session.name}</span>
+                </div>
               </div>
-            </div>
 
-            <div className="relative w-full h-20 bg-slate-800/50 rounded-md overflow-hidden">
-              {/* Vertical hour grid lines */}
-              {ticks.map(hour => (
+              <div className="relative w-full h-20 bg-slate-800/50 rounded-md overflow-hidden">
+                {/* Vertical hour grid lines */}
+                {ticks.map(hour => (
+                  <div
+                    key={`grid-${hour}`}
+                    className="absolute top-0 bottom-0 border-l border-slate-700/30"
+                    style={{ left: `${(hour / 24) * 100}%` }}
+                  />
+                ))}
+
+                {timeBlocks
+                  .filter(block => block.sessionName === session.name)
+                  .map(block => {
+                    const yPositions = ['60%', '40%', '10%'];
+                    const heights = ['35%', '25%', '20%'];
+
+                    return (
+                      <div
+                        key={block.key}
+                        className="absolute rounded transition-all duration-200 ease-in-out hover:scale-y-125 cursor-pointer"
+                        style={{
+                          left: `${block.left}%`,
+                          width: `${block.width}%`,
+                          top: yPositions[block.yLevel],
+                          height: heights[block.yLevel],
+                          backgroundColor: block.details.color,
+                          opacity: block.details.opacity,
+                        }}
+                        onMouseMove={(e) => handleMouseMove(e, block)}
+                        onMouseLeave={handleMouseLeave}
+                        aria-label={block.details.name}
+                      />
+                    );
+                  })}
+
                 <div
-                  key={`grid-${hour}`}
-                  className="absolute top-0 bottom-0 border-l border-slate-700/30"
-                  style={{ left: `${(hour / 24) * 100}%` }}
-                />
-              ))}
-
-              {timeBlocks
-                .filter(block => block.sessionName === session.name)
-                .map(block => {
-                  const yPositions = ['60%', '40%', '10%'];
-                  const heights = ['35%', '25%', '20%'];
-
-                  return (
-                    <div
-                      key={block.key}
-                      className="absolute rounded transition-all duration-200 ease-in-out hover:scale-y-125 cursor-pointer"
-                      style={{
-                        left: `${block.left}%`,
-                        width: `${block.width}%`,
-                        top: yPositions[block.yLevel],
-                        height: heights[block.yLevel],
-                        backgroundColor: block.details.color,
-                        opacity: block.details.opacity,
-                      }}
-                      onMouseMove={(e) => handleMouseMove(e, block)}
-                      onMouseLeave={handleMouseLeave}
-                      aria-label={block.details.name}
-                    />
-                  );
-                })}
-
-              <div
-                className="absolute top-0 bottom-0 w-0.5 bg-yellow-400"
-                style={{ left: `${(nowLine / 24) * 100}%` }}
-              >
-                <div className="absolute -top-5 -translate-x-1/2 text-xs text-yellow-300 font-bold whitespace-nowrap">
-                  Now
+                  className="absolute top-0 bottom-0 w-0.5 bg-yellow-400"
+                  style={{ left: `${(nowLine / 24) * 100}%` }}
+                >
+                  <div className="absolute -top-5 -translate-x-1/2 text-xs text-yellow-300 font-bold whitespace-nowrap">
+                    Now
+                  </div>
                 </div>
               </div>
             </div>
+          );
+        })
+      ) : (
+        // Unified view - all sessions on one timeline
+        <div className="mb-6">
+          <div className="relative w-full h-40 bg-slate-800/50 rounded-md overflow-hidden">
+            {/* Vertical hour grid lines */}
+            {ticks.map(hour => (
+              <div
+                key={`grid-${hour}`}
+                className="absolute top-0 bottom-0 border-l border-slate-700/30"
+                style={{ left: `${(hour / 24) * 100}%` }}
+              />
+            ))}
+
+            {/* All session blocks */}
+            {timeBlocks.map(block => {
+              const yPositions = ['75%', '50%', '25%'];
+              const heights = ['35%', '25%', '20%'];
+
+              return (
+                <div
+                  key={block.key}
+                  className="absolute rounded transition-all duration-200 ease-in-out hover:scale-y-125 cursor-pointer group"
+                  style={{
+                    left: `${block.left}%`,
+                    width: `${block.width}%`,
+                    top: yPositions[block.yLevel],
+                    height: heights[block.yLevel],
+                    backgroundColor: block.details.color,
+                    opacity: block.details.opacity,
+                  }}
+                  onMouseMove={(e) => handleMouseMove(e, block)}
+                  onMouseLeave={handleMouseLeave}
+                  aria-label={block.details.name}
+                  title={block.sessionName}
+                >
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 px-2 py-1 rounded whitespace-nowrap z-10">
+                    {block.sessionName}
+                  </div>
+                </div>
+              );
+            })}
+
+            <div
+              className="absolute top-0 bottom-0 w-0.5 bg-yellow-400"
+              style={{ left: `${(nowLine / 24) * 100}%` }}
+            >
+              <div className="absolute -top-5 -translate-x-1/2 text-xs text-yellow-300 font-bold whitespace-nowrap">
+                Now
+              </div>
+            </div>
           </div>
-        );
-      })}
+
+          {/* Legend for unified view */}
+          <div className="mt-3 flex flex-wrap gap-3 text-xs">
+            {[SESSIONS[3], SESSIONS[2], SESSIONS[0], SESSIONS[1]].map(session => {
+              const status = sessionStatus[session.name];
+              const statusColors = getStatusColor(status);
+              return (
+                <div key={session.name} className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded"
+                    style={{
+                      backgroundColor: statusColors.color,
+                      boxShadow: `0 0 4px ${statusColors.glow}`,
+                    }}
+                  />
+                  <span className="text-slate-300">{session.name}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="relative w-full mt-6 px-2" style={{ height: '40px' }}>
         {majorTicks.map(tick => (
