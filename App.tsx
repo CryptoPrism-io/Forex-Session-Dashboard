@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ForexChart from './components/ForexChart';
+import PWAInstall from './components/PWAInstall';
+import SocialLinks from './components/SocialLinks';
 import { TIMEZONES, SESSIONS } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
 import { IconClock, IconGlobe, IconTarget, IconBarChartBig } from './components/icons';
@@ -113,6 +115,9 @@ const App: React.FC = () => {
         </header>
 
         <div className="mb-6 flex flex-col md:flex-row md:justify-between items-center gap-4">
+          <div className="flex items-center gap-2">
+            <PWAInstall />
+          </div>
           <div className="flex items-center gap-2 relative flex-wrap justify-center">
             <IconGlobe className="w-5 h-5 text-cyan-400 flex-shrink-0" />
             <span className="text-sm font-medium text-slate-300 hidden sm:inline">Timezone:</span>
@@ -154,7 +159,9 @@ const App: React.FC = () => {
               )}
             </div>
           </div>
-          
+
+          <SocialLinks />
+
           <div className="bg-slate-900/40 backdrop-blur-lg border border-slate-700/50 rounded-lg p-3 flex items-center gap-4 shadow-xl">
              <div className="text-center">
                 <div className="text-3xl font-bold text-green-400 tracking-wider">{timeFormatted}</div>

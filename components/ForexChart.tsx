@@ -195,39 +195,41 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
 
   return (
     <div ref={chartContainerRef} className="w-full bg-slate-900/40 backdrop-blur-lg border border-slate-700/50 p-6 rounded-lg shadow-2xl">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-        <h3 className="text-lg font-bold text-slate-200">Session Timeline</h3>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setViewMode('separate')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded transition-all duration-200 ${
-              viewMode === 'separate'
-                ? 'bg-cyan-500 text-white shadow-lg'
-                : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
-            }`}
-          >
-            Separate
-          </button>
-          <button
-            onClick={() => setViewMode('unified')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded transition-all duration-200 ${
-              viewMode === 'unified'
-                ? 'bg-cyan-500 text-white shadow-lg'
-                : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
-            }`}
-          >
-            Unified
-          </button>
-          <button
-            onClick={() => setViewMode('guide')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded transition-all duration-200 ${
-              viewMode === 'guide'
-                ? 'bg-indigo-500 text-white shadow-lg'
-                : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
-            }`}
-          >
-            Guide
-          </button>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+        <div className="flex items-center gap-3">
+          <h3 className="text-lg font-bold text-slate-200">Session Timeline</h3>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode('separate')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded transition-all duration-200 ${
+                viewMode === 'separate'
+                  ? 'bg-cyan-500 text-white shadow-lg'
+                  : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
+              }`}
+            >
+              Individual
+            </button>
+            <button
+              onClick={() => setViewMode('unified')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded transition-all duration-200 ${
+                viewMode === 'unified'
+                  ? 'bg-cyan-500 text-white shadow-lg'
+                  : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
+              }`}
+            >
+              Unified
+            </button>
+            <button
+              onClick={() => setViewMode('guide')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded transition-all duration-200 ${
+                viewMode === 'guide'
+                  ? 'bg-indigo-500 text-white shadow-lg'
+                  : 'bg-slate-700/50 hover:bg-slate-600/70 text-slate-300'
+              }`}
+            >
+              Guide
+            </button>
+          </div>
         </div>
       </div>
 
