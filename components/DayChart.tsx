@@ -42,16 +42,16 @@ const DayChartTooltip: React.FC<{
   const endTimeLocal = formatTime(endUTC, timezoneOffset);
 
   // Calculate current hover time based on cursor position
+  // Note: The timeline is already in the selected timezone, so we don't add offset again
   let hoverTimeLocal = '';
   if (chartRef?.current) {
     const rect = chartRef.current.getBoundingClientRect();
     const relativeX = position.x - rect.left;
     const chartWidth = rect.width;
     const hoverHour = (relativeX / chartWidth) * 24;
-    const displayHour = (hoverHour + timezoneOffset) % 24;
-    const hours = Math.floor(displayHour);
-    const minutes = Math.round((displayHour - hours) * 60);
-    hoverTimeLocal = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    const finalHour = (Math.floor(hoverHour) % 24 + 24) % 24;
+    const minutes = Math.round((hoverHour - Math.floor(hoverHour)) * 60);
+    hoverTimeLocal = `${String(finalHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   }
 
   const style: React.CSSProperties = {
@@ -82,7 +82,7 @@ const DayChartTooltip: React.FC<{
 const DayChart: React.FC<DayChartProps> = ({ nowLine, timezoneOffset, currentTimezoneLabel }) => {
   const [hoveredBlock, setHoveredBlock] = useState<TimeBlock | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const chartContainerRef = React.useRef<HTMLDivElement>(null);
+  const timelineBarRef = React.useRef<HTMLDivElement>(null);
 
   const timeBlocks = useMemo(() => {
     const blocks: TimeBlock[] = [];
@@ -157,9 +157,9 @@ const DayChart: React.FC<DayChartProps> = ({ nowLine, timezoneOffset, currentTim
   const ticks = Array.from({ length: 24 }, (_, i) => i); // All 24 hours
 
   return (
-    <div ref={chartContainerRef} className="w-full bg-slate-900/40 backdrop-blur-lg border border-slate-700/50 p-6 rounded-lg shadow-2xl mt-8">
+    <div className="w-full bg-slate-900/40 backdrop-blur-lg border border-slate-700/50 p-6 rounded-lg shadow-2xl mt-8">
       <h3 className="text-lg font-bold text-slate-200 mb-4">24-Hour Timeline</h3>
-      <div className="relative w-full h-24 bg-slate-800/50 rounded-md overflow-hidden">
+      <div ref={timelineBarRef} className="relative w-full h-24 bg-slate-800/50 rounded-md overflow-hidden">
         {timeBlocks.map(block => {
           const yPositions = ['45%', '25%', '5%'];
           const heights = ['50%', '35%', '25%'];
@@ -212,7 +212,7 @@ const DayChart: React.FC<DayChartProps> = ({ nowLine, timezoneOffset, currentTim
         position={tooltipPosition}
         timezoneOffset={timezoneOffset}
         timezoneLabel={currentTimezoneLabel}
-        chartRef={chartContainerRef}
+        chartRef={timelineBarRef}
       />
     </div>
   );

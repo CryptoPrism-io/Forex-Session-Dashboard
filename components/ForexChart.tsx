@@ -45,16 +45,16 @@ const ChartTooltip: React.FC<{
   const endTimeLocal = formatTime(endUTC, timezoneOffset);
 
   // Calculate current hover time based on cursor position
+  // Note: The chart bars are already positioned in the selected timezone, so we don't add offset again
   let hoverTimeLocal = '';
   if (chartRef?.current) {
     const rect = chartRef.current.getBoundingClientRect();
     const relativeX = position.x - rect.left;
     const chartWidth = rect.width;
     const hoverHour = (relativeX / chartWidth) * 24;
-    const displayHour = (hoverHour + timezoneOffset) % 24;
-    const hours = Math.floor(displayHour);
-    const minutes = Math.round((displayHour - hours) * 60);
-    hoverTimeLocal = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    const finalHour = (Math.floor(hoverHour) % 24 + 24) % 24;
+    const minutes = Math.round((hoverHour - Math.floor(hoverHour)) * 60);
+    hoverTimeLocal = `${String(finalHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   }
 
   // Position tooltip always on top of cursor
@@ -240,7 +240,6 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                       onMouseMove={(e) => handleMouseMove(e, block)}
                       onMouseLeave={handleMouseLeave}
                       aria-label={block.details.name}
-                      title={block.details.name}
                     />
                   );
                 })}
