@@ -9,6 +9,11 @@ import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow } fr
 
 export type SessionStatus = 'OPEN' | 'CLOSED' | 'WARNING';
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 const App: React.FC = () => {
   const getInitialTimezone = (): Timezone => {
     const userOffset = -new Date().getTimezoneOffset() / 60;
@@ -19,10 +24,41 @@ const App: React.FC = () => {
   const [selectedTimezone, setSelectedTimezone] = useState<Timezone>(getInitialTimezone());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [showPWAButton, setShowPWAButton] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000); // Update every 1 second for real-time countdown
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setShowPWAButton(true);
+    };
+
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+      setShowPWAButton(false);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches || (window.navigator as any)?.standalone;
+    if (isStandalone) {
+      setIsInstalled(true);
+      setShowPWAButton(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
   }, []);
 
   const { nowLine, activeSessions, sessionStatus } = useMemo(() => {
@@ -118,6 +154,26 @@ const App: React.FC = () => {
     setIsMoreTimezonesOpen(false);
   };
 
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+
+        if (outcome === 'accepted') {
+          setIsInstalled(true);
+        }
+
+        setDeferredPrompt(null);
+        setShowPWAButton(false);
+      } catch (error) {
+        console.error('Failed to install app:', error);
+      }
+    } else {
+      alert('Install is handled by your browser menu. In Chrome: ⋮ > Install app.');
+    }
+  };
+
   // Format session elapsed/remaining time in HH MM SS format
   const formatSessionTime = (seconds: number): string => {
     const isNegative = seconds < 0;
@@ -153,9 +209,31 @@ const App: React.FC = () => {
             <div className="flex items-start justify-between gap-4 mb-6 pb-6 border-b border-slate-700/50">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <IconTradingFlow className="w-6 h-6 sm:w-7 sm:h-7 text-cyan-400 flex-shrink-0" style={{
-                    filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))'
-                  }} />
+                  {showPWAButton && !isInstalled ? (
+                    <button
+                      onClick={handleInstallClick}
+                      className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-lg active:scale-95"
+                      style={{
+                        filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.filter = 'drop-shadow(0 0 16px rgba(34, 211, 238, 0.8))';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.filter = 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))';
+                      }}
+                      title="Click to install the app"
+                      aria-label="Download and install app"
+                    >
+                      <IconTradingFlow className="w-full h-full text-cyan-400" />
+                    </button>
+                  ) : (
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" style={{
+                      filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))'
+                    }}>
+                      <IconTradingFlow className="w-full h-full text-cyan-400" />
+                    </div>
+                  )}
                   <h1
                     className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
                     style={{
