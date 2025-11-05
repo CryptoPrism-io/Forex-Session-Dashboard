@@ -58,23 +58,34 @@ const ChartTooltip: React.FC<{
     hoverTimeLocal = `${String(finalHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   }
 
-  // Position tooltip always on top of cursor
-  const offsetX = 0;
-  const offsetY = 10;
-  const tooltipWidth = 300; // approximate width
+  const tooltipWidth = 280;
+  const tooltipHeight = 200;
+  const horizontalPadding = 10;
+  const verticalPadding = 16;
 
-  let left = position.x + offsetX;
-  let top = position.y - offsetY; // Always position above
+  let left = position.x - tooltipWidth / 2;
+  let top = position.y - tooltipHeight - verticalPadding;
 
-  // Keep within viewport bounds horizontally
-  if (left + tooltipWidth > window.innerWidth) {
-    left = position.x - tooltipWidth;
+  if (left < horizontalPadding) {
+    left = horizontalPadding;
+  }
+
+  if (left + tooltipWidth > window.innerWidth - horizontalPadding) {
+    left = window.innerWidth - tooltipWidth - horizontalPadding;
+  }
+
+  if (top < horizontalPadding) {
+    top = position.y + verticalPadding;
+  }
+
+  if (top + tooltipHeight > window.innerHeight - horizontalPadding) {
+    top = window.innerHeight - tooltipHeight - horizontalPadding;
   }
 
   const style: React.CSSProperties = {
     position: 'fixed',
-    top: Math.max(10, top),
-    left: Math.max(10, left),
+    top,
+    left,
     pointerEvents: 'none',
     zIndex: 50,
   };
