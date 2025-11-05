@@ -21,7 +21,7 @@ const App: React.FC = () => {
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 30); // Update every 30 seconds for responsiveness
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000); // Update every 1 second for real-time countdown
     return () => clearInterval(timer);
   }, []);
 
@@ -32,7 +32,7 @@ const App: React.FC = () => {
     let localTime = (utcHours + selectedTimezone.offset) % 24;
     localTime = localTime < 0 ? localTime + 24 : localTime;
 
-    const currentlyActive: ({ name: string; color: string; type: 'main' | 'overlap' | 'killzone'; state: SessionStatus })[] = [];
+    const currentlyActive: ({ name: string; color: string; type: 'main' | 'overlap' | 'killzone'; state: SessionStatus; elapsedSeconds: number; remainingSeconds: number })[] = [];
     const statusMap: { [key: string]: SessionStatus } = {};
     const fifteenMinutesInHours = 15 / 60;
 
@@ -40,10 +40,27 @@ const App: React.FC = () => {
         // A session is active if the current time falls within its range, checking both "today" and "yesterday"
         // to correctly handle overnight sessions that cross the 00:00 UTC mark.
         const isActive = (utcHours >= s && utcHours < e) || (utcHours >= s - 24 && utcHours < e - 24);
-        
+
         let status: SessionStatus | null = null;
+        let elapsedSeconds = 0;
+        let remainingSeconds = 0;
+
+        // Determine adjusted start/end times for overnight sessions
+        let adjustedStart = s;
+        let adjustedEnd = e;
+
+        // For overnight sessions, adjust if we're in the "next day" portion
+        if (e > 24 && utcHours < s) {
+          adjustedStart = s - 24;
+          adjustedEnd = e - 24;
+        }
+
         if (isActive) {
             status = 'OPEN';
+            // Calculate elapsed and remaining time in seconds
+            elapsedSeconds = (utcHours - adjustedStart) * 3600;
+            remainingSeconds = (adjustedEnd - utcHours) * 3600;
+
             // Check if closing soon by calculating time to end for both possible session occurrences
             const timeToEnd = e - utcHours;
             const timeToEndYesterday = (e - 24) - utcHours;
@@ -56,9 +73,13 @@ const App: React.FC = () => {
             const timeToStartYesterday = (s - 24) - utcHours;
             if ((timeToStart > 0 && timeToStart <= fifteenMinutesInHours) || (timeToStartYesterday > 0 && timeToStartYesterday <= fifteenMinutesInHours)) {
                 status = 'WARNING';
+                // For pre-start countdown, show negative countdown on both sides
+                const timeUntilStart = timeToStart > 0 ? timeToStart : timeToStartYesterday;
+                elapsedSeconds = -(timeUntilStart * 3600);
+                remainingSeconds = -(timeUntilStart * 3600);
             }
         }
-        return { isActive, status };
+        return { isActive, status, elapsedSeconds, remainingSeconds };
     };
 
     SESSIONS.forEach(session => {
@@ -74,14 +95,14 @@ const App: React.FC = () => {
         if (key === 'name' || typeof prop !== 'object' || prop === null || !('key' in prop)) return;
 
         const bar = prop as ChartBarDetails & { range: [number, number] };
-        const { status } = checkSession(bar.range[0], bar.range[1]);
+        const { status, elapsedSeconds, remainingSeconds } = checkSession(bar.range[0], bar.range[1]);
 
         if (status) { // Only add if status is OPEN or WARNING
           let type: 'main' | 'overlap' | 'killzone' = 'main';
           if (key.startsWith('killzone')) type = 'killzone';
           else if (key.startsWith('overlap')) type = 'overlap';
-          
-          currentlyActive.push({ name: bar.name, color: bar.color, type, state: status });
+
+          currentlyActive.push({ name: bar.name, color: bar.color, type, state: status, elapsedSeconds, remainingSeconds });
         }
       });
     });
@@ -92,6 +113,19 @@ const App: React.FC = () => {
   const handleTimezoneChange = (tz: Timezone) => {
     setSelectedTimezone(tz);
     setIsMoreTimezonesOpen(false);
+  };
+
+  // Format session elapsed/remaining time in HH MM SS format
+  const formatSessionTime = (seconds: number): string => {
+    const isNegative = seconds < 0;
+    const absSeconds = Math.abs(seconds);
+
+    const hours = Math.floor(absSeconds / 3600);
+    const minutes = Math.floor((absSeconds % 3600) / 60);
+    const secs = Math.floor(absSeconds % 60);
+
+    const sign = isNegative ? '-' : '';
+    return `${sign}${hours}h ${minutes}m ${secs}s`;
   };
 
   const displayedTimezones = TIMEZONES.slice(0, 3);
@@ -200,9 +234,22 @@ const App: React.FC = () => {
                 }
 
                 return (
-                    <div key={session.name} className="flex items-center gap-2">
+                    <div key={session.name} className="flex items-center gap-2 min-w-fit">
+                        {/* Elapsed Time - LEFT */}
+                        <span className="text-xs font-mono text-slate-400">
+                            {formatSessionTime(session.elapsedSeconds)}
+                        </span>
+
+                        {/* Colored Indicator Dot */}
                         <span className="w-2.5 h-2.5 rounded-full" style={indicatorStyle}></span>
+
+                        {/* Session Name - CENTER */}
                         <span className="text-xs font-medium" style={textStyle}>{session.name}</span>
+
+                        {/* Remaining Time - RIGHT */}
+                        <span className="text-xs font-mono text-slate-400">
+                            {formatSessionTime(session.remainingSeconds)}
+                        </span>
                     </div>
                 );
               })}
