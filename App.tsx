@@ -236,7 +236,7 @@ const App: React.FC = () => {
           <div className="flex-1 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 sm:p-5 shadow-lg shadow-black/20">
             {/* Title and Subtitle */}
             <div className="flex items-center gap-3 mb-2">
-              {showPWAButton && !isInstalled ? (
+              {(installState === 'available' || installState === 'dismissed') ? (
                 <button
                   onClick={handleInstallClick}
                   className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-lg active:scale-95"
