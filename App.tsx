@@ -264,65 +264,61 @@ const App: React.FC = () => {
       backdropFilter: 'blur(10px)'
     }}>
       <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 flex flex-col items-center">
-        {/* TITLE, SUBTITLE, AND TIME DISPLAY - ABOVE CONTROL CARD */}
-        <div className="w-full mb-6">
-          {/* Title and Subtitle */}
-          <div className="flex items-center gap-3 mb-2">
-            {showPWAButton && !isInstalled ? (
-              <button
-                onClick={handleInstallClick}
-                className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-lg active:scale-95"
+        {/* HEADER ROW: Left Section (Title/Time/Timezone) + Right Section (Clocks) */}
+        <div className="w-full mb-6 flex gap-6">
+          {/* LEFT SECTION: Title, Subtitle, Time, and Timezone Selector */}
+          <div className="flex-1 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 sm:p-5 shadow-lg shadow-black/20">
+            {/* Title and Subtitle */}
+            <div className="flex items-center gap-3 mb-2">
+              {showPWAButton && !isInstalled ? (
+                <button
+                  onClick={handleInstallClick}
+                  className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-lg active:scale-95"
+                  style={{
+                    filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.filter = 'drop-shadow(0 0 16px rgba(34, 211, 238, 0.8))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.filter = 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))';
+                  }}
+                  title="Click to install the app"
+                  aria-label="Download and install app"
+                >
+                  <IconTradingFlow className="w-full h-full text-cyan-400" />
+                </button>
+              ) : (
+                <div className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" style={{
+                  filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))'
+                }}>
+                  <IconTradingFlow className="w-full h-full text-cyan-400" />
+                </div>
+              )}
+              <h1
+                className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
                 style={{
-                  filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))',
+                  textShadow: '0 0 30px rgba(34, 211, 238, 0.3), 0 0 60px rgba(59, 130, 246, 0.2)',
+                  filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.25))'
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.filter = 'drop-shadow(0 0 16px rgba(34, 211, 238, 0.8))';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.filter = 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))';
-                }}
-                title="Click to install the app"
-                aria-label="Download and install app"
               >
-                <IconTradingFlow className="w-full h-full text-cyan-400" />
-              </button>
-            ) : (
-              <div className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" style={{
-                filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))'
-              }}>
-                <IconTradingFlow className="w-full h-full text-cyan-400" />
-              </div>
-            )}
-            <h1
-              className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
-              style={{
-                textShadow: '0 0 30px rgba(34, 211, 238, 0.3), 0 0 60px rgba(59, 130, 246, 0.2)',
-                filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.25))'
-              }}
-            >
-              Global FX Trading Sessions
-            </h1>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-300 font-light tracking-wide max-w-sm mb-6">
-            Real-time session tracking with killzones and overlaps
-          </p>
-
-          {/* Big Time Display */}
-          <div className="mb-6">
-            <div className="text-5xl sm:text-6xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-green-400 bg-clip-text text-transparent tracking-wider font-mono">
-              {timeFormatted}
+                Global FX Trading Sessions
+              </h1>
             </div>
-            <div className="text-xs text-slate-400 font-light mt-1">{selectedTimezone.label}</div>
-          </div>
-        </div>
+            <p className="text-xs sm:text-sm text-slate-300 font-light tracking-wide mb-4">
+              Real-time session tracking with killzones and overlaps
+            </p>
 
-        {/* CONTROL CARD: Timezone Selector + Session Clocks + Live Sessions */}
-        <div className="w-full mb-6">
-          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 sm:p-5 shadow-lg shadow-black/20">
-            {/* TOP ROW: Timezone Selector (Left) + Session Clocks (Right) */}
-            <div className="flex items-start justify-between gap-4 mb-6 pb-6 border-b border-slate-700/50">
-              {/* TOP LEFT: Timezone Selector */}
-              <div className="flex flex-wrap gap-1.5 items-start">
+            {/* Big Time Display */}
+            <div className="mb-6">
+              <div className="text-5xl sm:text-6xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-green-400 bg-clip-text text-transparent tracking-wider font-mono">
+                {timeFormatted}
+              </div>
+              <div className="text-xs text-slate-400 font-light mt-1">{selectedTimezone.label}</div>
+            </div>
+
+            {/* Timezone Selector */}
+            <div className="flex flex-wrap gap-1.5">
                 {displayedTimezones.map(tz => (
                   <button
                     key={tz.label}
@@ -363,12 +359,18 @@ const App: React.FC = () => {
                   )}
                 </div>
               </div>
-
-              {/* TOP RIGHT: Session Clocks */}
-              <div className="flex justify-end">
-                <SessionClocks compact sessionStatus={sessionStatus} />
-              </div>
             </div>
+          </div>
+
+          {/* RIGHT SECTION: Session Clocks */}
+          <div className="flex justify-end">
+            <SessionClocks compact sessionStatus={sessionStatus} />
+          </div>
+        </div>
+
+        {/* SESSIONS LIST CARD */}
+        <div className="w-full mb-6">
+          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 sm:p-5 shadow-lg shadow-black/20">
 
             {/* Live Sessions List */}
             {activeSessions.length > 0 && (
