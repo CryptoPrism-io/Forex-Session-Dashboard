@@ -192,3 +192,53 @@ export const IconFilter: React.FC<{className?: string}> = ({className}) => (
     <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
   </svg>
 );
+
+export const IconTradingFlow: React.FC<{className?: string}> = ({className}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    style={{ animation: 'trading-flow 2s ease-in-out infinite' }}
+  >
+    <style>{`
+      @keyframes trading-flow {
+        0% {
+          opacity: 0.6;
+          transform: translateX(-2px);
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.6;
+          transform: translateX(2px);
+        }
+      }
+    `}</style>
+    {/* Left arrow */}
+    <path d="M3 12h3" strokeDasharray="6" strokeDashoffset="0" style={{ animation: 'arrow-flow 2s linear infinite' }} />
+    <path d="M8 9l3 3-3 3" />
+
+    {/* Center arrow */}
+    <path d="M13 12h3" strokeDasharray="6" strokeDashoffset="0" style={{ animation: 'arrow-flow 2s linear infinite 0.3s' }} />
+    <path d="M18 9l3 3-3 3" />
+
+    <style>{`
+      @keyframes arrow-flow {
+        0% {
+          stroke-dashoffset: 0;
+        }
+        100% {
+          stroke-dashoffset: 12;
+        }
+      }
+    `}</style>
+  </svg>
+);

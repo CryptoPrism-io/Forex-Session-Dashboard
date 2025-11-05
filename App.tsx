@@ -5,7 +5,7 @@ import SocialLinks from './components/SocialLinks';
 import SessionClocks from './components/SessionClocks';
 import { TIMEZONES, SESSIONS } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
-import { IconClock, IconGlobe, IconTarget, IconBarChartBig } from './components/icons';
+import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow } from './components/icons';
 
 export type SessionStatus = 'OPEN' | 'CLOSED' | 'WARNING';
 
@@ -152,15 +152,20 @@ const App: React.FC = () => {
             {/* TOP ROW: Title (Left) + Timezone Selector (Right) */}
             <div className="flex items-start justify-between gap-4 mb-6 pb-6 border-b border-slate-700/50">
               <div className="flex-1">
-                <h1
-                  className="text-2xl sm:text-3xl font-bold tracking-tight mb-2 bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
-                  style={{
-                    textShadow: '0 0 30px rgba(34, 211, 238, 0.3), 0 0 60px rgba(59, 130, 246, 0.2)',
-                    filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.25))'
-                  }}
-                >
-                  Global FX Trading Sessions
-                </h1>
+                <div className="flex items-center gap-3 mb-2">
+                  <IconTradingFlow className="w-6 h-6 sm:w-7 sm:h-7 text-cyan-400 flex-shrink-0" style={{
+                    filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))'
+                  }} />
+                  <h1
+                    className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
+                    style={{
+                      textShadow: '0 0 30px rgba(34, 211, 238, 0.3), 0 0 60px rgba(59, 130, 246, 0.2)',
+                      filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.25))'
+                    }}
+                  >
+                    Global FX Trading Sessions
+                  </h1>
+                </div>
                 <p className="text-xs sm:text-sm text-slate-300 font-light tracking-wide max-w-sm">
                   Real-time session tracking with killzones and overlaps
                 </p>
