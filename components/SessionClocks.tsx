@@ -21,7 +21,11 @@ const getTimeForTimezone = (timezone: string) => {
   return new Date(localeString);
 };
 
-const ClockCard: React.FC<ClockConfig> = ({ label, timezone, accent }) => {
+interface ClockCardProps extends ClockConfig {
+  compact?: boolean;
+}
+
+const ClockCard: React.FC<ClockCardProps> = ({ label, timezone, accent, compact }) => {
   const [time, setTime] = useState<Date>(() => getTimeForTimezone(timezone));
 
   useEffect(() => {
@@ -52,32 +56,45 @@ const ClockCard: React.FC<ClockConfig> = ({ label, timezone, accent }) => {
     day: 'numeric',
   });
 
+  const clockSize = compact ? 64 : 92;
+  const tickLength = compact ? 24 : 34;
+  const hourHandLength = compact ? 18 : 30;
+  const minuteHandLength = compact ? 24 : 40;
+  const secondHandLength = compact ? 26 : 44;
+
   return (
-    <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-900/40 border border-slate-700/40 backdrop-blur-xl shadow-lg shadow-black/20">
-      <div className="relative w-20 h-20 sm:w-24 sm:h-24">
+    <div className={`flex items-center gap-3 p-3 sm:gap-4 sm:p-4 rounded-2xl bg-slate-900/40 border border-slate-800/40 backdrop-blur-xl shadow-lg shadow-black/10 ${compact ? '' : 'md:flex-col md:items-start md:gap-3'}`}>
+      <div className="relative" style={{ width: clockSize, height: clockSize }}>
         <div className="absolute inset-0 rounded-full border border-slate-700/50 bg-slate-950/90 shadow-inner">
           {TICK_MARKS.map((_, index) => (
             <span
               key={index}
               className="absolute top-1/2 left-1/2 w-[2px] h-3 bg-slate-600/60 origin-center"
               style={{
-                transform: `translate(-50%, -50%) rotate(${index * 30}deg) translateY(-34px)`,
+                transform: `translate(-50%, -50%) rotate(${index * 30}deg) translateY(-${tickLength}px)`,
               }}
             />
           ))}
 
           <span
             className="absolute top-1/2 left-1/2 w-1 h-6 bg-slate-200 origin-bottom rounded"
-            style={{ transform: `translate(-50%, -100%) rotate(${hourAngle}deg)` }}
+            style={{
+              transform: `translate(-50%, -100%) rotate(${hourAngle}deg)`,
+              height: hourHandLength,
+            }}
           />
           <span
             className="absolute top-1/2 left-1/2 w-[3px] h-8 bg-slate-300 origin-bottom rounded"
-            style={{ transform: `translate(-50%, -100%) rotate(${minuteAngle}deg)` }}
+            style={{
+              transform: `translate(-50%, -100%) rotate(${minuteAngle}deg)`,
+              height: minuteHandLength,
+            }}
           />
           <span
             className="absolute top-1/2 left-1/2 w-[1px] h-9 origin-bottom rounded"
             style={{
               transform: `translate(-50%, -100%) rotate(${secondAngle}deg)`,
+              height: secondHandLength,
               background: accent,
             }}
           />
@@ -96,22 +113,20 @@ const ClockCard: React.FC<ClockConfig> = ({ label, timezone, accent }) => {
 
       <div className="flex flex-col">
         <span className="text-sm font-semibold text-slate-100">{label}</span>
-        <span className="text-xs text-slate-500">{dateString}</span>
+        <span className="text-[11px] text-slate-500">{dateString}</span>
         <span className="text-sm font-mono text-slate-200">{timeString}</span>
       </div>
     </div>
   );
 };
 
-const SessionClocks: React.FC = () => {
+const SessionClocks: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   return (
-    <section className="w-full mb-8">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {CLOCKS.map((config) => (
-          <ClockCard key={config.label} {...config} />
-        ))}
-      </div>
-    </section>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      {CLOCKS.map((config) => (
+        <ClockCard key={config.label} {...config} compact={compact} />
+      ))}
+    </div>
   );
 };
 
