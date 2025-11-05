@@ -27,7 +27,10 @@ const App: React.FC = () => {
 
   const { nowLine, activeSessions, sessionStatus } = useMemo(() => {
     const now = currentTime;
-    const utcHours = now.getUTCHours() + now.getUTCMinutes() / 60;
+    const utcHours =
+      now.getUTCHours() +
+      now.getUTCMinutes() / 60 +
+      now.getUTCSeconds() / 3600;
 
     let localTime = (utcHours + selectedTimezone.offset) % 24;
     localTime = localTime < 0 ? localTime + 24 : localTime;
