@@ -4,7 +4,9 @@ import SocialLinks from './components/SocialLinks';
 import SessionClocks from './components/SessionClocks';
 import InstallButton from './components/InstallButton';
 import InstallModal from './components/InstallModal';
+import AlertsToggle from './components/AlertsToggle';
 import { usePWAInstall } from './hooks/usePWAInstall';
+import { useSessionAlerts } from './hooks/useSessionAlerts';
 import { TIMEZONES, MAJOR_TIMEZONES, SESSIONS } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
 import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow } from './components/icons';
@@ -31,6 +33,13 @@ const App: React.FC = () => {
     handleInstallClick,
     handleDismissModal,
   } = usePWAInstall();
+
+  // Session Alerts management
+  const {
+    alertConfig,
+    toggleAlerts,
+    toggleSound,
+  } = useSessionAlerts();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000); // Update every 1 second for real-time countdown
@@ -402,6 +411,11 @@ const App: React.FC = () => {
         <footer className="w-full mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 text-slate-500 text-xs font-light">
           <p>Data is illustrative. Always verify times with your broker. Not financial advice.</p>
           <div className="flex items-center gap-3">
+            <AlertsToggle
+              alertConfig={alertConfig}
+              onToggle={toggleAlerts}
+              onToggleSound={toggleSound}
+            />
             <InstallButton
               onClick={handleInstallClick}
               show={installState === 'available' || installState === 'dismissed'}

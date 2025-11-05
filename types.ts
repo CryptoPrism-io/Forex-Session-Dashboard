@@ -43,3 +43,22 @@ export interface SessionData {
   killzoneAM?: ChartBarDetails & { range: [number, number] };
   killzonePM?: ChartBarDetails & { range: [number, number] };
 }
+
+// Alert Types
+export type AlertEventType = 'open-before' | 'open' | 'close-before' | 'close';
+
+export interface AlertEvent {
+  id: string;
+  sessionName: string;
+  barName: string;
+  eventType: AlertEventType;
+  triggerTime: number; // UTC hours when alert should fire
+  message: string;
+  color: string;
+}
+
+export interface AlertConfig {
+  enabled: boolean;
+  soundEnabled: boolean;
+  autoDismissSeconds: number;
+}
