@@ -267,52 +267,10 @@ const App: React.FC = () => {
         {/* CONTROL CARD: Title, Timezone Selector, Time Display + Live Sessions */}
         <div className="w-full mb-6">
           <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 sm:p-5 shadow-lg shadow-black/20">
-            {/* TOP ROW: Title (Left) + Timezone Selector (Right) */}
+            {/* TOP ROW: Timezone Selector (Left) + Session Clocks (Right) */}
             <div className="flex items-start justify-between gap-4 mb-6 pb-6 border-b border-slate-700/50">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  {showPWAButton && !isInstalled ? (
-                    <button
-                      onClick={handleInstallClick}
-                      className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-lg active:scale-95"
-                      style={{
-                        filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.filter = 'drop-shadow(0 0 16px rgba(34, 211, 238, 0.8))';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.filter = 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))';
-                      }}
-                      title="Click to install the app"
-                      aria-label="Download and install app"
-                    >
-                      <IconTradingFlow className="w-full h-full text-cyan-400" />
-                    </button>
-                  ) : (
-                    <div className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" style={{
-                      filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))'
-                    }}>
-                      <IconTradingFlow className="w-full h-full text-cyan-400" />
-                    </div>
-                  )}
-                  <h1
-                    className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
-                    style={{
-                      textShadow: '0 0 30px rgba(34, 211, 238, 0.3), 0 0 60px rgba(59, 130, 246, 0.2)',
-                      filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.25))'
-                    }}
-                  >
-                    Global FX Trading Sessions
-                  </h1>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-300 font-light tracking-wide max-w-sm">
-                  Real-time session tracking with killzones and overlaps
-                </p>
-              </div>
-
-              {/* TOP RIGHT: Timezone Selector */}
-              <div className="flex flex-wrap gap-1.5 justify-end">
+              {/* TOP LEFT: Timezone Selector */}
+              <div className="flex flex-wrap gap-1.5 items-start">
                 {displayedTimezones.map(tz => (
                   <button
                     key={tz.label}
@@ -335,7 +293,7 @@ const App: React.FC = () => {
                     ⋯
                   </button>
                   {isMoreTimezonesOpen && (
-                    <div className="absolute top-full mt-2 right-0 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 p-2 z-[9999] w-40">
+                    <div className="absolute top-full mt-2 left-0 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 p-2 z-[9999] w-40">
                       {moreTimezones.map(tz => (
                          <button
                             key={tz.label}
@@ -353,7 +311,53 @@ const App: React.FC = () => {
                   )}
                 </div>
               </div>
+
+              {/* TOP RIGHT: Session Clocks */}
+              <div className="flex-1 flex justify-end">
+                <SessionClocks compact sessionStatus={sessionStatus} />
+              </div>
             </div>
+
+            {/* Title and Subtitle */}
+            <div className="flex items-center gap-3 mb-2">
+              {showPWAButton && !isInstalled ? (
+                <button
+                  onClick={handleInstallClick}
+                  className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-lg active:scale-95"
+                  style={{
+                    filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.filter = 'drop-shadow(0 0 16px rgba(34, 211, 238, 0.8))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.filter = 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))';
+                  }}
+                  title="Click to install the app"
+                  aria-label="Download and install app"
+                >
+                  <IconTradingFlow className="w-full h-full text-cyan-400" />
+                </button>
+              ) : (
+                <div className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" style={{
+                  filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))'
+                }}>
+                  <IconTradingFlow className="w-full h-full text-cyan-400" />
+                </div>
+              )}
+              <h1
+                className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
+                style={{
+                  textShadow: '0 0 30px rgba(34, 211, 238, 0.3), 0 0 60px rgba(59, 130, 246, 0.2)',
+                  filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.25))'
+                }}
+              >
+                Global FX Trading Sessions
+              </h1>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-300 font-light tracking-wide max-w-sm mb-6 pb-6 border-b border-slate-700/50">
+              Real-time session tracking with killzones and overlaps
+            </p>
 
             {/* Big Time Display */}
             <div className="mb-3">
@@ -432,12 +436,6 @@ const App: React.FC = () => {
           timezoneOffset={selectedTimezone.offset}
           sessionStatus={sessionStatus}
         />
-
-        {/* SESSION CLOCKS */}
-        <section className="w-full mt-6 rounded-3xl bg-slate-900/40 border border-slate-800/50 backdrop-blur-xl shadow-lg shadow-black/20 p-4 sm:p-5">
-          <h2 className="text-xs font-semibold text-slate-300 mb-4 tracking-widest uppercase">Session Clocks</h2>
-          <SessionClocks compact sessionStatus={sessionStatus} />
-        </section>
 
         {/* FOOTER: Action Row with PWA + Social */}
         <footer className="w-full mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 text-slate-500 text-xs font-light">
