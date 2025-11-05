@@ -12,42 +12,32 @@ const PWAInstall: React.FC = () => {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    const handler = (e: Event) => {
+    const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowInstallButton(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
-
-    // Check if app is already installed
-    window.addEventListener('appinstalled', () => {
+    const handleAppInstalled = () => {
       setIsInstalled(true);
+      setDeferredPrompt(null);
       setShowInstallButton(false);
-    });
+    };
 
-    // Check if running in standalone mode (already installed)
-    if (window.navigator.standalone === true) {
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches || (window.navigator as any)?.standalone;
+    if (isStandalone) {
       setIsInstalled(true);
       setShowInstallButton(false);
     }
 
-    // Fallback: Show button after 3 seconds if event hasn't fired (for development/testing)
-    // This allows users to see and test the button UI
-    const fallbackTimer = setTimeout(() => {
-      if (!deferredPrompt) {
-        setShowInstallButton(true);
-      }
-    }, 3000);
-
     return () => {
-      clearTimeout(fallbackTimer);
-      window.removeEventListener('beforeinstallprompt', handler);
-      window.removeEventListener('appinstalled', () => {
-        setIsInstalled(true);
-      });
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [deferredPrompt]);
+  }, []);
 
   const handleInstallClick = async () => {
     // If deferredPrompt exists, use the native install flow
@@ -66,17 +56,12 @@ const PWAInstall: React.FC = () => {
         console.error('Failed to install app:', error);
       }
     } else {
-      // Fallback: Show a message or guide user (for development)
-      alert('PWA installation is available on compatible browsers. Please use the browser menu: Settings > Install app');
+      alert('Install is handled by your browser menu. In Chrome: ⋮ > Install app.');
     }
   };
 
-  if (!showInstallButton && !isInstalled) {
+  if (!showInstallButton || isInstalled) {
     return null;
-  }
-
-  if (isInstalled) {
-    return null; // Hide button when already installed
   }
 
   return (

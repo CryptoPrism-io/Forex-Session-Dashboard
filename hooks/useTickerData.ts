@@ -10,26 +10,24 @@ export interface TickerData {
 
 export type CategoryFilter = 'All' | 'Crypto' | 'Indices' | 'Forex' | 'Commodities';
 
-const ALPHA_VANTAGE_KEY = 'PURNU4E3JJHSKPOX';
+const ALPHA_VANTAGE_KEY = import.meta.env.VITE_ALPHA_VANTAGE_KEY || '';
 const ALPHA_VANTAGE_BASE = 'https://www.alphavantage.co/query';
+
+const ensureAlphaVantageKey = () => {
+  if (!ALPHA_VANTAGE_KEY) {
+    console.warn('Missing Alpha Vantage API key. Set VITE_ALPHA_VANTAGE_KEY in your environment.');
+    return false;
+  }
+  return true;
+};
 
 // Crypto symbol mapping from CoinGecko IDs to proper crypto symbols
 const CRYPTO_SYMBOL_MAP: Record<string, string> = {
-  'bitcoin': 'BTC',
-  'ethereum': 'ETH',
-  'binancecoin': 'BNB',
-  'cardano': 'ADA',
-  'solana': 'SOL',
-  'ripple': 'XRP',
-  'dogecoin': 'DOGE',
-  'polkadot': 'DOT',
-  'litecoin': 'LTC',
-  'chainlink': 'LINK',
-  'uniswap': 'UNI',
-  'cosmos': 'ATOM',
-  'avalanche-2': 'AVAX',
-  'filecoin': 'FIL',
-  'polygon': 'MATIC'
+  bitcoin: 'BTC',
+  ethereum: 'ETH',
+  solana: 'SOL',
+  ripple: 'XRP',
+  dogecoin: 'DOGE',
 };
 
 const CRYPTO_ASSETS = Object.keys(CRYPTO_SYMBOL_MAP);
@@ -88,36 +86,63 @@ const getCacheTimestamp = (category: string): Date | null => {
   }
 };
 
-// Fetch crypto data from CoinGecko (10 second polling)
+// Fetch crypto data from Alpha Vantage with throttling
 const fetchCryptoData = async (): Promise<TickerData[]> => {
+  if (!ensureAlphaVantageKey()) {
+    return getCachedData('Crypto') || [];
+  }
+
   try {
-    const ids = CRYPTO_ASSETS.join(',');
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`
-    );
+    const cached = getCachedData('Crypto');
+    const results: TickerData[] = [];
 
-    if (!response.ok) throw new Error('Failed to fetch crypto data');
-    const data = await response.json();
+    for (const [cryptoId, symbol] of Object.entries(CRYPTO_SYMBOL_MAP)) {
+      const params = new URLSearchParams({
+        function: 'CURRENCY_EXCHANGE_RATE',
+        from_currency: symbol,
+        to_currency: 'USD',
+        apikey: ALPHA_VANTAGE_KEY,
+      });
 
-    const cryptoData = CRYPTO_ASSETS.map((cryptoId) => {
-      const cryptoData = data[cryptoId];
-      if (!cryptoData) return null;
+      const response = await fetchWithTimeout(`${ALPHA_VANTAGE_BASE}?${params}`, 5000);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${symbol} data`);
+      }
 
-      const price = cryptoData.usd || 0;
-      const changePercent = cryptoData.usd_24h_change || 0;
-      const change = (price * changePercent) / 100;
+      const payload = await response.json();
+      const rate = payload['Realtime Currency Exchange Rate'];
+      if (!rate) {
+        continue;
+      }
 
-      return {
-        symbol: CRYPTO_SYMBOL_MAP[cryptoId],
+      const price = parseFloat(rate['5. Exchange Rate']);
+      if (Number.isNaN(price)) {
+        continue;
+      }
+
+      const previous = cached?.find((item) => item.symbol === symbol);
+      const prevPrice = previous?.price ?? price;
+      const change = price - prevPrice;
+      const changePercent = prevPrice ? (change / prevPrice) * 100 : 0;
+
+      results.push({
+        symbol,
         price,
         change,
         changePercent,
-        category: 'Crypto' as const,
-      };
-    }).filter((item): item is TickerData => item !== null);
+        category: 'Crypto',
+      });
 
-    setCachedData('Crypto', cryptoData);
-    return cryptoData;
+      // Alpha Vantage free tier: 5 requests/min. Wait to stay within limits.
+      await new Promise((resolve) => setTimeout(resolve, 15000));
+    }
+
+    if (results.length > 0) {
+      setCachedData('Crypto', results);
+      return results;
+    }
+
+    return cached || [];
   } catch (error) {
     console.error('Error fetching crypto data:', error);
     const cached = getCachedData('Crypto');
@@ -138,6 +163,9 @@ const fetchWithTimeout = async (url: string, timeout = 5000): Promise<Response> 
 
 // Fetch Forex data from Alpha Vantage
 const fetchForexData = async (): Promise<TickerData[]> => {
+  if (!ensureAlphaVantageKey()) {
+    return getCachedData('Forex') || [];
+  }
   try {
     const results: TickerData[] = [];
 
@@ -212,6 +240,9 @@ const fetchForexData = async (): Promise<TickerData[]> => {
 
 // Fetch Commodities data from Alpha Vantage
 const fetchCommoditiesData = async (): Promise<TickerData[]> => {
+  if (!ensureAlphaVantageKey()) {
+    return getCachedData('Commodities') || [];
+  }
   try {
     const results: TickerData[] = [];
 
@@ -339,7 +370,7 @@ export const useTickerData = () => {
 
     initializeData();
 
-    // Crypto: Poll every 10 seconds (CoinGecko is generous)
+    // Crypto: Poll every 5 minutes to respect Alpha Vantage limits
     const cryptoInterval = setInterval(async () => {
       const cryptoData = await fetchCryptoData();
       setTickers((prev) => {
@@ -347,7 +378,7 @@ export const useTickerData = () => {
         return [...cryptoData, ...nonCryptoData];
       });
       setLastFetched(new Date());
-    }, 10000);
+    }, 5 * 60 * 1000);
 
     // Forex & Commodities: Poll every 6 hours (respect 25 calls/day limit)
     const forexCommoditiesInterval = setInterval(async () => {

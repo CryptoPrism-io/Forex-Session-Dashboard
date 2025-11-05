@@ -1,8 +1,9 @@
-const CACHE_NAME = 'forex-session-v1';
+const CACHE_NAME = 'forex-session-v2';
+const resolveScopedUrl = (resource) => new URL(resource, self.registration.scope).toString();
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+  resolveScopedUrl('./'),
+  resolveScopedUrl('index.html'),
+  resolveScopedUrl('manifest.json')
 ];
 
 // Install event
@@ -11,7 +12,7 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE).catch(() => {
         // Gracefully handle missing assets
-        return cache.add('/').catch(() => {});
+        return cache.add(resolveScopedUrl('./')).catch(() => {});
       });
     })
   );
