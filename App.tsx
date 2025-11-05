@@ -125,56 +125,10 @@ const App: React.FC = () => {
         </header>
 
         <div className="mb-6 flex flex-col md:flex-row md:justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <PWAInstall />
-          </div>
-          <div className="flex items-center gap-2 relative flex-wrap justify-center">
-            <IconGlobe className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-            <span className="text-sm font-medium text-slate-300 hidden sm:inline">Timezone:</span>
-            {displayedTimezones.map(tz => (
-              <button
-                key={tz.label}
-                onClick={() => handleTimezoneChange(tz)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-300 backdrop-blur-md ${
-                  selectedTimezone.label === tz.label
-                    ? 'bg-cyan-500/30 border border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
-                    : 'bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
-                }`}
-              >
-                {tz.label}
-              </button>
-            ))}
-            <div className="relative">
-              <button
-                onClick={() => setIsMoreTimezonesOpen(!isMoreTimezonesOpen)}
-                className="w-8 h-8 flex items-center justify-center bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 rounded-lg transition-all duration-300 backdrop-blur-md"
-                aria-label="More timezones"
-              >
-                <span className="text-slate-300 font-light">⋯</span>
-              </button>
-              {isMoreTimezonesOpen && (
-                <div className="absolute top-full mt-2 left-0 sm:left-auto sm:right-0 bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 p-2 z-10 w-32">
-                  {moreTimezones.map(tz => (
-                     <button
-                        key={tz.label}
-                        onClick={() => handleTimezoneChange(tz)}
-                        className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-all duration-150 ${
-                            selectedTimezone.label === tz.label
-                              ? 'bg-cyan-500/30 text-cyan-100 border border-cyan-400/50'
-                              : 'hover:bg-slate-700/40 text-slate-300'
-                        }`}
-                      >
-                       {tz.label}
-                     </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <SocialLinks />
-
-          <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 rounded-2xl p-4 flex items-center gap-6 shadow-2xl shadow-black/30 hover:border-slate-600/50 transition-all duration-300">
+          {/* LEFT GROUP: Time Display + Timezone Selector */}
+          <div className="flex items-center gap-4">
+            {/* Time Display Card */}
+            <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 rounded-2xl p-4 flex items-center gap-6 shadow-2xl shadow-black/30 hover:border-slate-600/50 transition-all duration-300">
              <div className="text-center">
                 <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-green-400 bg-clip-text text-transparent tracking-wider">{timeFormatted}</div>
                 <div className="text-xs text-slate-400 font-light mt-1">{selectedTimezone.label}</div>
@@ -210,6 +164,58 @@ const App: React.FC = () => {
                   );
                 })}
             </div>
+          </div>
+
+            {/* Timezone Selector */}
+            <div className="flex items-center gap-2 relative flex-wrap justify-center">
+              <IconGlobe className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+              <span className="text-sm font-medium text-slate-300 hidden sm:inline">Timezone:</span>
+              {displayedTimezones.map(tz => (
+                <button
+                  key={tz.label}
+                  onClick={() => handleTimezoneChange(tz)}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-300 backdrop-blur-md ${
+                    selectedTimezone.label === tz.label
+                      ? 'bg-cyan-500/30 border border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
+                      : 'bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
+                  }`}
+                >
+                  {tz.label}
+                </button>
+              ))}
+              <div className="relative">
+                <button
+                  onClick={() => setIsMoreTimezonesOpen(!isMoreTimezonesOpen)}
+                  className="w-8 h-8 flex items-center justify-center bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 rounded-lg transition-all duration-300 backdrop-blur-md"
+                  aria-label="More timezones"
+                >
+                  <span className="text-slate-300 font-light">⋯</span>
+                </button>
+                {isMoreTimezonesOpen && (
+                  <div className="absolute top-full mt-2 left-0 sm:left-auto sm:right-0 bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 p-2 z-10 w-32">
+                    {moreTimezones.map(tz => (
+                       <button
+                          key={tz.label}
+                          onClick={() => handleTimezoneChange(tz)}
+                          className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-all duration-150 ${
+                              selectedTimezone.label === tz.label
+                                ? 'bg-cyan-500/30 text-cyan-100 border border-cyan-400/50'
+                                : 'hover:bg-slate-700/40 text-slate-300'
+                          }`}
+                        >
+                         {tz.label}
+                       </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT GROUP: PWA Install + Social Links */}
+          <div className="flex items-center gap-3">
+            <PWAInstall />
+            <SocialLinks />
           </div>
         </div>
 
