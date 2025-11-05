@@ -33,6 +33,42 @@ const App: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Auto-detect timezone based on IP geolocation
+  useEffect(() => {
+    const detectTimezoneFromIP = async () => {
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+
+        if (data.timezone) {
+          // Find timezone by IANA timezone name
+          const detectedTz = TIMEZONES.find(tz => tz.ianaTimezone === data.timezone);
+          if (detectedTz) {
+            setSelectedTimezone(detectedTz);
+            return;
+          }
+        }
+
+        // Fallback: try matching by offset if IANA match fails
+        if (data.utc_offset) {
+          const offsetHours = parseInt(data.utc_offset.split(':')[0]);
+          const offsetMinutes = parseInt(data.utc_offset.split(':')[1]) / 60 || 0;
+          const totalOffset = offsetHours + offsetMinutes;
+
+          const matchedTz = TIMEZONES.find(tz => Math.abs(tz.offset - totalOffset) < 0.1);
+          if (matchedTz) {
+            setSelectedTimezone(matchedTz);
+          }
+        }
+      } catch (error) {
+        console.log('IP geolocation failed, using device timezone:', error);
+        // Silently fall back to device timezone
+      }
+    };
+
+    detectTimezoneFromIP();
+  }, []);
+
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
