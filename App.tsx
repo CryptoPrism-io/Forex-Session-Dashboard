@@ -145,126 +145,122 @@ const App: React.FC = () => {
       background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%)',
       backdropFilter: 'blur(10px)'
     }}>
-      <main className="w-full max-w-7xl mx-auto p-4 sm:p-8 flex flex-col items-center">
-        <header className="w-full text-left mb-6 sm:mb-8">
-          <h1 className="text-lg sm:text-xl font-semibold tracking-tight" style={{
-            background: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}>
-            Forex Session Map
-          </h1>
-          <p className="text-xs text-slate-400 font-light">
-            Global market session timings and liquidity windows
-          </p>
-        </header>
+      <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 flex flex-col items-center">
+        {/* CONTROL CARD: Title, Timezone Selector, Time Display + Live Sessions */}
+        <div className="w-full mb-6">
+          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 sm:p-5 shadow-lg shadow-black/20">
+            {/* TOP ROW: Title (Left) + Timezone Selector (Right) */}
+            <div className="flex items-start justify-between gap-4 mb-6 pb-6 border-b border-slate-700/50">
+              <div className="flex-1">
+                <h1
+                  className="text-2xl sm:text-3xl font-bold tracking-tight mb-2 bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
+                  style={{
+                    textShadow: '0 0 30px rgba(34, 211, 238, 0.3), 0 0 60px rgba(59, 130, 246, 0.2)',
+                    filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.25))'
+                  }}
+                >
+                  Global FX Trading Sessions
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-300 font-light tracking-wide max-w-sm">
+                  Real-time session tracking with killzones and overlaps
+                </p>
+              </div>
 
-        <div className="mb-6 flex flex-col md:flex-row md:justify-between items-center gap-4">
-          {/* LEFT: Timezone Selector */}
-          <div className="flex items-center gap-2 relative flex-wrap justify-center">
-            <IconGlobe className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-            <span className="text-sm font-medium text-slate-300 hidden sm:inline">Timezone:</span>
-            {displayedTimezones.map(tz => (
-              <button
-                key={tz.label}
-                onClick={() => handleTimezoneChange(tz)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-300 backdrop-blur-md ${
-                  selectedTimezone.label === tz.label
-                    ? 'bg-cyan-500/30 border border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
-                    : 'bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
-                }`}
-              >
-                {tz.label}
-              </button>
-            ))}
-            <div className="relative">
-              <button
-                onClick={() => setIsMoreTimezonesOpen(!isMoreTimezonesOpen)}
-                className="w-8 h-8 flex items-center justify-center bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 rounded-lg transition-all duration-300 backdrop-blur-md"
-                aria-label="More timezones"
-              >
-                <span className="text-slate-300 font-light">⋯</span>
-              </button>
-              {isMoreTimezonesOpen && (
-                <div className="absolute top-full mt-2 left-0 sm:left-auto sm:right-0 bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 p-2 z-10 w-32">
-                  {moreTimezones.map(tz => (
-                     <button
-                        key={tz.label}
-                        onClick={() => handleTimezoneChange(tz)}
-                        className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-all duration-150 ${
-                            selectedTimezone.label === tz.label
-                              ? 'bg-cyan-500/30 text-cyan-100 border border-cyan-400/50'
-                              : 'hover:bg-slate-700/40 text-slate-300'
-                        }`}
-                      >
-                       {tz.label}
-                     </button>
-                  ))}
+              {/* TOP RIGHT: Timezone Selector */}
+              <div className="flex flex-wrap gap-1.5 justify-end">
+                {displayedTimezones.map(tz => (
+                  <button
+                    key={tz.label}
+                    onClick={() => handleTimezoneChange(tz)}
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-full transition-all duration-300 backdrop-blur-md ${
+                      selectedTimezone.label === tz.label
+                        ? 'bg-cyan-500/30 border border-cyan-400/60 text-cyan-100 shadow-md shadow-cyan-500/20'
+                        : 'bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300'
+                    }`}
+                  >
+                    {tz.label}
+                  </button>
+                ))}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsMoreTimezonesOpen(!isMoreTimezonesOpen)}
+                    className="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300 transition-all duration-300 backdrop-blur-md"
+                    aria-label="More timezones"
+                  >
+                    ⋯
+                  </button>
+                  {isMoreTimezonesOpen && (
+                    <div className="absolute top-full mt-2 right-0 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 p-2 z-10 w-40">
+                      {moreTimezones.map(tz => (
+                         <button
+                            key={tz.label}
+                            onClick={() => handleTimezoneChange(tz)}
+                            className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-all duration-150 ${
+                                selectedTimezone.label === tz.label
+                                  ? 'bg-cyan-500/30 text-cyan-100 border border-cyan-400/50'
+                                  : 'hover:bg-slate-700/40 text-slate-300'
+                            }`}
+                          >
+                           {tz.label}
+                         </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
 
-          {/* CENTER: Time Display Card */}
-          <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 rounded-2xl p-4 flex items-center gap-6 shadow-2xl shadow-black/30 hover:border-slate-600/50 transition-all duration-300">
-            <div className="text-center">
-              <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-green-400 bg-clip-text text-transparent tracking-wider">{timeFormatted}</div>
+            {/* Big Time Display */}
+            <div className="mb-3">
+              <div className="text-5xl sm:text-6xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-green-400 bg-clip-text text-transparent tracking-wider font-mono">
+                {timeFormatted}
+              </div>
               <div className="text-xs text-slate-400 font-light mt-1">{selectedTimezone.label}</div>
             </div>
-            {activeSessions.length > 0 && <div className="w-px h-12 bg-gradient-to-b from-slate-700/50 to-transparent"></div>}
-            <div className="flex flex-col gap-2.5">
-              {activeSessions.map(session => {
-                let textStyle: React.CSSProperties = {};
-                let indicatorStyle: React.CSSProperties = {};
 
-                if (session.type === 'killzone') {
-                  const color = 'hsl(0, 100%, 65%)';
-                  textStyle = { color: 'hsl(0, 100%, 80%)', textShadow: `0 0 8px ${color}` };
-                  indicatorStyle = { backgroundColor: color, boxShadow: `0 0 8px ${color}`};
-                } else if (session.type === 'overlap') {
-                  const color = 'hsl(30, 100%, 65%)';
-                  textStyle = { color: 'hsl(30, 100%, 80%)', textShadow: `0 0 8px ${color}` };
-                  indicatorStyle = { backgroundColor: color, boxShadow: `0 0 8px ${color}`};
-                } else { // main session
-                  textStyle = { color: session.color };
-                  indicatorStyle = { backgroundColor: session.color, boxShadow: `0 0 6px ${session.color}`};
-                }
+            {/* Live Sessions List */}
+            {activeSessions.length > 0 && (
+              <div className="space-y-1.5">
+                {activeSessions.map(session => {
+                  let textStyle: React.CSSProperties = {};
+                  let indicatorStyle: React.CSSProperties = {};
 
-                if (session.state === 'WARNING') {
-                  indicatorStyle.animation = 'pulse-glow 1.5s infinite';
-                }
+                  if (session.type === 'killzone') {
+                    const color = 'hsl(0, 100%, 65%)';
+                    textStyle = { color: 'hsl(0, 100%, 80%)', textShadow: `0 0 8px ${color}` };
+                    indicatorStyle = { backgroundColor: color, boxShadow: `0 0 8px ${color}`};
+                  } else if (session.type === 'overlap') {
+                    const color = 'hsl(30, 100%, 65%)';
+                    textStyle = { color: 'hsl(30, 100%, 80%)', textShadow: `0 0 8px ${color}` };
+                    indicatorStyle = { backgroundColor: color, boxShadow: `0 0 8px ${color}`};
+                  } else { // main session
+                    textStyle = { color: session.color };
+                    indicatorStyle = { backgroundColor: session.color, boxShadow: `0 0 6px ${session.color}`};
+                  }
 
-                return (
-                    <div key={session.name} className="flex items-center gap-2 min-w-fit">
-                        {/* Elapsed Time - LEFT */}
-                        <span className="text-xs font-mono text-slate-400">
-                            {formatSessionTime(session.elapsedSeconds)}
-                        </span>
+                  if (session.state === 'WARNING') {
+                    indicatorStyle.animation = 'pulse-glow 1.5s infinite';
+                  }
 
-                        {/* Colored Indicator Dot */}
-                        <span className="w-2.5 h-2.5 rounded-full" style={indicatorStyle}></span>
-
-                        {/* Session Name - CENTER */}
-                        <span className="text-xs font-medium" style={textStyle}>{session.name}</span>
-
-                        {/* Remaining Time - RIGHT */}
-                        <span className="text-xs font-mono text-slate-400">
-                            {formatSessionTime(session.remainingSeconds)}
-                        </span>
-                    </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* RIGHT: PWA Install + Social Links */}
-          <div className="flex items-center gap-3">
-            <PWAInstall />
-            <SocialLinks />
+                  return (
+                      <div key={session.name} className="flex items-center justify-between gap-2 px-2 py-1 bg-slate-800/20 rounded-lg">
+                          <span className="text-xs font-mono text-slate-500 min-w-12">
+                              {formatSessionTime(session.elapsedSeconds)}
+                          </span>
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={indicatorStyle}></span>
+                          <span className="text-xs font-medium flex-1 text-center" style={textStyle}>{session.name}</span>
+                          <span className="text-xs font-mono text-slate-500 min-w-12 text-right">
+                              {formatSessionTime(session.remainingSeconds)}
+                          </span>
+                      </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
+        {/* SESSION TIMELINE */}
         <ForexChart
           nowLine={nowLine}
           currentTimezoneLabel={selectedTimezone.label}
@@ -272,13 +268,19 @@ const App: React.FC = () => {
           sessionStatus={sessionStatus}
         />
 
-        <section className="w-full mt-8 rounded-3xl bg-slate-900/40 border border-slate-800/50 backdrop-blur-2xl shadow-2xl shadow-black/30 p-5 sm:p-7">
-          <h2 className="text-sm font-semibold text-slate-100 mb-4 tracking-wide uppercase">Session Clocks</h2>
+        {/* SESSION CLOCKS */}
+        <section className="w-full mt-6 rounded-3xl bg-slate-900/40 border border-slate-800/50 backdrop-blur-xl shadow-lg shadow-black/20 p-4 sm:p-5">
+          <h2 className="text-xs font-semibold text-slate-300 mb-4 tracking-widest uppercase">Session Clocks</h2>
           <SessionClocks compact sessionStatus={sessionStatus} />
         </section>
 
-        <footer className="text-center mt-12 text-slate-500 text-xs font-light">
+        {/* FOOTER: Action Row with PWA + Social */}
+        <footer className="w-full mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 text-slate-500 text-xs font-light">
           <p>Data is illustrative. Always verify times with your broker. Not financial advice.</p>
+          <div className="flex items-center gap-3">
+            <PWAInstall />
+            <SocialLinks />
+          </div>
         </footer>
       </main>
     </div>
