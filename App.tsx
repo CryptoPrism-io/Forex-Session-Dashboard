@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import ForexChart from './components/ForexChart';
 import PWAInstall from './components/PWAInstall';
 import SocialLinks from './components/SocialLinks';
-import TickerTape from './components/TickerTape';
 import { TIMEZONES, SESSIONS } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
 import { IconClock, IconGlobe, IconTarget, IconBarChartBig } from './components/icons';
@@ -142,7 +141,6 @@ const App: React.FC = () => {
       background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%)',
       backdropFilter: 'blur(10px)'
     }}>
-      <TickerTape selectedTimezone={selectedTimezone} />
       <main className="w-full max-w-7xl mx-auto p-4 sm:p-8 flex flex-col items-center">
         <header className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-semibold mb-2 tracking-tight" style={{
