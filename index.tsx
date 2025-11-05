@@ -19,8 +19,9 @@ root.render(
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     try {
-      const base = (import.meta as any).env?.BASE_URL || '/';
-      const swUrl = new URL('sw.js', base).toString();
+      const rawBase = (import.meta as any).env?.BASE_URL ?? '/';
+      const normalizedBase = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
+      const swUrl = `${normalizedBase}sw.js`;
       navigator.serviceWorker.register(swUrl).catch((err) => {
         console.log('Service Worker registration failed:', err);
       });
