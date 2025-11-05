@@ -10,11 +10,15 @@ interface TickerTapeProps {
 const CRYPTO_FETCH_INTERVAL = 10; // seconds (CoinGecko)
 const FOREX_COMMODITIES_FETCH_INTERVAL = 6 * 60 * 60; // 6 hours (Alpha Vantage)
 
+const TICKERS_PER_PAGE = 6; // Number of tickers to show at once
+const FADE_DURATION = 2; // Seconds before fading to next batch
+
 const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
   const { tickers, loading, error, lastFetched } = useTickerData();
   const [selectedFilter, setSelectedFilter] = useState<CategoryFilter>('All');
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [countdown, setCountdown] = useState(CRYPTO_FETCH_INTERVAL);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
 
   const filteredTickers = useMemo(() => {
     if (selectedFilter === 'All') {
@@ -22,6 +26,13 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
     }
     return tickers.filter((t) => t.category === selectedFilter);
   }, [tickers, selectedFilter]);
+
+  // Calculate paginated tickers
+  const totalPages = Math.ceil(filteredTickers.length / TICKERS_PER_PAGE);
+  const displayedTickers = useMemo(() => {
+    const startIdx = currentPageIndex * TICKERS_PER_PAGE;
+    return filteredTickers.slice(startIdx, startIdx + TICKERS_PER_PAGE);
+  }, [filteredTickers, currentPageIndex]);
 
   const filterOptions: CategoryFilter[] = ['All', 'Crypto', 'Indices', 'Forex', 'Commodities'];
 
@@ -70,6 +81,20 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
     }
   }, [lastFetched, fetchInterval]);
 
+  // Rotate through ticker pages every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentPageIndex((prev) => (prev + 1) % (totalPages || 1));
+    }, FADE_DURATION * 1000);
+
+    return () => clearInterval(interval);
+  }, [totalPages]);
+
+  // Reset page index when filter changes
+  useEffect(() => {
+    setCurrentPageIndex(0);
+  }, [selectedFilter]);
+
   if (error) {
     return (
       <div className="text-center py-2 text-xs text-red-400">
@@ -81,25 +106,28 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
   return (
     <div className="w-full bg-gradient-to-r from-slate-900/40 via-slate-800/30 to-slate-900/40 backdrop-blur-md border-b border-slate-700/30 shadow-lg shadow-black/10">
       <style>{`
-        @keyframes scroll-left {
+        @keyframes fade-in-out {
           0% {
-            transform: translateX(100%);
+            opacity: 0;
+          }
+          10% {
+            opacity: 1;
+          }
+          90% {
+            opacity: 1;
           }
           100% {
-            transform: translateX(-100%);
+            opacity: 0;
           }
         }
 
         .ticker-scroll {
-          animation: scroll-left 240s linear infinite;
+          animation: fade-in-out ${FADE_DURATION}s ease-in-out infinite;
           display: flex;
           gap: 2rem;
-          min-width: 200%;
+          flex-wrap: wrap;
           padding: 0.75rem 0;
-        }
-
-        .ticker-tape:hover .ticker-scroll {
-          animation-play-state: paused;
+          justify-content: center;
         }
 
         .ticker-item {
@@ -155,39 +183,26 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
         </div>
 
         {/* Center: Ticker tape */}
-        <div className="ticker-tape flex-1 overflow-hidden mx-4">
+        <div className="ticker-tape flex-1 mx-4">
           <div className="ticker-scroll">
-            {/* First pass */}
-            {filteredTickers.length > 0 && filteredTickers.map((ticker) => (
-              <div key={`${ticker.symbol}-1`} className="ticker-item">
-                <span className="ticker-symbol">{ticker.symbol}</span>
-                <span className="ticker-price">${ticker.price.toFixed(2)}</span>
-                <span
-                  className={`ticker-change ${
-                    ticker.changePercent >= 0 ? 'positive' : 'negative'
-                  }`}
-                >
-                  {ticker.changePercent >= 0 ? '+' : ''}
-                  {ticker.changePercent.toFixed(2)}%
-                </span>
-              </div>
-            ))}
-
-            {/* Second pass for seamless loop */}
-            {filteredTickers.length > 0 && filteredTickers.map((ticker) => (
-              <div key={`${ticker.symbol}-2`} className="ticker-item">
-                <span className="ticker-symbol">{ticker.symbol}</span>
-                <span className="ticker-price">${ticker.price.toFixed(2)}</span>
-                <span
-                  className={`ticker-change ${
-                    ticker.changePercent >= 0 ? 'positive' : 'negative'
-                  }`}
-                >
-                  {ticker.changePercent >= 0 ? '+' : ''}
-                  {ticker.changePercent.toFixed(2)}%
-                </span>
-              </div>
-            ))}
+            {displayedTickers.length > 0 ? (
+              displayedTickers.map((ticker) => (
+                <div key={ticker.symbol} className="ticker-item">
+                  <span className="ticker-symbol">{ticker.symbol}</span>
+                  <span className="ticker-price">${ticker.price.toFixed(2)}</span>
+                  <span
+                    className={`ticker-change ${
+                      ticker.changePercent >= 0 ? 'positive' : 'negative'
+                    }`}
+                  >
+                    {ticker.changePercent >= 0 ? '+' : ''}
+                    {ticker.changePercent.toFixed(2)}%
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="text-xs text-slate-400 p-4">No tickers available</div>
+            )}
           </div>
         </div>
 
