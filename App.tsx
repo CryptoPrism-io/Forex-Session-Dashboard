@@ -273,7 +273,7 @@ const App: React.FC = () => {
                     ⋯
                   </button>
                   {isMoreTimezonesOpen && (
-                    <div className="absolute top-full mt-2 right-0 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 p-2 z-10 w-40">
+                    <div className="absolute top-full mt-2 right-0 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 p-2 z-50 w-40">
                       {moreTimezones.map(tz => (
                          <button
                             key={tz.label}

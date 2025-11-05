@@ -14,13 +14,13 @@ export const TIMEZONES: Timezone[] = [
   { label: "EET", offset: 2 },      // Eastern European Time
   { label: "EEST", offset: 3 },     // Eastern European Summer Time
   { label: "BST", offset: 1 },      // British Summer Time
-  { label: "IST", offset: 5.5 },    // Irish Standard Time
+  { label: "IST (UTC+0)", offset: 0 },    // Irish Standard Time
   { label: "MSK", offset: 3 },      // Moscow Standard Time
 
   // === ASIA - EAST ===
   { label: "JST", offset: 9 },      // Japan Standard Time
   { label: "KST", offset: 9 },      // Korea Standard Time
-  { label: "CST", offset: 8 },      // China Standard Time
+  { label: "CST (UTC+8)", offset: 8 },      // China Standard Time
   { label: "HKT", offset: 8 },      // Hong Kong Time
   { label: "SGT", offset: 8 },      // Singapore Standard Time
   { label: "MYT", offset: 8 },      // Malaysia Time
@@ -31,7 +31,7 @@ export const TIMEZONES: Timezone[] = [
   { label: "WIT", offset: 9 },      // Eastern Indonesia Time
 
   // === ASIA - SOUTH & CENTRAL ===
-  { label: "IST", offset: 5.5 },    // Indian Standard Time
+  { label: "IST (UTC+5:30)", offset: 5.5 },    // Indian Standard Time
   { label: "PKT", offset: 5 },      // Pakistan Standard Time
   { label: "BDT", offset: 6 },      // Bangladesh Standard Time
   { label: "THA", offset: 7 },      // Thailand Time
@@ -42,7 +42,7 @@ export const TIMEZONES: Timezone[] = [
   { label: "PDT", offset: -7 },     // Pacific Daylight Time
   { label: "MST", offset: -7 },     // Mountain Standard Time
   { label: "MDT", offset: -6 },     // Mountain Daylight Time
-  { label: "CST", offset: -6 },     // Central Standard Time (US)
+  { label: "CST (UTC-6)", offset: -6 },     // Central Standard Time (US)
   { label: "CDT", offset: -5 },     // Central Daylight Time
   { label: "EST", offset: -5 },     // Eastern Standard Time
   { label: "EDT", offset: -4 },     // Eastern Daylight Time
