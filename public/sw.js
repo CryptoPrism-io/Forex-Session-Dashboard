@@ -1,18 +1,18 @@
-const CACHE_NAME = 'forex-session-v2';
-const resolveScopedUrl = (resource) => new URL(resource, self.registration.scope).toString();
-const ASSETS_TO_CACHE = [
-  resolveScopedUrl('./'),
-  resolveScopedUrl('index.html'),
-  resolveScopedUrl('manifest.json')
+// Service Worker for Global FX Trading Sessions PWA
+
+const CACHE_NAME = 'fx-sessions-v1';
+const urlsToCache = [
+  '/Forex-Session-Dashboard/',
+  '/Forex-Session-Dashboard/index.html',
 ];
 
 // Install event
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE).catch(() => {
-        // Gracefully handle missing assets
-        return cache.add(resolveScopedUrl('./')).catch(() => {});
+      return cache.addAll(urlsToCache).catch(() => {
+        // Gracefully handle if some URLs fail
+        console.log('Some resources failed to cache');
       });
     })
   );
@@ -35,10 +35,10 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event with network-first strategy
+// Fetch event - Network first, fallback to cache
 self.addEventListener('fetch', (event) => {
-  // Skip cross-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) {
+  // Only cache GET requests
+  if (event.request.method !== 'GET') {
     return;
   }
 
@@ -46,24 +46,18 @@ self.addEventListener('fetch', (event) => {
     fetch(event.request)
       .then((response) => {
         // Cache successful responses
-        if (response && response.status === 200) {
-          const responseClone = response.clone();
+        if (response.status === 200) {
+          const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
+            cache.put(event.request, responseToCache);
           });
         }
         return response;
       })
       .catch(() => {
-        // Fallback to cache if network fails
-        return caches.match(event.request).then((response) => {
-          return response || new Response('Offline - Resource not available', {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: new Headers({
-              'Content-Type': 'text/plain'
-            })
-          });
+        // Fall back to cache if network fails
+        return caches.match(event.request).then((cachedResponse) => {
+          return cachedResponse || new Response('Offline - Resource not cached');
         });
       })
   );
