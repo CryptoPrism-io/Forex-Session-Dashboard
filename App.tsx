@@ -2,16 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import ForexChart from './components/ForexChart';
 import SocialLinks from './components/SocialLinks';
 import SessionClocks from './components/SessionClocks';
+import InstallButton from './components/InstallButton';
+import InstallModal from './components/InstallModal';
+import { usePWAInstall } from './hooks/usePWAInstall';
 import { TIMEZONES, MAJOR_TIMEZONES, SESSIONS } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
 import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow } from './components/icons';
 
 export type SessionStatus = 'OPEN' | 'CLOSED' | 'WARNING';
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
 
 const App: React.FC = () => {
   const getInitialTimezone = (): Timezone => {
@@ -23,9 +21,16 @@ const App: React.FC = () => {
   const [selectedTimezone, setSelectedTimezone] = useState<Timezone>(getInitialTimezone());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showPWAButton, setShowPWAButton] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+
+  // PWA Installation management
+  const {
+    installState,
+    browserInfo,
+    showInstallModal,
+    setShowInstallModal,
+    handleInstallClick,
+    handleDismissModal,
+  } = usePWAInstall();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000); // Update every 1 second for real-time countdown
@@ -66,34 +71,6 @@ const App: React.FC = () => {
     };
 
     detectTimezoneFromIP();
-  }, []);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShowPWAButton(true);
-    };
-
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setDeferredPrompt(null);
-      setShowPWAButton(false);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches || (window.navigator as any)?.standalone;
-    if (isStandalone) {
-      setIsInstalled(true);
-      setShowPWAButton(false);
-    }
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
   }, []);
 
   const { nowLine, activeSessions, sessionStatus } = useMemo(() => {
@@ -189,25 +166,6 @@ const App: React.FC = () => {
     setIsMoreTimezonesOpen(false);
   };
 
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      try {
-        await deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-
-        if (outcome === 'accepted') {
-          setIsInstalled(true);
-        }
-
-        setDeferredPrompt(null);
-        setShowPWAButton(false);
-      } catch (error) {
-        console.error('Failed to install app:', error);
-      }
-    } else {
-      alert('Install is handled by your browser menu. In Chrome: ⋮ > Install app.');
-    }
-  };
 
   // Format session elapsed/remaining time in HH MM SS format
   const formatSessionTime = (seconds: number): string => {
@@ -444,26 +402,22 @@ const App: React.FC = () => {
         <footer className="w-full mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 text-slate-500 text-xs font-light">
           <p>Data is illustrative. Always verify times with your broker. Not financial advice.</p>
           <div className="flex items-center gap-3">
-            {/* PWA Install Button - Only visible when installable */}
-            {showPWAButton && !isInstalled && (
-              <button
-                onClick={handleInstallClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 hover:border-cyan-300/60 text-cyan-300 transition-all duration-300 backdrop-blur-md shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/30"
-                title="Click to install the app"
-                aria-label="Download and install app"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                <span className="hidden sm:inline">Install</span>
-              </button>
-            )}
+            <InstallButton
+              onClick={handleInstallClick}
+              show={installState === 'available' || installState === 'dismissed'}
+              hasNativePrompt={installState === 'available'}
+            />
             <SocialLinks />
           </div>
         </footer>
       </main>
+
+      {/* PWA Installation Modal */}
+      <InstallModal
+        isOpen={showInstallModal}
+        onClose={handleDismissModal}
+        browserInfo={browserInfo}
+      />
     </div>
   );
 };

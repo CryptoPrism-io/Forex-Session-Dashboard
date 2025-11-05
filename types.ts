@@ -1,3 +1,17 @@
+// PWA Installation Types
+export interface BrowserInfo {
+  name: string;
+  isIOS: boolean;
+  isSafari: boolean;
+  isChrome: boolean;
+  isFirefox: boolean;
+  isEdge: boolean;
+  isSamsung: boolean;
+  isOpera: boolean;
+  isStandalone: boolean;
+}
+
+export type InstallState = 'available' | 'installed' | 'dismissed' | 'unavailable';
 
 export interface Timezone {
   label: string;
