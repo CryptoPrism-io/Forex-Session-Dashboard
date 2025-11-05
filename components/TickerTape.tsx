@@ -174,11 +174,11 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
         }
       `}</style>
 
-      <div className="flex items-center justify-between px-4 relative">
+      <div className="flex items-center justify-between px-4 relative overflow-hidden">
         {/* Left: Countdown timer for next fetch */}
-        <div className="flex-shrink-0 pr-4 border-r border-slate-700/30">
-          <div className="text-xs font-light text-slate-400">
-            <span className="inline-block min-w-[130px]">
+        <div className="flex-shrink-0 pr-4 border-r border-slate-700/30 overflow-hidden min-w-max">
+          <div className="text-xs font-light text-slate-400 whitespace-nowrap">
+            <span className="inline-block">
               Next fetch in: <span className="font-semibold text-cyan-400">{formatCountdown(countdown)}</span>
             </span>
           </div>
@@ -209,7 +209,7 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
         </div>
 
         {/* Right: Filter dropdown */}
-        <div className="flex-shrink-0 pl-4 border-l border-slate-700/30 relative">
+        <div className="flex-shrink-0 pl-4 border-l border-slate-700/30 relative overflow-hidden min-w-max">
           <button
             onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 transition-all duration-300 backdrop-blur-md"
