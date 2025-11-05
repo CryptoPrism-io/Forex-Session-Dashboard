@@ -190,7 +190,7 @@ const App: React.FC = () => {
   const displayedTimezones = TIMEZONES.slice(0, 3);
   const moreTimezones = TIMEZONES.slice(3);
   const timeFormatted = currentTime.toLocaleTimeString([], {
-    timeZone: selectedTimezone.label,
+    timeZone: selectedTimezone.ianaTimezone || selectedTimezone.label,
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,

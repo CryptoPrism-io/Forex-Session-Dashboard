@@ -14,35 +14,35 @@ export const TIMEZONES: Timezone[] = [
   { label: "EET", offset: 2 },      // Eastern European Time
   { label: "EEST", offset: 3 },     // Eastern European Summer Time
   { label: "BST", offset: 1 },      // British Summer Time
-  { label: "IST (UTC+0)", offset: 0 },    // Irish Standard Time
-  { label: "MSK", offset: 3 },      // Moscow Standard Time
+  { label: "IST (UTC+0)", offset: 0, ianaTimezone: "Europe/Dublin" },    // Irish Standard Time
+  { label: "MSK", offset: 3, ianaTimezone: "Europe/Moscow" },      // Moscow Standard Time
 
   // === ASIA - EAST ===
-  { label: "JST", offset: 9 },      // Japan Standard Time
-  { label: "KST", offset: 9 },      // Korea Standard Time
-  { label: "CST (UTC+8)", offset: 8 },      // China Standard Time
-  { label: "HKT", offset: 8 },      // Hong Kong Time
-  { label: "SGT", offset: 8 },      // Singapore Standard Time
-  { label: "MYT", offset: 8 },      // Malaysia Time
-  { label: "PHT", offset: 8 },      // Philippine Time
-  { label: "WIB", offset: 7 },      // Western Indonesia Time
-  { label: "ICT", offset: 7 },      // Indochina Time (Thailand, Cambodia, Laos)
-  { label: "WITA", offset: 8 },     // Central Indonesia Time
-  { label: "WIT", offset: 9 },      // Eastern Indonesia Time
+  { label: "JST", offset: 9, ianaTimezone: "Asia/Tokyo" },      // Japan Standard Time
+  { label: "KST", offset: 9, ianaTimezone: "Asia/Seoul" },      // Korea Standard Time
+  { label: "CST (UTC+8)", offset: 8, ianaTimezone: "Asia/Shanghai" },      // China Standard Time
+  { label: "HKT", offset: 8, ianaTimezone: "Asia/Hong_Kong" },      // Hong Kong Time
+  { label: "SGT", offset: 8, ianaTimezone: "Asia/Singapore" },      // Singapore Standard Time
+  { label: "MYT", offset: 8, ianaTimezone: "Asia/Kuala_Lumpur" },      // Malaysia Time
+  { label: "PHT", offset: 8, ianaTimezone: "Asia/Manila" },      // Philippine Time
+  { label: "WIB", offset: 7, ianaTimezone: "Asia/Jakarta" },      // Western Indonesia Time
+  { label: "ICT", offset: 7, ianaTimezone: "Asia/Bangkok" },      // Indochina Time (Thailand, Cambodia, Laos)
+  { label: "WITA", offset: 8, ianaTimezone: "Asia/Makassar" },     // Central Indonesia Time
+  { label: "WIT", offset: 9, ianaTimezone: "Asia/Jayapura" },      // Eastern Indonesia Time
 
   // === ASIA - SOUTH & CENTRAL ===
-  { label: "IST (UTC+5:30)", offset: 5.5 },    // Indian Standard Time
-  { label: "PKT", offset: 5 },      // Pakistan Standard Time
-  { label: "BDT", offset: 6 },      // Bangladesh Standard Time
-  { label: "THA", offset: 7 },      // Thailand Time
-  { label: "AEST", offset: 10 },    // Australian Eastern Standard Time
+  { label: "IST (UTC+5:30)", offset: 5.5, ianaTimezone: "Asia/Kolkata" },    // Indian Standard Time
+  { label: "PKT", offset: 5, ianaTimezone: "Asia/Karachi" },      // Pakistan Standard Time
+  { label: "BDT", offset: 6, ianaTimezone: "Asia/Dhaka" },      // Bangladesh Standard Time
+  { label: "THA", offset: 7, ianaTimezone: "Asia/Bangkok" },      // Thailand Time
+  { label: "AEST", offset: 10, ianaTimezone: "Australia/Sydney" },    // Australian Eastern Standard Time
 
   // === AMERICAS - NORTH ===
-  { label: "PST", offset: -8 },     // Pacific Standard Time
-  { label: "PDT", offset: -7 },     // Pacific Daylight Time
-  { label: "MST", offset: -7 },     // Mountain Standard Time
-  { label: "MDT", offset: -6 },     // Mountain Daylight Time
-  { label: "CST (UTC-6)", offset: -6 },     // Central Standard Time (US)
+  { label: "PST", offset: -8, ianaTimezone: "America/Los_Angeles" },     // Pacific Standard Time
+  { label: "PDT", offset: -7, ianaTimezone: "America/Los_Angeles" },     // Pacific Daylight Time
+  { label: "MST", offset: -7, ianaTimezone: "America/Denver" },     // Mountain Standard Time
+  { label: "MDT", offset: -6, ianaTimezone: "America/Denver" },     // Mountain Daylight Time
+  { label: "CST (UTC-6)", offset: -6, ianaTimezone: "America/Chicago" },     // Central Standard Time (US)
   { label: "CDT", offset: -5 },     // Central Daylight Time
   { label: "EST", offset: -5 },     // Eastern Standard Time
   { label: "EDT", offset: -4 },     // Eastern Daylight Time

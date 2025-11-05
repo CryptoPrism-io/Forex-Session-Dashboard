@@ -2,6 +2,7 @@
 export interface Timezone {
   label: string;
   offset: number;
+  ianaTimezone?: string; // IANA timezone identifier for toLocaleTimeString
 }
 
 export interface TooltipInfo {
