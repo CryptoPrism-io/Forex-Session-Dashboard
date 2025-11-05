@@ -338,7 +338,7 @@ const App: React.FC = () => {
                     className="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300 transition-all duration-300 backdrop-blur-md"
                     aria-label="More timezones"
                   >
-                    ⋯
+                    ...
                   </button>
                   {isMoreTimezonesOpen && (
                     <div className="absolute top-full mt-2 left-0 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 p-2 z-[9999] w-40">
@@ -358,7 +358,6 @@ const App: React.FC = () => {
                     </div>
                   )}
                 </div>
-              </div>
             </div>
           </div>
 
