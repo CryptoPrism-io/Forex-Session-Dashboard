@@ -44,7 +44,7 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
   }
 
   return (
-    <div className="w-full overflow-hidden bg-gradient-to-r from-slate-900/40 via-slate-800/30 to-slate-900/40 backdrop-blur-md border-b border-slate-700/30 shadow-lg shadow-black/10">
+    <div className="w-full bg-gradient-to-r from-slate-900/40 via-slate-800/30 to-slate-900/40 backdrop-blur-md border-b border-slate-700/30 shadow-lg shadow-black/10">
       <style>{`
         @keyframes scroll-left {
           0% {
@@ -109,7 +109,7 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
         }
       `}</style>
 
-      <div className="flex items-center justify-between px-4">
+      <div className="flex items-center justify-between px-4 relative">
         {/* Left: Last fetched timestamp */}
         <div className="flex-shrink-0 pr-4 border-r border-slate-700/30">
           <div className="text-xs font-light text-slate-400">
@@ -167,7 +167,7 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
           </button>
 
           {isFilterDropdownOpen && (
-            <div className="absolute top-full mt-2 right-0 bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl shadow-black/50 p-1 z-10 w-40">
+            <div className="absolute top-full mt-2 right-0 bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl shadow-black/50 p-1 z-50 w-40">
               {filterOptions.map((filter) => (
                 <button
                   key={filter}
