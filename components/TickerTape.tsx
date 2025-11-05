@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTickerData, CategoryFilter } from '../hooks/useTickerData';
 import { IconFilter, IconChevronDown } from './icons';
 import { Timezone } from '../types';
@@ -7,10 +7,13 @@ interface TickerTapeProps {
   selectedTimezone: Timezone;
 }
 
+const FETCH_INTERVAL = 10; // seconds
+
 const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
   const { tickers, loading, error, lastFetched } = useTickerData();
   const [selectedFilter, setSelectedFilter] = useState<CategoryFilter>('All');
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+  const [countdown, setCountdown] = useState(FETCH_INTERVAL);
 
   const filteredTickers = useMemo(() => {
     if (selectedFilter === 'All') {
@@ -21,19 +24,26 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
 
   const filterOptions: CategoryFilter[] = ['All', 'Crypto', 'Indices', 'Forex', 'Commodities'];
 
-  const formatLastFetchedTime = (): string => {
-    if (!lastFetched) return 'Loading...';
+  // Countdown timer effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          return FETCH_INTERVAL;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-    const timeString = lastFetched.toLocaleTimeString([], {
-      timeZone: selectedTimezone.label,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
+    return () => clearInterval(interval);
+  }, []);
 
-    return `Last updated: ${timeString}`;
-  };
+  // Reset countdown when data is fetched
+  useEffect(() => {
+    if (lastFetched) {
+      setCountdown(FETCH_INTERVAL);
+    }
+  }, [lastFetched]);
 
   if (error) {
     return (
@@ -110,10 +120,12 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
       `}</style>
 
       <div className="flex items-center justify-between px-4 relative">
-        {/* Left: Last fetched timestamp */}
+        {/* Left: Countdown timer for next fetch */}
         <div className="flex-shrink-0 pr-4 border-r border-slate-700/30">
           <div className="text-xs font-light text-slate-400">
-            {formatLastFetchedTime()}
+            <span className="inline-block min-w-[120px]">
+              Next fetch in: <span className="font-semibold text-cyan-400">{countdown}s</span>
+            </span>
           </div>
         </div>
 
