@@ -223,8 +223,25 @@ const App: React.FC = () => {
     return `${sign}${hours}h ${minutes}m ${secs}s`;
   };
 
-  const displayedTimezones = TIMEZONES.slice(0, 3);
-  const moreTimezones = TIMEZONES.slice(3);
+  // Display only UTC, GMT, and the user's selected timezone
+  const utcTz = TIMEZONES.find(tz => tz.label === 'UTC');
+  const gmtTz = TIMEZONES.find(tz => tz.label === 'GMT');
+
+  const displayedTimezones: Timezone[] = [];
+  if (utcTz) displayedTimezones.push(utcTz);
+  if (gmtTz) displayedTimezones.push(gmtTz);
+
+  // Add user's selected timezone if it's not already in the list
+  if (selectedTimezone.label !== 'UTC' && selectedTimezone.label !== 'GMT') {
+    displayedTimezones.push(selectedTimezone);
+  }
+
+  // All other timezones for the dropdown
+  const moreTimezones = TIMEZONES.filter(tz =>
+    tz.label !== 'UTC' &&
+    tz.label !== 'GMT' &&
+    tz.label !== selectedTimezone.label
+  );
   const timeFormatted = currentTime.toLocaleTimeString([], {
     timeZone: selectedTimezone.ianaTimezone || selectedTimezone.label,
     hour: '2-digit',
