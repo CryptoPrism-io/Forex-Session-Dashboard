@@ -42,6 +42,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip non-http(s) URLs (chrome-extension, blob, data, etc.)
+  // Service workers cannot cache these schemes
+  const url = new URL(event.request.url);
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {

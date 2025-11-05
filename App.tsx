@@ -46,40 +46,34 @@ const App: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-detect timezone based on IP geolocation
+  // Auto-detect timezone based on browser's native timezone
   useEffect(() => {
-    const detectTimezoneFromIP = async () => {
+    const detectTimezoneFromBrowser = () => {
       try {
-        const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
+        // Use native JavaScript Intl API to get browser's timezone
+        const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-        if (data.timezone) {
-          // Find timezone by IANA timezone name
-          const detectedTz = TIMEZONES.find(tz => tz.ianaTimezone === data.timezone);
-          if (detectedTz) {
-            setSelectedTimezone(detectedTz);
-            return;
-          }
+        // Find matching timezone by IANA name
+        const detectedTz = TIMEZONES.find(tz => tz.ianaTimezone === browserTimezone);
+        if (detectedTz) {
+          setSelectedTimezone(detectedTz);
+          return;
         }
 
-        // Fallback: try matching by offset if IANA match fails
-        if (data.utc_offset) {
-          const offsetHours = parseInt(data.utc_offset.split(':')[0]);
-          const offsetMinutes = parseInt(data.utc_offset.split(':')[1]) / 60 || 0;
-          const totalOffset = offsetHours + offsetMinutes;
-
-          const matchedTz = TIMEZONES.find(tz => Math.abs(tz.offset - totalOffset) < 0.1);
-          if (matchedTz) {
-            setSelectedTimezone(matchedTz);
-          }
+        // Fallback: try matching by UTC offset if IANA match fails
+        const now = new Date();
+        const userOffset = -now.getTimezoneOffset() / 60;
+        const matchedTz = TIMEZONES.find(tz => Math.abs(tz.offset - userOffset) < 0.1);
+        if (matchedTz) {
+          setSelectedTimezone(matchedTz);
         }
       } catch (error) {
-        console.log('IP geolocation failed, using device timezone:', error);
-        // Silently fall back to device timezone
+        console.log('Timezone detection failed, using default:', error);
+        // Silently fall back to default (UTC) timezone
       }
     };
 
-    detectTimezoneFromIP();
+    detectTimezoneFromBrowser();
   }, []);
 
   const { nowLine, activeSessions, sessionStatus } = useMemo(() => {
