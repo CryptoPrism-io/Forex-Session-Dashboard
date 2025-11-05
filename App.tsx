@@ -366,6 +366,14 @@ const App: React.FC = () => {
             {/* Live Sessions List */}
             {activeSessions.length > 0 && (
               <div className="space-y-1.5">
+                {/* Column Headers */}
+                <div className="flex items-center justify-between gap-3 px-2 py-1 mb-1.5">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider min-w-20">Time</span>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex-1">Session</span>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider min-w-16 text-right">Elapsed</span>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider min-w-16 text-right">Remaining</span>
+                </div>
+
                 {activeSessions.map(session => {
                   let textStyle: React.CSSProperties = {};
                   let indicatorStyle: React.CSSProperties = {};
