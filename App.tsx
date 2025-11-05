@@ -274,7 +274,7 @@ const App: React.FC = () => {
 
         <section className="w-full mt-8 rounded-3xl bg-slate-900/40 border border-slate-800/50 backdrop-blur-2xl shadow-2xl shadow-black/30 p-5 sm:p-7">
           <h2 className="text-sm font-semibold text-slate-100 mb-4 tracking-wide uppercase">Session Clocks</h2>
-          <SessionClocks compact />
+          <SessionClocks compact sessionStatus={sessionStatus} />
         </section>
 
         <footer className="text-center mt-12 text-slate-500 text-xs font-light">
