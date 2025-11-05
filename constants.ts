@@ -2,18 +2,18 @@ import { Timezone, SessionData } from './types';
 
 export const TIMEZONES: Timezone[] = [
   // === MAJOR FOREX TIMEZONES (Quick Select) ===
-  { label: "UTC", offset: 0 },
-  { label: "GMT", offset: 0 },
-  { label: "EST", offset: -5 },
+  { label: "UTC", offset: 0, ianaTimezone: "UTC" },
+  { label: "GMT", offset: 0, ianaTimezone: "UTC" },
+  { label: "EST", offset: -5, ianaTimezone: "America/New_York" },
 
   // === EUROPE ===
-  { label: "WET", offset: 0 },      // Western European Time
-  { label: "WEST", offset: 1 },     // Western European Summer Time
-  { label: "CET", offset: 1 },      // Central European Time
-  { label: "CEST", offset: 2 },     // Central European Summer Time
-  { label: "EET", offset: 2 },      // Eastern European Time
-  { label: "EEST", offset: 3 },     // Eastern European Summer Time
-  { label: "BST", offset: 1 },      // British Summer Time
+  { label: "WET", offset: 0, ianaTimezone: "Europe/London" },      // Western European Time
+  { label: "WEST", offset: 1, ianaTimezone: "Europe/London" },     // Western European Summer Time
+  { label: "CET", offset: 1, ianaTimezone: "Europe/Paris" },      // Central European Time
+  { label: "CEST", offset: 2, ianaTimezone: "Europe/Paris" },     // Central European Summer Time
+  { label: "EET", offset: 2, ianaTimezone: "Europe/Athens" },      // Eastern European Time
+  { label: "EEST", offset: 3, ianaTimezone: "Europe/Athens" },     // Eastern European Summer Time
+  { label: "BST", offset: 1, ianaTimezone: "Europe/London" },      // British Summer Time
   { label: "IST (UTC+0)", offset: 0, ianaTimezone: "Europe/Dublin" },    // Irish Standard Time
   { label: "MSK", offset: 3, ianaTimezone: "Europe/Moscow" },      // Moscow Standard Time
 
@@ -35,7 +35,6 @@ export const TIMEZONES: Timezone[] = [
   { label: "PKT", offset: 5, ianaTimezone: "Asia/Karachi" },      // Pakistan Standard Time
   { label: "BDT", offset: 6, ianaTimezone: "Asia/Dhaka" },      // Bangladesh Standard Time
   { label: "THA", offset: 7, ianaTimezone: "Asia/Bangkok" },      // Thailand Time
-  { label: "AEST", offset: 10, ianaTimezone: "Australia/Sydney" },    // Australian Eastern Standard Time
 
   // === AMERICAS - NORTH ===
   { label: "PST", offset: -8, ianaTimezone: "America/Los_Angeles" },     // Pacific Standard Time
@@ -43,46 +42,45 @@ export const TIMEZONES: Timezone[] = [
   { label: "MST", offset: -7, ianaTimezone: "America/Denver" },     // Mountain Standard Time
   { label: "MDT", offset: -6, ianaTimezone: "America/Denver" },     // Mountain Daylight Time
   { label: "CST (UTC-6)", offset: -6, ianaTimezone: "America/Chicago" },     // Central Standard Time (US)
-  { label: "CDT", offset: -5 },     // Central Daylight Time
-  { label: "EST", offset: -5 },     // Eastern Standard Time
-  { label: "EDT", offset: -4 },     // Eastern Daylight Time
+  { label: "CDT", offset: -5, ianaTimezone: "America/Chicago" },     // Central Daylight Time
+  { label: "EST", offset: -5, ianaTimezone: "America/New_York" },     // Eastern Standard Time
+  { label: "EDT", offset: -4, ianaTimezone: "America/New_York" },     // Eastern Daylight Time
 
   // === AMERICAS - CENTRAL ===
-  { label: "CST(MX)", offset: -6 }, // Central Standard Time (Mexico)
-  { label: "CDMX", offset: -6 },    // Mexico City Time
+  { label: "CST(MX)", offset: -6, ianaTimezone: "America/Mexico_City" }, // Central Standard Time (Mexico)
+  { label: "CDMX", offset: -6, ianaTimezone: "America/Mexico_City" },    // Mexico City Time
 
   // === AMERICAS - SOUTH ===
-  { label: "VET", offset: -4 },     // Venezuela Time
-  { label: "ART", offset: -3 },     // Argentina Time
-  { label: "BRT", offset: -3 },     // Brasília Time
-  { label: "BRST", offset: -2 },    // Brasília Summer Time
-  { label: "PET", offset: -5 },     // Peru Time
-  { label: "CLT", offset: -3 },     // Chile Standard Time
-  { label: "CLST", offset: -2 },    // Chile Summer Time
+  { label: "VET", offset: -4, ianaTimezone: "America/Caracas" },     // Venezuela Time
+  { label: "ART", offset: -3, ianaTimezone: "America/Argentina/Buenos_Aires" },     // Argentina Time
+  { label: "BRT", offset: -3, ianaTimezone: "America/Sao_Paulo" },     // Brasília Time
+  { label: "BRST", offset: -2, ianaTimezone: "America/Sao_Paulo" },    // Brasília Summer Time
+  { label: "PET", offset: -5, ianaTimezone: "America/Lima" },     // Peru Time
+  { label: "CLT", offset: -3, ianaTimezone: "America/Santiago" },     // Chile Standard Time
+  { label: "CLST", offset: -2, ianaTimezone: "America/Santiago" },    // Chile Summer Time
 
   // === AFRICA ===
-  { label: "WET", offset: 0 },      // West Africa Time
-  { label: "WAT", offset: 1 },      // West Africa Time
-  { label: "CAT", offset: 2 },      // Central Africa Time
-  { label: "EAT", offset: 3 },      // East Africa Time
-  { label: "SAST", offset: 2 },     // South Africa Standard Time
+  { label: "WAT", offset: 1, ianaTimezone: "Africa/Lagos" },      // West Africa Time
+  { label: "CAT", offset: 2, ianaTimezone: "Africa/Harare" },      // Central Africa Time
+  { label: "EAT", offset: 3, ianaTimezone: "Africa/Nairobi" },      // East Africa Time
+  { label: "SAST", offset: 2, ianaTimezone: "Africa/Johannesburg" },     // South Africa Standard Time
 
   // === MIDDLE EAST ===
-  { label: "AST", offset: 3 },      // Arabia Standard Time
-  { label: "GST", offset: 4 },      // Gulf Standard Time
-  { label: "IRST", offset: 3.5 },   // Iran Standard Time
-  { label: "IST(IL)", offset: 2 },  // Israel Standard Time
-  { label: "EEST(EG)", offset: 3 }, // Egypt Time
+  { label: "AST", offset: 3, ianaTimezone: "Asia/Riyadh" },      // Arabia Standard Time
+  { label: "GST", offset: 4, ianaTimezone: "Asia/Dubai" },      // Gulf Standard Time
+  { label: "IRST", offset: 3.5, ianaTimezone: "Asia/Tehran" },   // Iran Standard Time
+  { label: "IST(IL)", offset: 2, ianaTimezone: "Asia/Jerusalem" },  // Israel Standard Time
+  { label: "EEST(EG)", offset: 3, ianaTimezone: "Africa/Cairo" }, // Egypt Time
 
   // === OCEANIA ===
-  { label: "AWST", offset: 8 },     // Australian Western Standard Time
-  { label: "ACST", offset: 9.5 },   // Australian Central Standard Time
-  { label: "ACSST", offset: 10.5 }, // Australian Central Summer Time
-  { label: "AEST", offset: 10 },    // Australian Eastern Standard Time
-  { label: "AEDT", offset: 11 },    // Australian Eastern Daylight Time
-  { label: "NZST", offset: 12 },    // New Zealand Standard Time
-  { label: "NZDT", offset: 13 },    // New Zealand Daylight Time
-  { label: "FJST", offset: 13 },    // Fiji Time
+  { label: "AWST", offset: 8, ianaTimezone: "Australia/Perth" },     // Australian Western Standard Time
+  { label: "ACST", offset: 9.5, ianaTimezone: "Australia/Adelaide" },   // Australian Central Standard Time
+  { label: "ACSST", offset: 10.5, ianaTimezone: "Australia/Adelaide" }, // Australian Central Summer Time
+  { label: "AEST", offset: 10, ianaTimezone: "Australia/Sydney" },    // Australian Eastern Standard Time
+  { label: "AEDT", offset: 11, ianaTimezone: "Australia/Sydney" },    // Australian Eastern Daylight Time
+  { label: "NZST", offset: 12, ianaTimezone: "Pacific/Auckland" },    // New Zealand Standard Time
+  { label: "NZDT", offset: 13, ianaTimezone: "Pacific/Auckland" },    // New Zealand Daylight Time
+  { label: "FJST", offset: 13, ianaTimezone: "Pacific/Fiji" },    // Fiji Time
 ];
 
 export const SESSIONS: SessionData[] = [
