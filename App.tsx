@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import ForexChart from './components/ForexChart';
 import PWAInstall from './components/PWAInstall';
 import SocialLinks from './components/SocialLinks';
+import SessionClocks from './components/SessionClocks';
 import { TIMEZONES, SESSIONS } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
 import { IconClock, IconGlobe, IconTarget, IconBarChartBig } from './components/icons';
@@ -142,8 +143,8 @@ const App: React.FC = () => {
       backdropFilter: 'blur(10px)'
     }}>
       <main className="w-full max-w-7xl mx-auto p-4 sm:p-8 flex flex-col items-center">
-        <header className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-semibold mb-2 tracking-tight" style={{
+        <header className="w-full text-left mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl font-semibold mb-1 tracking-tight" style={{
             background: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -151,10 +152,12 @@ const App: React.FC = () => {
           }}>
             Forex Session Map
           </h1>
-          <p className="text-sm text-slate-400 font-light">
+          <p className="text-xs sm:text-sm text-slate-400 font-light">
             Global market session timings and liquidity windows
           </p>
         </header>
+
+        <SessionClocks />
 
         <div className="mb-6 flex flex-col md:flex-row md:justify-between items-center gap-4">
           {/* LEFT: Timezone Selector */}
