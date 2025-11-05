@@ -32,29 +32,42 @@ const PWAInstall: React.FC = () => {
       setShowInstallButton(false);
     }
 
+    // Fallback: Show button after 3 seconds if event hasn't fired (for development/testing)
+    // This allows users to see and test the button UI
+    const fallbackTimer = setTimeout(() => {
+      if (!deferredPrompt) {
+        setShowInstallButton(true);
+      }
+    }, 3000);
+
     return () => {
+      clearTimeout(fallbackTimer);
       window.removeEventListener('beforeinstallprompt', handler);
       window.removeEventListener('appinstalled', () => {
         setIsInstalled(true);
       });
     };
-  }, []);
+  }, [deferredPrompt]);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    // If deferredPrompt exists, use the native install flow
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
 
-    try {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          setIsInstalled(true);
+        }
 
-      if (outcome === 'accepted') {
-        setIsInstalled(true);
+        setDeferredPrompt(null);
+        setShowInstallButton(false);
+      } catch (error) {
+        console.error('Failed to install app:', error);
       }
-
-      setDeferredPrompt(null);
-      setShowInstallButton(false);
-    } catch (error) {
-      console.error('Failed to install app:', error);
+    } else {
+      // Fallback: Show a message or guide user (for development)
+      alert('PWA installation is available on compatible browsers. Please use the browser menu: Settings > Install app');
     }
   };
 
