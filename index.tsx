@@ -14,3 +14,18 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Register service worker for PWA support with correct base path on GitHub Pages
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    try {
+      const base = (import.meta as any).env?.BASE_URL || '/';
+      const swUrl = new URL('sw.js', base).toString();
+      navigator.serviceWorker.register(swUrl).catch((err) => {
+        console.log('Service Worker registration failed:', err);
+      });
+    } catch (err) {
+      console.log('Service Worker registration error:', err);
+    }
+  });
+}

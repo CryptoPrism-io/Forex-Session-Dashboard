@@ -75,15 +75,5 @@
 </head>
   <body class="text-slate-200">
     <div id="root"></div>
-    <script>
-      // Register service worker for PWA support
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch((err) => {
-            console.log('Service Worker registration failed:', err);
-          });
-        });
-      }
-    </script>
   </body>
 </html>
