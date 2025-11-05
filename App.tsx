@@ -108,7 +108,7 @@ const App: React.FC = () => {
       background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%)',
       backdropFilter: 'blur(10px)'
     }}>
-      <TickerTape />
+      <TickerTape selectedTimezone={selectedTimezone} />
       <main className="w-full max-w-7xl mx-auto p-4 sm:p-8 flex flex-col items-center">
         <header className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-semibold mb-2 tracking-tight" style={{

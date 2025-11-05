@@ -10,24 +10,27 @@ export interface TickerData {
 
 export type CategoryFilter = 'All' | 'Crypto' | 'Indices' | 'Forex' | 'Commodities';
 
+// Crypto symbol mapping from CoinGecko IDs to proper crypto symbols
+const CRYPTO_SYMBOL_MAP: Record<string, string> = {
+  'bitcoin': 'BTC',
+  'ethereum': 'ETH',
+  'binancecoin': 'BNB',
+  'cardano': 'ADA',
+  'solana': 'SOL',
+  'ripple': 'XRP',
+  'dogecoin': 'DOGE',
+  'polkadot': 'DOT',
+  'litecoin': 'LTC',
+  'chainlink': 'LINK',
+  'uniswap': 'UNI',
+  'cosmos': 'ATOM',
+  'avalanche-2': 'AVAX',
+  'filecoin': 'FIL',
+  'polygon': 'MATIC'
+};
+
 // Crypto assets for CoinGecko API (free, no auth required)
-const CRYPTO_ASSETS = [
-  'bitcoin',
-  'ethereum',
-  'binancecoin',
-  'cardano',
-  'solana',
-  'ripple',
-  'dogecoin',
-  'polkadot',
-  'litecoin',
-  'chainlink',
-  'uniswap',
-  'cosmos',
-  'avalanche-2',
-  'filecoin',
-  'polygon',
-];
+const CRYPTO_ASSETS = Object.keys(CRYPTO_SYMBOL_MAP);
 
 // Indices/Stocks (placeholder - will use Alpha Vantage or similar)
 const INDICES_ASSETS = [
@@ -56,7 +59,7 @@ const fetchCryptoData = async (): Promise<TickerData[]> => {
       const change = (price * changePercent) / 100;
 
       return {
-        symbol: cryptoId.split('-')[0].toUpperCase().slice(0, 4),
+        symbol: CRYPTO_SYMBOL_MAP[cryptoId],
         price,
         change,
         changePercent,
@@ -84,6 +87,7 @@ export const useTickerData = () => {
   const [tickers, setTickers] = useState<TickerData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
 
   const fetchData = async () => {
     try {
@@ -98,6 +102,7 @@ export const useTickerData = () => {
 
       const allData = [...cryptoData, ...indicesData];
       setTickers(allData.length > 0 ? allData : []);
+      setLastFetched(new Date());
     } catch (err) {
       setError('Failed to load ticker data');
       console.error(err);
@@ -115,5 +120,5 @@ export const useTickerData = () => {
     return () => clearInterval(interval);
   }, []);
 
-  return { tickers, loading, error };
+  return { tickers, loading, error, lastFetched };
 };

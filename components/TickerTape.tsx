@@ -1,9 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useTickerData, CategoryFilter } from '../hooks/useTickerData';
+import { IconFilter, IconChevronDown } from './icons';
+import { Timezone } from '../types';
 
-const TickerTape: React.FC = () => {
-  const { tickers, loading, error } = useTickerData();
+interface TickerTapeProps {
+  selectedTimezone: Timezone;
+}
+
+const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
+  const { tickers, loading, error, lastFetched } = useTickerData();
   const [selectedFilter, setSelectedFilter] = useState<CategoryFilter>('All');
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
 
   const filteredTickers = useMemo(() => {
     if (selectedFilter === 'All') {
@@ -13,6 +20,20 @@ const TickerTape: React.FC = () => {
   }, [tickers, selectedFilter]);
 
   const filterOptions: CategoryFilter[] = ['All', 'Crypto', 'Indices', 'Forex', 'Commodities'];
+
+  const formatLastFetchedTime = (): string => {
+    if (!lastFetched) return 'Loading...';
+
+    const timeString = lastFetched.toLocaleTimeString([], {
+      timeZone: selectedTimezone.label,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+
+    return `Last updated: ${timeString}`;
+  };
 
   if (error) {
     return (
@@ -89,8 +110,15 @@ const TickerTape: React.FC = () => {
       `}</style>
 
       <div className="flex items-center justify-between px-4">
-        {/* Left: Ticker tape */}
-        <div className="ticker-tape flex-1 overflow-hidden">
+        {/* Left: Last fetched timestamp */}
+        <div className="flex-shrink-0 pr-4 border-r border-slate-700/30">
+          <div className="text-xs font-light text-slate-400">
+            {formatLastFetchedTime()}
+          </div>
+        </div>
+
+        {/* Center: Ticker tape */}
+        <div className="ticker-tape flex-1 overflow-hidden mx-4">
           <div className="ticker-scroll">
             {/* First pass */}
             {filteredTickers.length > 0 && filteredTickers.map((ticker) => (
@@ -126,21 +154,38 @@ const TickerTape: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Filter buttons */}
-        <div className="flex items-center gap-2 pl-4 flex-shrink-0">
-          {filterOptions.map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setSelectedFilter(filter)}
-              className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-300 backdrop-blur-md whitespace-nowrap ${
-                selectedFilter === filter
-                  ? 'bg-cyan-500/30 border border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
-                  : 'bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
-              }`}
-            >
-              {filter}
-            </button>
-          ))}
+        {/* Right: Filter dropdown */}
+        <div className="flex-shrink-0 pl-4 border-l border-slate-700/30 relative">
+          <button
+            onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 transition-all duration-300 backdrop-blur-md"
+            title="Filter assets by category"
+          >
+            <IconFilter className="w-4 h-4" />
+            <span className="hidden sm:inline">{selectedFilter}</span>
+            <IconChevronDown className={`w-3 h-3 transition-transform duration-300 ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isFilterDropdownOpen && (
+            <div className="absolute top-full mt-2 right-0 bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl shadow-black/50 p-1 z-10 w-40">
+              {filterOptions.map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => {
+                    setSelectedFilter(filter);
+                    setIsFilterDropdownOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-all duration-150 ${
+                    selectedFilter === filter
+                      ? 'bg-cyan-500/30 text-cyan-100 border border-cyan-400/50'
+                      : 'hover:bg-slate-700/40 text-slate-300'
+                  }`}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
