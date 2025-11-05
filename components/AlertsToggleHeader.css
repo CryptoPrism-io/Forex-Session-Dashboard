@@ -1,0 +1,112 @@
+/* Alerts Toggle Header Animations */
+
+/* Outer glow - pulsing radially outward */
+@keyframes glowPulseOuter {
+  0% {
+    width: 24px;
+    height: 24px;
+    opacity: 0.8;
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(34, 211, 238, 0.2);
+  }
+  100% {
+    width: 52px;
+    height: 52px;
+    opacity: 0;
+    box-shadow: 0 0 0 24px rgba(34, 211, 238, 0);
+  }
+}
+
+/* Middle glow - rotating gradient */
+@keyframes glowRotate {
+  0% {
+    transform: rotate(0deg);
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 0.6;
+  }
+}
+
+/* Inner glow - pulsing in reverse */
+@keyframes glowPulseInner {
+  0% {
+    width: 32px;
+    height: 32px;
+    opacity: 0.4;
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.1);
+  }
+  100% {
+    width: 32px;
+    height: 32px;
+    opacity: 0.2;
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+/* Outer radial glow - cyan expansion */
+.alerts-glow-outer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: glowPulseOuter 2s ease-out infinite;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.3), transparent);
+}
+
+/* Middle radial glow - rotating gradient */
+.alerts-glow-middle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: glowRotate 4s linear infinite;
+  background: conic-gradient(
+    from 0deg,
+    rgba(34, 211, 238, 0.6),
+    rgba(59, 130, 246, 0.4),
+    rgba(34, 211, 238, 0.6)
+  );
+  opacity: 0.4;
+  filter: blur(8px);
+}
+
+/* Inner radial glow - blue pulse */
+.alerts-glow-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: glowPulseInner 3s ease-in-out infinite;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.4), transparent);
+}
+
+/* Optional: Enhance the bell icon pulse animation when enabled */
+@media (prefers-reduced-motion: no-preference) {
+  .alerts-glow-outer,
+  .alerts-glow-middle,
+  .alerts-glow-inner {
+    will-change: transform, opacity, box-shadow;
+  }
+}

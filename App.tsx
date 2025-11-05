@@ -4,7 +4,7 @@ import SocialLinks from './components/SocialLinks';
 import SessionClocks from './components/SessionClocks';
 import InstallButton from './components/InstallButton';
 import InstallModal from './components/InstallModal';
-import AlertsToggle from './components/AlertsToggle';
+import AlertsToggleHeader from './components/AlertsToggleHeader';
 import { usePWAInstall } from './hooks/usePWAInstall';
 import { useSessionAlerts } from './hooks/useSessionAlerts';
 import { TIMEZONES, MAJOR_TIMEZONES, SESSIONS } from './constants';
@@ -255,6 +255,14 @@ const App: React.FC = () => {
                   <IconTradingFlow className="w-full h-full text-cyan-400" />
                 </div>
               )}
+
+              {/* Alerts Toggle Header with Gradient Glow */}
+              <AlertsToggleHeader
+                alertConfig={alertConfig}
+                onToggle={toggleAlerts}
+                onToggleSound={toggleSound}
+              />
+
               <h1
                 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
                 style={{
@@ -405,11 +413,6 @@ const App: React.FC = () => {
         <footer className="w-full mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 text-slate-500 text-xs font-light">
           <p>Data is illustrative. Always verify times with your broker. Not financial advice.</p>
           <div className="flex items-center gap-3">
-            <AlertsToggle
-              alertConfig={alertConfig}
-              onToggle={toggleAlerts}
-              onToggleSound={toggleSound}
-            />
             <InstallButton
               onClick={handleInstallClick}
               show={installState === 'available' || installState === 'dismissed'}
