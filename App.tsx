@@ -3,7 +3,7 @@ import ForexChart from './components/ForexChart';
 import PWAInstall from './components/PWAInstall';
 import SocialLinks from './components/SocialLinks';
 import SessionClocks from './components/SessionClocks';
-import { TIMEZONES, SESSIONS } from './constants';
+import { TIMEZONES, MAJOR_TIMEZONES, SESSIONS } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
 import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow } from './components/icons';
 
@@ -236,10 +236,8 @@ const App: React.FC = () => {
     displayedTimezones.push(selectedTimezone);
   }
 
-  // All other timezones for the dropdown
-  const moreTimezones = TIMEZONES.filter(tz =>
-    tz.label !== 'UTC' &&
-    tz.label !== 'GMT' &&
+  // Major trading timezones for the dropdown (8-10 important ones)
+  const moreTimezones = MAJOR_TIMEZONES.filter(tz =>
     tz.label !== selectedTimezone.label
   );
   const timeFormatted = currentTime.toLocaleTimeString([], {

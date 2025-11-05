@@ -83,6 +83,20 @@ export const TIMEZONES: Timezone[] = [
   { label: "FJST", offset: 13, ianaTimezone: "Pacific/Fiji" },    // Fiji Time
 ];
 
+// Major forex trading timezones for dropdown (8-10 most important)
+export const MAJOR_TIMEZONES: Timezone[] = [
+  { label: "JST", offset: 9, ianaTimezone: "Asia/Tokyo" },      // Japan Standard Time
+  { label: "HKT", offset: 8, ianaTimezone: "Asia/Hong_Kong" },  // Hong Kong Time
+  { label: "SGT", offset: 8, ianaTimezone: "Asia/Singapore" },  // Singapore Standard Time
+  { label: "CET", offset: 1, ianaTimezone: "Europe/Paris" },    // Central European Time
+  { label: "BST", offset: 1, ianaTimezone: "Europe/London" },   // British Summer Time
+  { label: "MSK", offset: 3, ianaTimezone: "Europe/Moscow" },   // Moscow Standard Time
+  { label: "EST", offset: -5, ianaTimezone: "America/New_York" },    // Eastern Standard Time
+  { label: "PST", offset: -8, ianaTimezone: "America/Los_Angeles" }, // Pacific Standard Time
+  { label: "AEST", offset: 10, ianaTimezone: "Australia/Sydney" },   // Australian Eastern Standard Time
+  { label: "NZST", offset: 12, ianaTimezone: "Pacific/Auckland" },   // New Zealand Standard Time
+];
+
 export const SESSIONS: SessionData[] = [
   {
     name: "Sydney",
