@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { SESSIONS } from '../constants';
 import { ChartBarDetails, TooltipInfo } from '../types';
 import { SessionStatus } from '../App';
@@ -115,6 +115,22 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
   const [chartsVisible, setChartsVisible] = useState(true);
   const [collapsedSections, setCollapsedSections] = useState({ mainSessions: false, overlaps: false, killzones: false });
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
+  const [nowBlinkVisible, setNowBlinkVisible] = useState(true);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNowBlinkVisible((prev) => !prev);
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  const nowLineStyle = useMemo(() => ({
+    left: `${(nowLine / 24) * 100}%`,
+    opacity: nowBlinkVisible ? 1 : 0.15,
+    boxShadow: nowBlinkVisible ? '0 0 14px rgba(250, 204, 21, 0.8)' : 'none',
+    transition: 'opacity 0.2s ease'
+  }), [nowLine, nowBlinkVisible]);
 
   const toggleSection = (section: 'mainSessions' | 'overlaps' | 'killzones') => {
     setCollapsedSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -304,7 +320,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
 
                 <div
                   className="absolute top-0 bottom-0 w-0.5 bg-yellow-400"
-                  style={{ left: `${(nowLine / 24) * 100}%` }}
+                  style={nowLineStyle}
                 >
                   <div className="absolute -top-5 -translate-x-1/2 text-xs text-yellow-300 font-bold whitespace-nowrap">
                     Now
@@ -359,7 +375,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
 
             <div
               className="absolute top-0 bottom-0 w-0.5 bg-yellow-400"
-              style={{ left: `${(nowLine / 24) * 100}%` }}
+              style={nowLineStyle}
             >
               <div className="absolute -top-5 -translate-x-1/2 text-xs text-yellow-300 font-bold whitespace-nowrap">
                 Now
