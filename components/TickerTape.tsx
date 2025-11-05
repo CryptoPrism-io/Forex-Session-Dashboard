@@ -125,9 +125,11 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
           animation: fade-in-out ${FADE_DURATION}s ease-in-out infinite;
           display: flex;
           gap: 2rem;
-          flex-wrap: wrap;
+          flex-wrap: nowrap;
           padding: 0.75rem 0;
           justify-content: center;
+          max-height: 3.5rem;
+          overflow: hidden;
         }
 
         .ticker-item {
@@ -183,7 +185,7 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
         </div>
 
         {/* Center: Ticker tape */}
-        <div className="ticker-tape flex-1 mx-4">
+        <div className="ticker-tape flex-1 mx-4 overflow-hidden">
           <div className="ticker-scroll">
             {displayedTickers.length > 0 ? (
               displayedTickers.map((ticker) => (
