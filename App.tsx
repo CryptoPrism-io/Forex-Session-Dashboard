@@ -146,23 +146,19 @@ const App: React.FC = () => {
       backdropFilter: 'blur(10px)'
     }}>
       <main className="w-full max-w-7xl mx-auto p-4 sm:p-8 flex flex-col items-center">
-        <section className="w-full mb-6 sm:mb-8 rounded-3xl bg-slate-900/40 border border-slate-800/50 backdrop-blur-2xl shadow-2xl shadow-black/30 p-5 sm:p-7">
-          <div className="mb-4">
-            <h1 className="text-lg sm:text-xl font-semibold tracking-tight" style={{
-              background: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}>
-              Forex Session Map
-            </h1>
-            <p className="text-xs text-slate-400 font-light">
-              Global market session timings and liquidity windows
-            </p>
-          </div>
-
-          <SessionClocks compact />
-        </section>
+        <header className="w-full text-left mb-6 sm:mb-8">
+          <h1 className="text-lg sm:text-xl font-semibold tracking-tight" style={{
+            background: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            Forex Session Map
+          </h1>
+          <p className="text-xs text-slate-400 font-light">
+            Global market session timings and liquidity windows
+          </p>
+        </header>
 
         <div className="mb-6 flex flex-col md:flex-row md:justify-between items-center gap-4">
           {/* LEFT: Timezone Selector */}
@@ -275,6 +271,11 @@ const App: React.FC = () => {
           timezoneOffset={selectedTimezone.offset}
           sessionStatus={sessionStatus}
         />
+
+        <section className="w-full mt-8 rounded-3xl bg-slate-900/40 border border-slate-800/50 backdrop-blur-2xl shadow-2xl shadow-black/30 p-5 sm:p-7">
+          <h2 className="text-sm font-semibold text-slate-100 mb-4 tracking-wide uppercase">Session Clocks</h2>
+          <SessionClocks compact />
+        </section>
 
         <footer className="text-center mt-12 text-slate-500 text-xs font-light">
           <p>Data is illustrative. Always verify times with your broker. Not financial advice.</p>
