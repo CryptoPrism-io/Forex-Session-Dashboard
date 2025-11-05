@@ -122,7 +122,7 @@ const ClockCard: React.FC<ClockCardProps> = ({ label, timezone, accent, compact,
 
   return (
     <div
-      className={`flex items-center gap-3 p-3 sm:gap-4 sm:p-4 rounded-2xl bg-slate-900/40 border border-slate-800/40 backdrop-blur-xl shadow-lg shadow-black/10 ${compact ? '' : 'md:flex-col md:items-start md:gap-3'}`}
+      className={`flex items-center gap-2 p-3 sm:gap-3 sm:p-3 rounded-2xl bg-slate-900/50 border border-slate-800/60 backdrop-blur-xl shadow-md shadow-black/15 transition-all duration-300 ${compact ? '' : 'md:flex-col md:items-start md:gap-2'}`}
       style={cardStyle}
     >
       <div className="relative" style={{ width: clockSize, height: clockSize }}>
@@ -189,7 +189,7 @@ const SessionClocks: React.FC<{
   sessionStatus?: Record<string, SessionStatusValue>;
 }> = ({ compact = false, sessionStatus }) => {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
       {CLOCKS.map((config) => (
         <ClockCard key={config.label} {...config} compact={compact} sessionStatus={sessionStatus} />
       ))}
