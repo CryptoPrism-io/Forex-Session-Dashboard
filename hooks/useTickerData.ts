@@ -125,6 +125,17 @@ const fetchCryptoData = async (): Promise<TickerData[]> => {
   }
 };
 
+// Helper to fetch with timeout
+const fetchWithTimeout = async (url: string, timeout = 5000): Promise<Response> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
 // Fetch Forex data from Alpha Vantage
 const fetchForexData = async (): Promise<TickerData[]> => {
   try {
@@ -138,7 +149,7 @@ const fetchForexData = async (): Promise<TickerData[]> => {
         apikey: ALPHA_VANTAGE_KEY,
       });
 
-      const response = await fetch(`${ALPHA_VANTAGE_BASE}?${params}`);
+      const response = await fetchWithTimeout(`${ALPHA_VANTAGE_BASE}?${params}`, 5000);
       if (!response.ok) throw new Error('Failed to fetch forex data');
 
       const data = await response.json();
@@ -157,7 +168,7 @@ const fetchForexData = async (): Promise<TickerData[]> => {
       }
 
       // Respect rate limits - small delay between requests
-      await new Promise(resolve => setTimeout(resolve, 250));
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     // Fetch precious metals (Gold, Silver) via Forex API
@@ -169,7 +180,7 @@ const fetchForexData = async (): Promise<TickerData[]> => {
         apikey: ALPHA_VANTAGE_KEY,
       });
 
-      const response = await fetch(`${ALPHA_VANTAGE_BASE}?${params}`);
+      const response = await fetchWithTimeout(`${ALPHA_VANTAGE_BASE}?${params}`, 5000);
       if (!response.ok) throw new Error('Failed to fetch metals data');
 
       const data = await response.json();
@@ -187,7 +198,7 @@ const fetchForexData = async (): Promise<TickerData[]> => {
         });
       }
 
-      await new Promise(resolve => setTimeout(resolve, 250));
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     setCachedData('Forex', results);
@@ -211,7 +222,7 @@ const fetchCommoditiesData = async (): Promise<TickerData[]> => {
         apikey: ALPHA_VANTAGE_KEY,
       });
 
-      const response = await fetch(`${ALPHA_VANTAGE_BASE}?${params}`);
+      const response = await fetchWithTimeout(`${ALPHA_VANTAGE_BASE}?${params}`, 5000);
       if (!response.ok) throw new Error(`Failed to fetch ${commodity.symbol} data`);
 
       const data = await response.json();
@@ -242,7 +253,7 @@ const fetchCommoditiesData = async (): Promise<TickerData[]> => {
         });
       }
 
-      await new Promise(resolve => setTimeout(resolve, 250));
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     setCachedData('Commodities', results);
@@ -278,37 +289,50 @@ export const useTickerData = () => {
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
 
   useEffect(() => {
-    // Initial load - try to get from cache first
+    // Initial load - show cached data immediately, then fetch fresh data in background
     const initializeData = async () => {
       try {
-        setLoading(true);
         setError(null);
 
-        // Always fetch crypto (CoinGecko - fast and free)
-        const cryptoData = await fetchCryptoData();
-
-        // Try to use cached forex/commodities if available
-        let forexData = getCachedData('Forex') || [];
-        let commoditiesData = getCachedData('Commodities') || [];
-
-        // If no cache, fetch from Alpha Vantage
-        if (forexData.length === 0) {
-          forexData = await fetchForexData();
-        }
-
-        if (commoditiesData.length === 0) {
-          commoditiesData = await fetchCommoditiesData();
-        }
-
+        // Load cached data immediately for fast initial render
+        const cachedCrypto = getCachedData('Crypto') || [];
+        const cachedForex = getCachedData('Forex') || [];
+        const cachedCommodities = getCachedData('Commodities') || [];
         const indicesData = getPlaceholderIndicesData();
-        const allData = [...cryptoData, ...forexData, ...commoditiesData, ...indicesData];
 
-        setTickers(allData.length > 0 ? allData : []);
-        setLastFetched(new Date());
+        // Show cached data immediately
+        const cachedData = [...cachedCrypto, ...cachedForex, ...cachedCommodities, ...indicesData];
+        if (cachedData.length > 0) {
+          setTickers(cachedData);
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
+
+        // Fetch fresh data in the background without blocking
+        const fetchFreshData = async () => {
+          const [cryptoData, forexData, commoditiesData] = await Promise.all([
+            fetchCryptoData(),
+            fetchForexData(),
+            fetchCommoditiesData(),
+          ]);
+
+          const allData = [...cryptoData, ...forexData, ...commoditiesData, ...indicesData];
+          setTickers(allData.length > 0 ? allData : []);
+          setLastFetched(new Date());
+          setLoading(false);
+        };
+
+        fetchFreshData().catch((err) => {
+          console.error(err);
+          if (cachedData.length === 0) {
+            setError('Failed to load ticker data');
+          }
+          setLoading(false);
+        });
       } catch (err) {
         setError('Failed to load ticker data');
         console.error(err);
-      } finally {
         setLoading(false);
       }
     };
