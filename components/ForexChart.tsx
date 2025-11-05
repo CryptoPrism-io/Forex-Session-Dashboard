@@ -111,7 +111,7 @@ const ChartTooltip: React.FC<{
 const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, timezoneOffset, sessionStatus }) => {
   const [hoveredBlock, setHoveredBlock] = useState<TimeBlock | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const [viewMode, setViewMode] = useState<'unified' | 'separate' | 'guide'>('separate');
+  const [viewMode, setViewMode] = useState<'unified' | 'separate' | 'guide'>('unified');
   const [chartsVisible, setChartsVisible] = useState(true);
   const [collapsedSections, setCollapsedSections] = useState({ mainSessions: false, overlaps: false, killzones: false });
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
