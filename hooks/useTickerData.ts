@@ -32,11 +32,29 @@ const CRYPTO_SYMBOL_MAP: Record<string, string> = {
 // Crypto assets for CoinGecko API (free, no auth required)
 const CRYPTO_ASSETS = Object.keys(CRYPTO_SYMBOL_MAP);
 
-// Indices/Stocks (placeholder - will use Alpha Vantage or similar)
+// Indices/Stocks (placeholder)
 const INDICES_ASSETS = [
   { symbol: 'SPY', display: 'S&P 500' },
   { symbol: 'QQQ', display: 'Nasdaq-100' },
   { symbol: 'VIX', display: 'Volatility Index' },
+];
+
+// Forex pairs (placeholder)
+const FOREX_ASSETS = [
+  { symbol: 'EURUSD', display: 'EUR/USD' },
+  { symbol: 'GBPUSD', display: 'GBP/USD' },
+  { symbol: 'USDJPY', display: 'USD/JPY' },
+  { symbol: 'USDCAD', display: 'USD/CAD' },
+  { symbol: 'EURGBP', display: 'EUR/GBP' },
+];
+
+// Commodities (placeholder)
+const COMMODITIES_ASSETS = [
+  { symbol: 'GOLD', display: 'Gold' },
+  { symbol: 'SILVER', display: 'Silver' },
+  { symbol: 'OIL', display: 'Crude Oil' },
+  { symbol: 'NATGAS', display: 'Natural Gas' },
+  { symbol: 'WHEAT', display: 'Wheat' },
 ];
 
 // Fetch crypto data from CoinGecko (completely free, no auth)
@@ -72,7 +90,7 @@ const fetchCryptoData = async (): Promise<TickerData[]> => {
   }
 };
 
-// Placeholder for stock/forex/indices data
+// Placeholder for indices data
 const getPlaceholderIndicesData = (): TickerData[] => {
   return INDICES_ASSETS.map((asset) => ({
     symbol: asset.symbol,
@@ -80,6 +98,28 @@ const getPlaceholderIndicesData = (): TickerData[] => {
     change: (Math.random() - 0.5) * 50,
     changePercent: (Math.random() - 0.5) * 5,
     category: 'Indices',
+  }));
+};
+
+// Placeholder for forex data
+const getPlaceholderForexData = (): TickerData[] => {
+  return FOREX_ASSETS.map((asset) => ({
+    symbol: asset.symbol,
+    price: Math.random() * 0.5 + 1.0, // Forex pairs typically range 0.5-2.0
+    change: (Math.random() - 0.5) * 0.1,
+    changePercent: (Math.random() - 0.5) * 2,
+    category: 'Forex',
+  }));
+};
+
+// Placeholder for commodities data
+const getPlaceholderCommoditiesData = (): TickerData[] => {
+  return COMMODITIES_ASSETS.map((asset) => ({
+    symbol: asset.symbol,
+    price: Math.random() * 3000 + 100,
+    change: (Math.random() - 0.5) * 100,
+    changePercent: (Math.random() - 0.5) * 3,
+    category: 'Commodities',
   }));
 };
 
@@ -97,10 +137,12 @@ export const useTickerData = () => {
       // Fetch crypto data from CoinGecko (real data)
       const cryptoData = await fetchCryptoData();
 
-      // Get placeholder indices data (for now)
+      // Get placeholder data for other asset types
       const indicesData = getPlaceholderIndicesData();
+      const forexData = getPlaceholderForexData();
+      const commoditiesData = getPlaceholderCommoditiesData();
 
-      const allData = [...cryptoData, ...indicesData];
+      const allData = [...cryptoData, ...indicesData, ...forexData, ...commoditiesData];
       setTickers(allData.length > 0 ? allData : []);
       setLastFetched(new Date());
     } catch (err) {
