@@ -107,7 +107,7 @@ const App: React.FC = () => {
     let localTime = (utcHours + selectedTimezone.offset) % 24;
     localTime = localTime < 0 ? localTime + 24 : localTime;
 
-    const currentlyActive: ({ name: string; color: string; type: 'main' | 'overlap' | 'killzone'; state: SessionStatus; elapsedSeconds: number; remainingSeconds: number })[] = [];
+    const currentlyActive: ({ name: string; color: string; type: 'main' | 'overlap' | 'killzone'; state: SessionStatus; elapsedSeconds: number; remainingSeconds: number; startUTC: number; endUTC: number })[] = [];
     const statusMap: { [key: string]: SessionStatus } = {};
     const fifteenMinutesInHours = 15 / 60;
 
@@ -154,7 +154,7 @@ const App: React.FC = () => {
                 remainingSeconds = -(timeUntilStart * 3600);
             }
         }
-        return { isActive, status, elapsedSeconds, remainingSeconds };
+        return { isActive, status, elapsedSeconds, remainingSeconds, startUTC: s, endUTC: e };
     };
 
     SESSIONS.forEach(session => {
@@ -170,14 +170,14 @@ const App: React.FC = () => {
         if (key === 'name' || typeof prop !== 'object' || prop === null || !('key' in prop)) return;
 
         const bar = prop as ChartBarDetails & { range: [number, number] };
-        const { status, elapsedSeconds, remainingSeconds } = checkSession(bar.range[0], bar.range[1]);
+        const { status, elapsedSeconds, remainingSeconds, startUTC, endUTC } = checkSession(bar.range[0], bar.range[1]);
 
         if (status) { // Only add if status is OPEN or WARNING
           let type: 'main' | 'overlap' | 'killzone' = 'main';
           if (key.startsWith('killzone')) type = 'killzone';
           else if (key.startsWith('overlap')) type = 'overlap';
 
-          currentlyActive.push({ name: bar.name, color: bar.color, type, state: status, elapsedSeconds, remainingSeconds });
+          currentlyActive.push({ name: bar.name, color: bar.color, type, state: status, elapsedSeconds, remainingSeconds, startUTC, endUTC });
         }
       });
     });
@@ -221,6 +221,17 @@ const App: React.FC = () => {
 
     const sign = isNegative ? '-' : '';
     return `${sign}${hours}h ${minutes}m ${secs}s`;
+  };
+
+  // Format UTC hours to HH:MM in user's timezone
+  const formatTimeInTimezone = (utcHours: number): string => {
+    let localHours = (utcHours + selectedTimezone.offset) % 24;
+    localHours = localHours < 0 ? localHours + 24 : localHours;
+
+    const hours = Math.floor(localHours);
+    const minutes = Math.floor((localHours - hours) * 60);
+
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   };
 
   // Display only UTC, GMT, and the user's selected timezone
@@ -377,13 +388,25 @@ const App: React.FC = () => {
                   }
 
                   return (
-                      <div key={session.name} className="flex items-center justify-between gap-2 px-2 py-1 bg-slate-800/20 rounded-lg">
-                          <span className="text-xs font-mono text-slate-500 min-w-12">
+                      <div key={session.name} className="flex items-center justify-between gap-3 px-2 py-1.5 bg-slate-800/20 rounded-lg">
+                          {/* Start - End Time (Left) */}
+                          <span className="text-xs font-light text-slate-400 min-w-20">
+                              {formatTimeInTimezone(session.startUTC)} – {formatTimeInTimezone(session.endUTC)}
+                          </span>
+
+                          {/* Session Name with Indicator (Center) */}
+                          <div className="flex items-center gap-1.5 flex-1">
+                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={indicatorStyle}></span>
+                              <span className="text-xs font-medium" style={textStyle}>{session.name}</span>
+                          </div>
+
+                          {/* Elapsed Time (Right) */}
+                          <span className="text-xs font-light text-slate-400 min-w-16 text-right">
                               {formatSessionTime(session.elapsedSeconds)}
                           </span>
-                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={indicatorStyle}></span>
-                          <span className="text-xs font-medium flex-1 text-center" style={textStyle}>{session.name}</span>
-                          <span className="text-xs font-mono text-slate-500 min-w-12 text-right">
+
+                          {/* Remaining Time (Far Right) */}
+                          <span className="text-xs font-light text-slate-400 min-w-16 text-right">
                               {formatSessionTime(session.remainingSeconds)}
                           </span>
                       </div>
