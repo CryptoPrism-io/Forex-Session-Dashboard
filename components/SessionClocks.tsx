@@ -56,11 +56,11 @@ const ClockCard: React.FC<ClockCardProps> = ({ label, timezone, accent, compact 
     day: 'numeric',
   });
 
-  const clockSize = compact ? 64 : 92;
-  const tickLength = compact ? 24 : 34;
-  const hourHandLength = compact ? 18 : 30;
-  const minuteHandLength = compact ? 24 : 40;
-  const secondHandLength = compact ? 26 : 44;
+  const clockSize = compact ? 128 : 184;
+  const tickLength = compact ? 48 : 68;
+  const hourHandLength = compact ? 40 : 60;
+  const minuteHandLength = compact ? 50 : 76;
+  const secondHandLength = compact ? 56 : 84;
 
   return (
     <div className={`flex items-center gap-3 p-3 sm:gap-4 sm:p-4 rounded-2xl bg-slate-900/40 border border-slate-800/40 backdrop-blur-xl shadow-lg shadow-black/10 ${compact ? '' : 'md:flex-col md:items-start md:gap-3'}`}>
