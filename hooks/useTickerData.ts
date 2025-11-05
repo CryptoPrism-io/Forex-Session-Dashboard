@@ -8,93 +8,109 @@ export interface TickerData {
   category: 'Forex' | 'Indices' | 'Crypto' | 'Commodities';
 }
 
-// Asset list: mix of forex, indices, crypto, and commodities
-const ASSETS = [
-  // Forex pairs (20)
-  { symbol: 'EURUSD', category: 'Forex' as const },
-  { symbol: 'GBPUSD', category: 'Forex' as const },
-  { symbol: 'JPYUSD', category: 'Forex' as const },
-  { symbol: 'AUDUSD', category: 'Forex' as const },
-  { symbol: 'NZDUSD', category: 'Forex' as const },
-  { symbol: 'USDJPY', category: 'Forex' as const },
-  { symbol: 'USDCAD', category: 'Forex' as const },
-  { symbol: 'USDCHF', category: 'Forex' as const },
-  { symbol: 'EURGBP', category: 'Forex' as const },
-  { symbol: 'EURJPY', category: 'Forex' as const },
+export type CategoryFilter = 'All' | 'Crypto' | 'Indices' | 'Forex' | 'Commodities';
 
-  // Indices (12)
-  { symbol: 'SPY', category: 'Indices' as const },
-  { symbol: 'QQQ', category: 'Indices' as const },
-  { symbol: 'IWM', category: 'Indices' as const },
-  { symbol: 'EEM', category: 'Indices' as const },
-  { symbol: 'VTI', category: 'Indices' as const },
-  { symbol: 'GLD', category: 'Indices' as const },
-  { symbol: 'USO', category: 'Indices' as const },
-  { symbol: 'TLT', category: 'Indices' as const },
-  { symbol: 'DBC', category: 'Indices' as const },
-  { symbol: 'DXY', category: 'Indices' as const },
-  { symbol: 'VIX', category: 'Indices' as const },
-  { symbol: 'TNX', category: 'Indices' as const },
-
-  // Crypto (15)
-  { symbol: 'BINANCE:BTCUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:ETHUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:BNBUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:XRPUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:ADAUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:SOLUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:DOGEUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:AVAXUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:LTCUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:LINKUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:POLKAUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:MATICUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:FILUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:UNIUSDT', category: 'Crypto' as const },
-  { symbol: 'BINANCE:ATOMUSDT', category: 'Crypto' as const },
-
-  // Commodities (10)
-  { symbol: 'GC=F', category: 'Commodities' as const },
-  { symbol: 'SI=F', category: 'Commodities' as const },
-  { symbol: 'CL=F', category: 'Commodities' as const },
-  { symbol: 'NG=F', category: 'Commodities' as const },
-  { symbol: 'ZC=F', category: 'Commodities' as const },
-  { symbol: 'ZS=F', category: 'Commodities' as const },
-  { symbol: 'ZW=F', category: 'Commodities' as const },
-  { symbol: 'CT=F', category: 'Commodities' as const },
-  { symbol: 'CC=F', category: 'Commodities' as const },
-  { symbol: 'KC=F', category: 'Commodities' as const },
+// Crypto assets for CoinGecko API (free, no auth required)
+const CRYPTO_ASSETS = [
+  'bitcoin',
+  'ethereum',
+  'binancecoin',
+  'cardano',
+  'solana',
+  'ripple',
+  'dogecoin',
+  'polkadot',
+  'litecoin',
+  'chainlink',
+  'uniswap',
+  'cosmos',
+  'avalanche-2',
+  'filecoin',
+  'polygon',
 ];
 
-// Generate mock data for development (since Finnhub free tier has limitations)
-const generateMockTicker = (asset: typeof ASSETS[0]): TickerData => {
-  const basePrice = Math.random() * 1000 + 10;
-  const change = (Math.random() - 0.5) * 100;
-  const changePercent = (change / basePrice) * 100;
+// Indices/Stocks (placeholder - will use Alpha Vantage or similar)
+const INDICES_ASSETS = [
+  { symbol: 'SPY', display: 'S&P 500' },
+  { symbol: 'QQQ', display: 'Nasdaq-100' },
+  { symbol: 'VIX', display: 'Volatility Index' },
+];
 
-  return {
+// Fetch crypto data from CoinGecko (completely free, no auth)
+const fetchCryptoData = async (): Promise<TickerData[]> => {
+  try {
+    const ids = CRYPTO_ASSETS.join(',');
+    const response = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true&order=market_cap_desc`
+    );
+
+    if (!response.ok) throw new Error('Failed to fetch crypto data');
+    const data = await response.json();
+
+    return CRYPTO_ASSETS.map((cryptoId) => {
+      const cryptoData = data[cryptoId];
+      if (!cryptoData) return null;
+
+      const price = cryptoData.usd || 0;
+      const changePercent = cryptoData.usd_24h_change || 0;
+      const change = (price * changePercent) / 100;
+
+      return {
+        symbol: cryptoId.split('-')[0].toUpperCase().slice(0, 4),
+        price,
+        change,
+        changePercent,
+        category: 'Crypto',
+      };
+    }).filter((item): item is TickerData => item !== null);
+  } catch (error) {
+    console.error('Error fetching crypto data:', error);
+    return [];
+  }
+};
+
+// Placeholder for stock/forex/indices data
+const getPlaceholderIndicesData = (): TickerData[] => {
+  return INDICES_ASSETS.map((asset) => ({
     symbol: asset.symbol,
-    price: basePrice,
-    change,
-    changePercent,
-    category: asset.category,
-  };
+    price: Math.random() * 500 + 50,
+    change: (Math.random() - 0.5) * 50,
+    changePercent: (Math.random() - 0.5) * 5,
+    category: 'Indices',
+  }));
 };
 
 export const useTickerData = () => {
   const [tickers, setTickers] = useState<TickerData[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Initialize with mock data
-    setTickers(ASSETS.map(generateMockTicker));
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    // Setup polling interval (8 seconds)
-    const interval = setInterval(() => {
-      // Regenerate mock data to simulate price updates
-      setTickers(ASSETS.map(generateMockTicker));
-    }, 8000);
+      // Fetch crypto data from CoinGecko (real data)
+      const cryptoData = await fetchCryptoData();
+
+      // Get placeholder indices data (for now)
+      const indicesData = getPlaceholderIndicesData();
+
+      const allData = [...cryptoData, ...indicesData];
+      setTickers(allData.length > 0 ? allData : []);
+    } catch (err) {
+      setError('Failed to load ticker data');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+
+    // Setup polling interval (10 seconds)
+    const interval = setInterval(fetchData, 10000);
 
     return () => clearInterval(interval);
   }, []);
