@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AlertConfig } from '../types';
+import { usePopoverPosition } from '../hooks/usePopoverPosition';
 
 interface AlertsToggleProps {
   alertConfig: AlertConfig;
@@ -9,6 +10,7 @@ interface AlertsToggleProps {
 
 const AlertsToggle: React.FC<AlertsToggleProps> = ({ alertConfig, onToggle, onToggleSound }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const { triggerRef, position, placement } = usePopoverPosition();
 
   const handleToggleClick = () => {
     onToggle();
@@ -20,7 +22,7 @@ const AlertsToggle: React.FC<AlertsToggleProps> = ({ alertConfig, onToggle, onTo
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={triggerRef}>
       <button
         onClick={handleToggleClick}
         className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 ${
@@ -57,8 +59,14 @@ const AlertsToggle: React.FC<AlertsToggleProps> = ({ alertConfig, onToggle, onTo
             onClick={() => setShowMenu(false)}
           />
 
-          {/* Menu */}
-          <div className="absolute top-full right-0 mt-2 w-48 bg-slate-900/95 backdrop-blur-xl border border-slate-800/50 rounded-lg shadow-lg shadow-black/40 z-40 overflow-hidden">
+          {/* Menu - Fixed positioning with smart collision detection */}
+          <div
+            className="fixed w-48 bg-slate-900/95 backdrop-blur-xl border border-slate-800/50 rounded-lg shadow-lg shadow-black/40 z-40 overflow-hidden"
+            style={{
+              top: `${position.top}px`,
+              right: `${position.right}px`,
+            }}
+          >
             <div className="p-3 space-y-2">
               <div
                 onClick={handleToggleClick}
@@ -102,11 +110,12 @@ const AlertsToggle: React.FC<AlertsToggleProps> = ({ alertConfig, onToggle, onTo
         </>
       )}
 
-      {/* Quick toggle button in menu trigger */}
+      {/* Toggle menu button */}
       <button
         onClick={() => setShowMenu(!showMenu)}
         className="absolute inset-0 w-full h-full rounded-lg"
         style={{ pointerEvents: showMenu ? 'none' : 'auto' }}
+        aria-label="Toggle alerts menu"
       />
     </div>
   );
