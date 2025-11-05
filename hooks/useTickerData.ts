@@ -10,6 +10,9 @@ export interface TickerData {
 
 export type CategoryFilter = 'All' | 'Crypto' | 'Indices' | 'Forex' | 'Commodities';
 
+const ALPHA_VANTAGE_KEY = 'PURNU4E3JJHSKPOX';
+const ALPHA_VANTAGE_BASE = 'https://www.alphavantage.co/query';
+
 // Crypto symbol mapping from CoinGecko IDs to proper crypto symbols
 const CRYPTO_SYMBOL_MAP: Record<string, string> = {
   'bitcoin': 'BTC',
@@ -31,22 +34,58 @@ const CRYPTO_SYMBOL_MAP: Record<string, string> = {
 
 const CRYPTO_ASSETS = Object.keys(CRYPTO_SYMBOL_MAP);
 
-// Forex pairs for Frankfurter API
+// Forex pairs for Alpha Vantage
 const FOREX_PAIRS = [
-  { symbol: 'EURUSD', base: 'EUR', quote: 'USD' },
-  { symbol: 'GBPUSD', base: 'GBP', quote: 'USD' },
-  { symbol: 'USDJPY', base: 'USD', quote: 'JPY' },
-  { symbol: 'USDCAD', base: 'USD', quote: 'CAD' },
-  { symbol: 'EURGBP', base: 'EUR', quote: 'GBP' },
+  { symbol: 'EURUSD', from: 'EUR', to: 'USD' },
+  { symbol: 'GBPUSD', from: 'GBP', to: 'USD' },
+  { symbol: 'USDJPY', from: 'USD', to: 'JPY' },
+  { symbol: 'USDCAD', from: 'USD', to: 'CAD' },
+  { symbol: 'EURGBP', from: 'EUR', to: 'GBP' },
 ];
 
-// Commodities for Commodities-API
-const COMMODITIES_MAP: Record<string, string> = {
-  'GOLD': 'XAUUSD',    // Gold in USD
-  'SILVER': 'XAGUSD',  // Silver in USD
-  'OIL': 'OILWTI',     // WTI Crude Oil
-  'NATGAS': 'GASUSD',  // Natural Gas
-  'WHEAT': 'WHEAT',    // Wheat
+// Commodities for Alpha Vantage
+const COMMODITIES = [
+  { symbol: 'OIL', function: 'WTI', display: 'Crude Oil (WTI)' },
+  { symbol: 'NATGAS', function: 'NATURAL_GAS', display: 'Natural Gas' },
+  { symbol: 'WHEAT', function: 'WHEAT', display: 'Wheat' },
+];
+
+// Precious metals via Forex API
+const PRECIOUS_METALS = [
+  { symbol: 'GOLD', from: 'XAU', to: 'USD', display: 'Gold' },
+  { symbol: 'SILVER', from: 'XAG', to: 'USD', display: 'Silver' },
+];
+
+// Cache utilities
+const getCacheKey = (category: string) => `ticker_cache_${category}`;
+const getCacheTimestampKey = (category: string) => `ticker_timestamp_${category}`;
+
+const getCachedData = (category: string): TickerData[] | null => {
+  try {
+    const cached = localStorage.getItem(getCacheKey(category));
+    if (!cached) return null;
+    return JSON.parse(cached);
+  } catch {
+    return null;
+  }
+};
+
+const setCachedData = (category: string, data: TickerData[]) => {
+  try {
+    localStorage.setItem(getCacheKey(category), JSON.stringify(data));
+    localStorage.setItem(getCacheTimestampKey(category), new Date().toISOString());
+  } catch (e) {
+    console.warn('Failed to cache data:', e);
+  }
+};
+
+const getCacheTimestamp = (category: string): Date | null => {
+  try {
+    const timestamp = localStorage.getItem(getCacheTimestampKey(category));
+    return timestamp ? new Date(timestamp) : null;
+  } catch {
+    return null;
+  }
 };
 
 // Fetch crypto data from CoinGecko (10 second polling)
@@ -60,7 +99,7 @@ const fetchCryptoData = async (): Promise<TickerData[]> => {
     if (!response.ok) throw new Error('Failed to fetch crypto data');
     const data = await response.json();
 
-    return CRYPTO_ASSETS.map((cryptoId) => {
+    const cryptoData = CRYPTO_ASSETS.map((cryptoId) => {
       const cryptoData = data[cryptoId];
       if (!cryptoData) return null;
 
@@ -73,88 +112,145 @@ const fetchCryptoData = async (): Promise<TickerData[]> => {
         price,
         change,
         changePercent,
-        category: 'Crypto',
+        category: 'Crypto' as const,
       };
     }).filter((item): item is TickerData => item !== null);
+
+    setCachedData('Crypto', cryptoData);
+    return cryptoData;
   } catch (error) {
     console.error('Error fetching crypto data:', error);
-    return [];
+    const cached = getCachedData('Crypto');
+    return cached || [];
   }
 };
 
-// Fetch forex data from Frankfurter API (free, no auth, daily updates)
+// Fetch Forex data from Alpha Vantage
 const fetchForexData = async (): Promise<TickerData[]> => {
   try {
-    const response = await fetch('https://api.frankfurter.dev/v1/latest?base=USD');
+    const results: TickerData[] = [];
 
-    if (!response.ok) throw new Error('Failed to fetch forex data');
-    const data = await response.json();
+    for (const pair of FOREX_PAIRS) {
+      const params = new URLSearchParams({
+        function: 'CURRENCY_EXCHANGE_RATE',
+        from_currency: pair.from,
+        to_currency: pair.to,
+        apikey: ALPHA_VANTAGE_KEY,
+      });
 
-    return FOREX_PAIRS.map((pair) => {
-      const rate = data.rates[pair.quote];
-      if (!rate) return null;
+      const response = await fetch(`${ALPHA_VANTAGE_BASE}?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch forex data');
 
-      // Calculate the price in USD for display
-      let price: number;
-      let changePercent = 0; // Frankfurter doesn't provide historical by default
+      const data = await response.json();
 
-      if (pair.base === 'USD') {
-        // For USD base pairs, show the rate directly
-        price = rate;
-      } else {
-        // For other pairs like EUR/USD, calculate
-        const baseRate = data.rates[pair.base];
-        price = rate / baseRate;
+      if (data['Realtime Currency Exchange Rate']) {
+        const rate = data['Realtime Currency Exchange Rate'];
+        const price = parseFloat(rate['5. Exchange Rate']);
+
+        results.push({
+          symbol: pair.symbol,
+          price,
+          change: 0,
+          changePercent: 0,
+          category: 'Forex',
+        });
       }
 
-      return {
-        symbol: pair.symbol,
-        price,
-        change: 0,
-        changePercent,
-        category: 'Forex',
-      };
-    }).filter((item): item is TickerData => item !== null);
+      // Respect rate limits - small delay between requests
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+
+    // Fetch precious metals (Gold, Silver) via Forex API
+    for (const metal of PRECIOUS_METALS) {
+      const params = new URLSearchParams({
+        function: 'CURRENCY_EXCHANGE_RATE',
+        from_currency: metal.from,
+        to_currency: metal.to,
+        apikey: ALPHA_VANTAGE_KEY,
+      });
+
+      const response = await fetch(`${ALPHA_VANTAGE_BASE}?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch metals data');
+
+      const data = await response.json();
+
+      if (data['Realtime Currency Exchange Rate']) {
+        const rate = data['Realtime Currency Exchange Rate'];
+        const price = parseFloat(rate['5. Exchange Rate']);
+
+        results.push({
+          symbol: metal.symbol,
+          price,
+          change: 0,
+          changePercent: 0,
+          category: 'Commodities',
+        });
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+
+    setCachedData('Forex', results);
+    return results;
   } catch (error) {
     console.error('Error fetching forex data:', error);
-    return [];
+    const cached = getCachedData('Forex');
+    return cached || [];
   }
 };
 
-// Fetch commodities data from Commodities-API (requires free API key signup)
+// Fetch Commodities data from Alpha Vantage
 const fetchCommoditiesData = async (): Promise<TickerData[]> => {
   try {
-    // Using commodities-api.com - requires signup for free key
-    const apiKey = 'YOUR_COMMODITIES_API_KEY'; // User needs to signup and add their key
+    const results: TickerData[] = [];
 
-    const commoditiesSymbols = Object.values(COMMODITIES_MAP).join(',');
-    const response = await fetch(
-      `https://commodities-api.com/api/latest?access_key=${apiKey}&base=USD&symbols=${commoditiesSymbols}`
-    );
+    for (const commodity of COMMODITIES) {
+      const params = new URLSearchParams({
+        function: commodity.function,
+        interval: 'daily',
+        apikey: ALPHA_VANTAGE_KEY,
+      });
 
-    if (!response.ok) throw new Error('Failed to fetch commodities data');
-    const data = await response.json();
+      const response = await fetch(`${ALPHA_VANTAGE_BASE}?${params}`);
+      if (!response.ok) throw new Error(`Failed to fetch ${commodity.symbol} data`);
 
-    if (!data.success) {
-      console.warn('Commodities API error:', data.error);
-      return [];
+      const data = await response.json();
+
+      // Alpha Vantage returns different structures for different commodities
+      // Extract the most recent price from the data
+      let price = 0;
+      const dataKey = Object.keys(data).find(key => key !== 'Meta Data' && key !== 'name' && key !== 'interval' && key !== 'unit');
+
+      if (dataKey && data[dataKey]) {
+        const timeSeries = data[dataKey];
+        const mostRecentKey = Object.keys(timeSeries)[0];
+        if (mostRecentKey && timeSeries[mostRecentKey]) {
+          const valueKey = Object.keys(timeSeries[mostRecentKey]).find(key => key.includes('value'));
+          if (valueKey) {
+            price = parseFloat(timeSeries[mostRecentKey][valueKey]);
+          }
+        }
+      }
+
+      if (price > 0) {
+        results.push({
+          symbol: commodity.symbol,
+          price,
+          change: 0,
+          changePercent: 0,
+          category: 'Commodities',
+        });
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 250));
     }
 
-    return Object.entries(COMMODITIES_MAP).map(([symbol, apiSymbol]) => {
-      const rate = data.rates[apiSymbol];
-      if (!rate) return null;
-
-      return {
-        symbol,
-        price: rate,
-        change: 0,
-        changePercent: 0,
-        category: 'Commodities',
-      };
-    }).filter((item): item is TickerData => item !== null);
+    setCachedData('Commodities', results);
+    return results;
   } catch (error) {
     console.error('Error fetching commodities data:', error);
-    return [];
+    const cached = getCachedData('Commodities');
+    return cached || [];
   }
 };
 
@@ -171,7 +267,7 @@ const getPlaceholderIndicesData = (): TickerData[] => {
     price: Math.random() * 500 + 50,
     change: (Math.random() - 0.5) * 50,
     changePercent: (Math.random() - 0.5) * 5,
-    category: 'Indices',
+    category: 'Indices' as const,
   }));
 };
 
@@ -182,17 +278,27 @@ export const useTickerData = () => {
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
 
   useEffect(() => {
-    // Initial fetch
-    const fetchAllData = async () => {
+    // Initial load - try to get from cache first
+    const initializeData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const [cryptoData, forexData, commoditiesData] = await Promise.all([
-          fetchCryptoData(),
-          fetchForexData(),
-          fetchCommoditiesData(),
-        ]);
+        // Always fetch crypto (CoinGecko - fast and free)
+        const cryptoData = await fetchCryptoData();
+
+        // Try to use cached forex/commodities if available
+        let forexData = getCachedData('Forex') || [];
+        let commoditiesData = getCachedData('Commodities') || [];
+
+        // If no cache, fetch from Alpha Vantage
+        if (forexData.length === 0) {
+          forexData = await fetchForexData();
+        }
+
+        if (commoditiesData.length === 0) {
+          commoditiesData = await fetchCommoditiesData();
+        }
 
         const indicesData = getPlaceholderIndicesData();
         const allData = [...cryptoData, ...forexData, ...commoditiesData, ...indicesData];
@@ -207,10 +313,9 @@ export const useTickerData = () => {
       }
     };
 
-    fetchAllData();
+    initializeData();
 
-    // Setup different polling intervals
-    // Crypto: 10 seconds (most frequent)
+    // Crypto: Poll every 10 seconds (CoinGecko is generous)
     const cryptoInterval = setInterval(async () => {
       const cryptoData = await fetchCryptoData();
       setTickers((prev) => {
@@ -220,30 +325,25 @@ export const useTickerData = () => {
       setLastFetched(new Date());
     }, 10000);
 
-    // Forex: 2 hours (Frankfurter updates daily, so no point polling more often)
-    const forexInterval = setInterval(async () => {
-      const forexData = await fetchForexData();
-      setTickers((prev) => {
-        const nonForexData = prev.filter((t) => t.category !== 'Forex');
-        return [...nonForexData, ...forexData];
-      });
-      setLastFetched(new Date());
-    }, 2 * 60 * 60 * 1000); // 2 hours
+    // Forex & Commodities: Poll every 6 hours (respect 25 calls/day limit)
+    const forexCommoditiesInterval = setInterval(async () => {
+      const [forexData, commoditiesData] = await Promise.all([
+        fetchForexData(),
+        fetchCommoditiesData(),
+      ]);
 
-    // Commodities: 1 hour (reasonable rate limit approach)
-    const commoditiesInterval = setInterval(async () => {
-      const commoditiesData = await fetchCommoditiesData();
       setTickers((prev) => {
-        const nonCommoditiesData = prev.filter((t) => t.category !== 'Commodities');
-        return [...nonCommoditiesData, ...commoditiesData];
+        const otherData = prev.filter(
+          (t) => t.category !== 'Forex' && t.category !== 'Commodities'
+        );
+        return [...otherData, ...forexData, ...commoditiesData];
       });
       setLastFetched(new Date());
-    }, 60 * 60 * 1000); // 1 hour
+    }, 6 * 60 * 60 * 1000); // 6 hours
 
     return () => {
       clearInterval(cryptoInterval);
-      clearInterval(forexInterval);
-      clearInterval(commoditiesInterval);
+      clearInterval(forexCommoditiesInterval);
     };
   }, []);
 
