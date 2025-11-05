@@ -116,13 +116,13 @@ const ClockCard: React.FC<ClockCardProps> = ({ label, timezone, accent, compact,
     animation: isWarning ? 'pulse-glow 1.5s infinite' : undefined,
   };
 
-  const labelClass = `text-sm font-semibold ${isActive ? 'text-slate-100' : 'text-slate-400'}`;
-  const timeClass = `text-sm font-mono ${isActive ? 'text-slate-100' : 'text-slate-300'}`;
-  const dateClass = `text-[11px] ${isActive ? 'text-slate-400' : 'text-slate-500'}`;
+  const labelClass = `${compact ? 'text-xs' : 'text-sm'} font-semibold ${isActive ? 'text-slate-100' : 'text-slate-400'}`;
+  const timeClass = `${compact ? 'text-xs' : 'text-sm'} font-mono ${isActive ? 'text-slate-100' : 'text-slate-300'}`;
+  const dateClass = `${compact ? 'text-[10px]' : 'text-[11px]'} ${isActive ? 'text-slate-400' : 'text-slate-500'}`;
 
   return (
     <div
-      className={`flex items-center gap-2 p-3 sm:gap-3 sm:p-3 rounded-2xl bg-slate-900/50 border border-slate-800/60 backdrop-blur-xl shadow-md shadow-black/15 transition-all duration-300 ${compact ? '' : 'md:flex-col md:items-start md:gap-2'}`}
+      className={`flex items-center gap-2 rounded-2xl bg-slate-900/50 border border-slate-800/60 backdrop-blur-xl shadow-md shadow-black/15 transition-all duration-300 ${compact ? 'p-2 gap-1.5' : 'p-3 sm:gap-3 sm:p-3 md:flex-col md:items-start md:gap-2'}`}
       style={cardStyle}
     >
       <div className="relative" style={{ width: clockSize, height: clockSize }}>
@@ -189,7 +189,7 @@ const SessionClocks: React.FC<{
   sessionStatus?: Record<string, SessionStatusValue>;
 }> = ({ compact = false, sessionStatus }) => {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+    <div className={`grid ${compact ? 'grid-cols-2 gap-2' : 'grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3'}`}>
       {CLOCKS.map((config) => (
         <ClockCard key={config.label} {...config} compact={compact} sessionStatus={sessionStatus} />
       ))}

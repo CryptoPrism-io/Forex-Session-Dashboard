@@ -313,7 +313,7 @@ const App: React.FC = () => {
               </div>
 
               {/* TOP RIGHT: Session Clocks */}
-              <div className="flex-1 flex justify-end">
+              <div className="flex justify-end">
                 <SessionClocks compact sessionStatus={sessionStatus} />
               </div>
             </div>
