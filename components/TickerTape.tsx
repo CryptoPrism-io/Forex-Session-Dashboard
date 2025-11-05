@@ -7,13 +7,14 @@ interface TickerTapeProps {
   selectedTimezone: Timezone;
 }
 
-const FETCH_INTERVAL = 10; // seconds
+const CRYPTO_FETCH_INTERVAL = 10; // seconds (CoinGecko)
+const FOREX_COMMODITIES_FETCH_INTERVAL = 6 * 60 * 60; // 6 hours (Alpha Vantage)
 
 const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
   const { tickers, loading, error, lastFetched } = useTickerData();
   const [selectedFilter, setSelectedFilter] = useState<CategoryFilter>('All');
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-  const [countdown, setCountdown] = useState(FETCH_INTERVAL);
+  const [countdown, setCountdown] = useState(CRYPTO_FETCH_INTERVAL);
 
   const filteredTickers = useMemo(() => {
     if (selectedFilter === 'All') {
@@ -24,26 +25,50 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
 
   const filterOptions: CategoryFilter[] = ['All', 'Crypto', 'Indices', 'Forex', 'Commodities'];
 
+  // Determine the fetch interval based on selected filter
+  const getFetchInterval = (filter: CategoryFilter): number => {
+    if (filter === 'Crypto') return CRYPTO_FETCH_INTERVAL;
+    if (filter === 'Forex' || filter === 'Commodities') return FOREX_COMMODITIES_FETCH_INTERVAL;
+    return CRYPTO_FETCH_INTERVAL; // Default to crypto for 'All' and 'Indices'
+  };
+
+  const fetchInterval = getFetchInterval(selectedFilter);
+
+  // Format countdown for display
+  const formatCountdown = (seconds: number): string => {
+    if (seconds < 60) {
+      return `${seconds}s`;
+    } else if (seconds < 3600) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}m ${secs}s`;
+    } else {
+      const hours = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      return `${hours}h ${mins}m`;
+    }
+  };
+
   // Countdown timer effect
   useEffect(() => {
     const interval = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          return FETCH_INTERVAL;
+          return fetchInterval;
         }
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchInterval]);
 
-  // Reset countdown when data is fetched
+  // Reset countdown when data is fetched or filter changes
   useEffect(() => {
     if (lastFetched) {
-      setCountdown(FETCH_INTERVAL);
+      setCountdown(fetchInterval);
     }
-  }, [lastFetched]);
+  }, [lastFetched, fetchInterval]);
 
   if (error) {
     return (
@@ -123,8 +148,8 @@ const TickerTape: React.FC<TickerTapeProps> = ({ selectedTimezone }) => {
         {/* Left: Countdown timer for next fetch */}
         <div className="flex-shrink-0 pr-4 border-r border-slate-700/30">
           <div className="text-xs font-light text-slate-400">
-            <span className="inline-block min-w-[120px]">
-              Next fetch in: <span className="font-semibold text-cyan-400">{countdown}s</span>
+            <span className="inline-block min-w-[130px]">
+              Next fetch in: <span className="font-semibold text-cyan-400">{formatCountdown(countdown)}</span>
             </span>
           </div>
         </div>
