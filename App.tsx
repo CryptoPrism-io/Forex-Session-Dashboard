@@ -228,65 +228,56 @@ const App: React.FC = () => {
         <div className="w-full mb-6 flex gap-6">
           {/* LEFT SECTION: Title, Subtitle, Time, and Timezone Selector */}
           <div className="flex-1 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 sm:p-5 shadow-lg shadow-black/20">
-            {/* Title and Subtitle */}
-            <div className="flex items-center gap-3 mb-2">
-              {(installState === 'available' || installState === 'dismissed') ? (
-                <button
-                  onClick={handleInstallClick}
-                  className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-lg active:scale-95"
+            {/* TOP ROW: Title and Timezone Selector */}
+            <div className="flex items-start justify-between gap-4 mb-4">
+              {/* Title and Icons */}
+              <div className="flex items-center gap-3">
+                {(installState === 'available' || installState === 'dismissed') ? (
+                  <button
+                    onClick={handleInstallClick}
+                    className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-lg active:scale-95"
+                    style={{
+                      filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.filter = 'drop-shadow(0 0 16px rgba(34, 211, 238, 0.8))';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.filter = 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))';
+                    }}
+                    title="Click to install the app"
+                    aria-label="Download and install app"
+                  >
+                    <IconTradingFlow className="w-full h-full text-cyan-400" />
+                  </button>
+                ) : (
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" style={{
+                    filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))'
+                  }}>
+                    <IconTradingFlow className="w-full h-full text-cyan-400" />
+                  </div>
+                )}
+
+                {/* Alerts Toggle Header with Gradient Glow */}
+                <AlertsToggleHeader
+                  alertConfig={alertConfig}
+                  onToggle={toggleAlerts}
+                  onToggleSound={toggleSound}
+                />
+
+                <h1
+                  className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
                   style={{
-                    filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))',
+                    textShadow: '0 0 30px rgba(34, 211, 238, 0.3), 0 0 60px rgba(59, 130, 246, 0.2)',
+                    filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.25))'
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.filter = 'drop-shadow(0 0 16px rgba(34, 211, 238, 0.8))';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.filter = 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))';
-                  }}
-                  title="Click to install the app"
-                  aria-label="Download and install app"
                 >
-                  <IconTradingFlow className="w-full h-full text-cyan-400" />
-                </button>
-              ) : (
-                <div className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" style={{
-                  filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))'
-                }}>
-                  <IconTradingFlow className="w-full h-full text-cyan-400" />
-                </div>
-              )}
-
-              {/* Alerts Toggle Header with Gradient Glow */}
-              <AlertsToggleHeader
-                alertConfig={alertConfig}
-                onToggle={toggleAlerts}
-                onToggleSound={toggleSound}
-              />
-
-              <h1
-                className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
-                style={{
-                  textShadow: '0 0 30px rgba(34, 211, 238, 0.3), 0 0 60px rgba(59, 130, 246, 0.2)',
-                  filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.25))'
-                }}
-              >
-                Global FX Trading Sessions
-              </h1>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-300 font-light tracking-wide mb-4">
-              Real-time session tracking with killzones and overlaps
-            </p>
-
-            {/* Big Time Display */}
-            <div className="mb-6">
-              <div className="text-5xl sm:text-6xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-green-400 bg-clip-text text-transparent tracking-wider font-mono">
-                {timeFormatted}
+                  Global FX Trading Sessions
+                </h1>
               </div>
-              <div className="text-xs text-slate-400 font-light mt-1">{selectedTimezone.label}</div>
-            </div>
 
-            {/* Timezone Selector */}
-            <div className="flex flex-wrap gap-1.5">
+              {/* Timezone Selector - Top Right */}
+              <div className="flex flex-wrap gap-1.5 justify-end">
                 {displayedTimezones.map(tz => (
                   <button
                     key={tz.label}
@@ -309,7 +300,7 @@ const App: React.FC = () => {
                     ...
                   </button>
                   {isMoreTimezonesOpen && (
-                    <div className="absolute top-full mt-2 left-0 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 p-2 z-[9999] w-40">
+                    <div className="absolute top-full mt-2 right-0 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 p-2 z-[9999] w-40">
                       {moreTimezones.map(tz => (
                          <button
                             key={tz.label}
@@ -326,22 +317,23 @@ const App: React.FC = () => {
                     </div>
                   )}
                 </div>
+              </div>
             </div>
-          </div>
+            <p className="text-xs sm:text-sm text-slate-300 font-light tracking-wide mb-4">
+              Real-time session tracking with killzones and overlaps
+            </p>
 
-          {/* RIGHT SECTION: Session Clocks */}
-          <div className="flex justify-end">
-            <SessionClocks compact sessionStatus={sessionStatus} />
-          </div>
-        </div>
-
-        {/* SESSIONS LIST CARD */}
-        <div className="w-full mb-6">
-          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 sm:p-5 shadow-lg shadow-black/20">
+            {/* Big Time Display */}
+            <div className="mb-6">
+              <div className="text-5xl sm:text-6xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-green-400 bg-clip-text text-transparent tracking-wider font-mono">
+                {timeFormatted}
+              </div>
+              <div className="text-xs text-slate-400 font-light mt-1">{selectedTimezone.label}</div>
+            </div>
 
             {/* Live Sessions List */}
             {activeSessions.length > 0 && (
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 border-t border-slate-700/30 pt-4">
                 {/* Column Headers */}
                 <div className="flex items-center justify-between gap-3 px-2 py-1 mb-1.5">
                   <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider min-w-20">Time</span>
@@ -398,6 +390,11 @@ const App: React.FC = () => {
                 })}
               </div>
             )}
+          </div>
+
+          {/* RIGHT SECTION: Session Clocks */}
+          <div className="flex justify-end">
+            <SessionClocks compact sessionStatus={sessionStatus} />
           </div>
         </div>
 
