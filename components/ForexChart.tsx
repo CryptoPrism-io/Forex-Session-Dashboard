@@ -134,12 +134,14 @@ const ForexChart: React.FC<ForexChartProps> = ({
   onToggleDSTOverride, onAutoDetectToggle
 }) => {
   const [hoveredBlock, setHoveredBlock] = useState<TimeBlock | null>(null);
+  const [displayedBlock, setDisplayedBlock] = useState<TimeBlock | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [viewMode, setViewMode] = useState<'unified' | 'separate' | 'guide' | 'volume'>('unified');
   const [chartsVisible, setChartsVisible] = useState(true);
   const [showDSTMenu, setShowDSTMenu] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({ mainSessions: false, overlaps: false, killzones: false });
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
+  const tooltipTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const [nowBlinkVisible, setNowBlinkVisible] = useState(true);
   const [showLayersMenu, setShowLayersMenu] = useState(false);
   const [visibleLayers, setVisibleLayers] = useState({
@@ -245,10 +247,25 @@ const ForexChart: React.FC<ForexChartProps> = ({
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, block: TimeBlock) => {
     setHoveredBlock(block);
     setTooltipPosition({ x: e.clientX, y: e.clientY });
+
+    // Clear previous timeout if exists
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+    }
+
+    // Set tooltip to show after 1 second
+    tooltipTimeoutRef.current = setTimeout(() => {
+      setDisplayedBlock(block);
+    }, 1000);
   };
 
   const handleMouseLeave = () => {
+    // Clear the timeout so tooltip doesn't show if user leaves too quickly
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+    }
     setHoveredBlock(null);
+    setDisplayedBlock(null);
   };
 
   const getStatusColor = (status: SessionStatus) => {
@@ -939,7 +956,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
       )}
 
       <ChartTooltip
-        block={hoveredBlock}
+        block={displayedBlock}
         position={tooltipPosition}
         timezoneOffset={timezoneOffset}
         timezoneLabel={currentTimezoneLabel}
