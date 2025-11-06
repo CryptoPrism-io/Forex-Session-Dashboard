@@ -245,7 +245,25 @@ const ForexChart: React.FC<ForexChartProps> = ({
   }, [timezoneOffset]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, block: TimeBlock) => {
-    setHoveredBlock(block);
+    const rect = chartContainerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    // Calculate X position as percentage (0-100)
+    const relativeX = e.clientX - rect.left;
+    const xPercent = (relativeX / rect.width) * 100;
+
+    // Find all blocks that overlap at this X position
+    const overlappingBlocks = timeBlocks.filter(
+      b => b.left <= xPercent && xPercent < (b.left + b.width)
+    );
+
+    // Select the block with the highest yLevel (most specific: killzone > overlap > session)
+    // If multiple blocks have same yLevel, pick the first one
+    const mostSpecificBlock = overlappingBlocks.reduce((prev, current) =>
+      current.yLevel > prev.yLevel ? current : prev
+    );
+
+    setHoveredBlock(mostSpecificBlock);
     setTooltipPosition({ x: e.clientX, y: e.clientY });
 
     // Clear previous timeout if exists
@@ -255,7 +273,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
 
     // Set tooltip to show after 1 second
     tooltipTimeoutRef.current = setTimeout(() => {
-      setDisplayedBlock(block);
+      setDisplayedBlock(mostSpecificBlock);
     }, 1000);
   };
 
