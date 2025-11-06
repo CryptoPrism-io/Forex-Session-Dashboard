@@ -192,7 +192,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
 
             {/* "Now" Reference Line */}
             <ReferenceLine
-              x={Math.floor(nowLine * 2)} // nowLine is 0-24, convert to data index (0-48)
+              x={Math.floor(getUTCHour(nowLine, timezoneOffset) * 2)} // Convert local time back to UTC, then to data index
               stroke="rgba(34, 211, 238, 0.8)"
               strokeWidth={2}
               strokeDasharray="0"
