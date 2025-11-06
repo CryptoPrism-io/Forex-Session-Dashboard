@@ -349,39 +349,21 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
               isAnimationActive={false}
             />
 
-            {/* "Now" Reference Line */}
+            {/* "Now" Reference Line - Vertical Line for Current Time */}
             <ReferenceLine
               x={Math.floor(nowLine * 2)} // Chart data is now rotated to local timezone, so use local time directly
               stroke="#facc15"
-              strokeWidth={2}
+              strokeWidth={3}
               strokeDasharray="0"
               label={{
                 value: 'NOW',
                 position: 'top',
                 fill: '#facc15',
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: 'bold',
               }}
               style={{
-                filter: 'drop-shadow(0 0 8px rgba(250, 204, 21, 0.6))',
-              }}
-            />
-
-            {/* Horizontal Line for Current Volume Level */}
-            <ReferenceLine
-              y={chartData[Math.floor(nowLine * 2)]?.volume || 50}
-              stroke="#facc15"
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              label={{
-                value: `Volume: ${chartData[Math.floor(nowLine * 2)]?.volume || 50}`,
-                position: 'right',
-                fill: '#facc15',
-                fontSize: 11,
-                fontWeight: 'bold',
-              }}
-              style={{
-                filter: 'drop-shadow(0 0 8px rgba(250, 204, 21, 0.6))',
+                filter: 'drop-shadow(0 0 12px rgba(250, 204, 21, 0.8))',
               }}
             />
 
