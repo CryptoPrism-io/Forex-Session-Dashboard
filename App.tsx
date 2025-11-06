@@ -22,7 +22,6 @@ const App: React.FC = () => {
 
   const [selectedTimezone, setSelectedTimezone] = useState<Timezone>(getInitialTimezone());
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
 
   // PWA Installation management
   const {
@@ -194,23 +193,19 @@ const App: React.FC = () => {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   };
 
-  // Display only UTC, GMT, and the user's selected timezone
-  const utcTz = TIMEZONES.find(tz => tz.label === 'UTC');
-  const gmtTz = TIMEZONES.find(tz => tz.label === 'GMT');
+  // Display top 5 forex trading timezones + user's selected timezone
+  const topTimezones = [
+    TIMEZONES.find(tz => tz.label === 'UTC'),
+    TIMEZONES.find(tz => tz.label === 'GMT'),
+    TIMEZONES.find(tz => tz.label === 'JST'),     // Tokyo
+    TIMEZONES.find(tz => tz.label === 'EST'),     // New York
+    TIMEZONES.find(tz => tz.label === 'AEST'),    // Sydney
+  ].filter(Boolean) as Timezone[];
 
-  const displayedTimezones: Timezone[] = [];
-  if (utcTz) displayedTimezones.push(utcTz);
-  if (gmtTz) displayedTimezones.push(gmtTz);
-
-  // Add user's selected timezone if it's not already in the list
-  if (selectedTimezone.label !== 'UTC' && selectedTimezone.label !== 'GMT') {
-    displayedTimezones.push(selectedTimezone);
-  }
-
-  // Major trading timezones for the dropdown (8-10 important ones)
-  const moreTimezones = MAJOR_TIMEZONES.filter(tz =>
-    tz.label !== selectedTimezone.label
-  );
+  // Add user's selected timezone if not already in the list
+  const displayedTimezones = selectedTimezone && !topTimezones.some(tz => tz.label === selectedTimezone.label)
+    ? [...topTimezones, selectedTimezone]
+    : topTimezones;
   const timeFormatted = currentTime.toLocaleTimeString([], {
     timeZone: selectedTimezone.ianaTimezone || selectedTimezone.label,
     hour: '2-digit',
@@ -291,32 +286,6 @@ const App: React.FC = () => {
                     {tz.label}
                   </button>
                 ))}
-                <div className="relative">
-                  <button
-                    onClick={() => setIsMoreTimezonesOpen(!isMoreTimezonesOpen)}
-                    className="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300 transition-all duration-300 backdrop-blur-md"
-                    aria-label="More timezones"
-                  >
-                    ...
-                  </button>
-                  {isMoreTimezonesOpen && (
-                    <div className="absolute top-full mt-2 right-0 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 p-2 z-[9999] w-40">
-                      {moreTimezones.map(tz => (
-                         <button
-                            key={tz.label}
-                            onClick={() => handleTimezoneChange(tz)}
-                            className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-all duration-150 ${
-                                selectedTimezone.label === tz.label
-                                  ? 'bg-cyan-500/30 text-cyan-100 border border-cyan-400/50'
-                                  : 'hover:bg-slate-700/40 text-slate-300'
-                            }`}
-                          >
-                           {tz.label}
-                         </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
             <p className="text-xs sm:text-sm text-slate-300 font-light tracking-wide mb-4">
