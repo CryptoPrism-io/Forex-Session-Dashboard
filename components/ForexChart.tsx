@@ -635,7 +635,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
                     aria-label={block.details.name}
                     title={block.sessionName}
                   >
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 px-2 py-1 rounded whitespace-nowrap z-10">
+                    <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                       {block.sessionName}
                     </div>
                   </div>
