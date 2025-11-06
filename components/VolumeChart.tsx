@@ -163,34 +163,12 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
     const startTimeLocal = formatTimeInTimezone(sessionStartUTC, timezoneOffset);
     const endTimeLocal = formatTimeInTimezone(sessionEndUTC, timezoneOffset);
 
-    // Add timezone-aware details to description
-    let descWithTimezone = baseSession.desc;
-
-    // Add lunch dip timezone conversion if present
-    if ('lunchDip' in baseSession) {
-      const lunchDipLocal = formatTimeInTimezone(baseSession.lunchDip, timezoneOffset);
-      descWithTimezone = descWithTimezone.replace('11:00 UTC', `11:00 UTC (${lunchDipLocal} ${currentTimezoneLabel})`);
-    }
-
-    // Add peak timezone conversion if present
-    if ('peak' in baseSession) {
-      const peakLocal = formatTimeInTimezone(baseSession.peak, timezoneOffset);
-      descWithTimezone = descWithTimezone.replace('13:30 UTC', `13:30 UTC (${peakLocal} ${currentTimezoneLabel})`);
-    }
-
-    // Add rollover lull timezone conversion if present
-    if ('rolloverLull' in baseSession) {
-      const rolloverStart = formatTimeInTimezone(baseSession.rolloverLull[0], timezoneOffset);
-      const rolloverEnd = formatTimeInTimezone(baseSession.rolloverLull[1], timezoneOffset);
-      descWithTimezone = descWithTimezone.replace('21:00–22:00 UTC', `21:00–22:00 UTC (${rolloverStart}–${rolloverEnd} ${currentTimezoneLabel})`);
-    }
-
     return {
       ...baseSession,
       label: `${startTimeLocal}–${endTimeLocal}`,
-      desc: descWithTimezone,
+      desc: baseSession.desc,
     };
-  }, [nowLine, timezoneOffset, currentTimezoneLabel]);
+  }, [nowLine, timezoneOffset]);
 
   // Function to detect what events are at a given local time
   const getSessionEventsAtTime = useMemo(() => {
