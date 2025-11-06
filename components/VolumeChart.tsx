@@ -87,6 +87,52 @@ const CustomVolumeTooltip: React.FC<any> = ({ active, payload, label, getSession
   return null;
 };
 
+// Custom clock label component
+const TimeClockLabel: React.FC<{
+  value?: string;
+  x?: number;
+  y?: number;
+  currentTime: Date;
+  timezoneOffset: number;
+}> = ({ x = 0, y = 0, currentTime, timezoneOffset }) => {
+  // Get local time in user's timezone
+  const utcHours = currentTime.getUTCHours();
+  const utcMinutes = currentTime.getUTCMinutes();
+  const totalUTCMinutes = utcHours * 60 + utcMinutes;
+  const totalLocalMinutes = totalUTCMinutes + timezoneOffset * 60;
+  const localHours = Math.floor((totalLocalMinutes / 60) % 24);
+  const localMinutes = Math.round(totalLocalMinutes % 60);
+
+  const timeStr = `${String(localHours).padStart(2, '0')}:${String(localMinutes).padStart(2, '0')}`;
+
+  return (
+    <g>
+      {/* Circle background */}
+      <circle
+        cx={x}
+        cy={y}
+        r={24}
+        fill="rgba(250, 204, 21, 0.15)"
+        stroke="rgba(250, 204, 21, 0.6)"
+        strokeWidth={1.5}
+      />
+      {/* Time text rotated 270 degrees */}
+      <text
+        x={x}
+        y={y}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="#fde047"
+        fontSize={11}
+        fontWeight={600}
+        transform={`rotate(270 ${x} ${y})`}
+      >
+        {timeStr}
+      </text>
+    </g>
+  );
+};
+
 const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, currentTimezoneLabel, currentTime = new Date() }) => {
   // Convert local time (nowLine) back to UTC for accurate session detection
   const getUTCHour = (localHour: number, offset: number): number => {
@@ -355,19 +401,20 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
               isAnimationActive={false}
             />
 
-            {/* "Now" Reference Line - Elegant Vertical Indicator */}
+            {/* "Now" Reference Line with Digital Clock Badge */}
             <ReferenceLine
               x={nowLine}
               stroke="rgba(250, 204, 21, 0.85)"
-              strokeWidth={1.5}
+              strokeWidth={0.75}
               ifOverflow="visible"
               label={{
-                value: 'NOW',
+                content: () => (
+                  <TimeClockLabel
+                    currentTime={currentTime}
+                    timezoneOffset={timezoneOffset}
+                  />
+                ),
                 position: 'top',
-                fill: '#fde047',
-                fontSize: 12,
-                fontWeight: 600,
-                dy: -4, // lift the label slightly
               }}
               style={{
                 filter: 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.4))',
