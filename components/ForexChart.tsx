@@ -347,7 +347,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
         // Unified view - all sessions on one timeline
         <div className="mb-5">
           <div className="relative w-full h-32 bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
-            {/* Volume Profile Background */}
+            {/* Volume Histogram Background */}
             {useMemo(() => {
               // Rotate volume data based on timezone
               let rotationSteps = Math.round((timezoneOffset % 24) * 2);
@@ -358,21 +358,12 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                 ...VOLUME_DATA.slice(0, 48 - rotationSteps)
               ];
 
-              // Create SVG path for volume profile
-              // ViewBox: 0-1000 for x (width), 0-100 for y (height) for precision
+              // Create SVG histogram bars
               const chartWidth = 1000;
               const chartHeight = 100;
-              const pointSpacing = chartWidth / 48; // 48 data points
-              const volumeScale = chartHeight * 0.85; // Use 85% of height for volume
-              const baselineY = chartHeight - 5; // Leave 5 units at bottom
-
-              let pathData = `M 0 ${baselineY}`;
-              rotatedVolume.forEach((volume, i) => {
-                const x = i * pointSpacing;
-                const y = baselineY - (volume / 100) * volumeScale;
-                pathData += ` L ${x} ${y}`;
-              });
-              pathData += ` L ${chartWidth} ${baselineY} Z`;
+              const barWidth = chartWidth / 48; // One bar per data point
+              const volumeScale = chartHeight * 0.85;
+              const baselineY = chartHeight - 5;
 
               return (
                 <svg
@@ -382,12 +373,30 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                   preserveAspectRatio="none"
                 >
                   <defs>
-                    <linearGradient id="volumeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="rgba(34, 211, 238, 0.15)" />
-                      <stop offset="100%" stopColor="rgba(34, 211, 238, 0.02)" />
+                    {/* Gradient from red (bottom) to orange to green (top), bottom-to-top direction */}
+                    <linearGradient id="volumeHistogramGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+                      <stop offset="0%" stopColor="rgb(220, 38, 38)" stopOpacity="0.25" />
+                      <stop offset="50%" stopColor="rgb(234, 88, 12)" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="rgb(34, 197, 94)" stopOpacity="0.25" />
                     </linearGradient>
                   </defs>
-                  <path d={pathData} fill="url(#volumeGradient)" stroke="rgba(34, 211, 238, 0.3)" strokeWidth="0.8" />
+                  {/* Draw histogram bars */}
+                  {rotatedVolume.map((volume, i) => {
+                    const x = i * barWidth;
+                    const barHeight = (volume / 100) * volumeScale;
+                    const y = baselineY - barHeight;
+
+                    return (
+                      <rect
+                        key={`bar-${i}`}
+                        x={x}
+                        y={y}
+                        width={barWidth}
+                        height={barHeight}
+                        fill="url(#volumeHistogramGradient)"
+                      />
+                    );
+                  })}
                 </svg>
               );
             }, [timezoneOffset])}
