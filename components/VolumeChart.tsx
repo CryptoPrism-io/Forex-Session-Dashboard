@@ -355,46 +355,23 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
               isAnimationActive={false}
             />
 
-            {/* "Now" Reference Line - Vertical Line for Current Time */}
+            {/* "Now" Reference Line - Elegant Vertical Indicator */}
             <ReferenceLine
               x={nowLine}
-              stroke="#facc15"
-              strokeWidth={3}
-              strokeDasharray="3 3"
+              stroke="rgba(250, 204, 21, 0.85)"
+              strokeWidth={1.5}
               ifOverflow="visible"
               label={{
                 value: 'NOW',
                 position: 'top',
-                fill: '#facc15',
-                fontSize: 14,
-                fontWeight: 'bold',
+                fill: '#fde047',
+                fontSize: 12,
+                fontWeight: 600,
+                dy: -4, // lift the label slightly
               }}
               style={{
-                filter: 'drop-shadow(0 0 15px rgba(250, 204, 21, 0.9))',
-                transition: 'all 0.6s ease-in-out',
-              }}
-            />
-
-            {/* Yellow Pulsating Dot at Current Time */}
-            <ReferenceDot
-              x={nowLine}
-              y={
-                (() => {
-                  // Linear interpolation between bins for smooth dot placement
-                  const lowerIndex = Math.floor(nowLine * 2);
-                  const upperIndex = Math.ceil(nowLine * 2);
-                  const t = nowLine * 2 - lowerIndex;
-                  const lower = VOLUME_DATA[lowerIndex % 48];
-                  const upper = VOLUME_DATA[upperIndex % 48];
-                  return lower + (upper - lower) * t;
-                })()
-              }
-              r={5}
-              fill="#facc15"
-              className="pulse-yellow-dot"
-              strokeWidth={0}
-              style={{
-                transition: 'all 0.6s ease-in-out',
+                filter: 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.4))',
+                transition: 'transform 1s ease-in-out',
               }}
             />
           </AreaChart>
