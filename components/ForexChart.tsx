@@ -258,7 +258,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
         block,
         position: { x: relativeX, y: relativeY },
       });
-    }, 1000);
+    }, 300);
   };
 
   const handleMouseLeave = () => {
