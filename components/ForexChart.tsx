@@ -358,10 +358,22 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                 ...VOLUME_DATA.slice(0, 48 - rotationSteps)
               ];
 
-              // Create SVG histogram bars
+              // Interpolate from 48 points (30-min) to 144 points (10-min intervals)
+              const interpolatedVolume: number[] = [];
+              for (let i = 0; i < rotatedVolume.length - 1; i++) {
+                interpolatedVolume.push(rotatedVolume[i]);
+                // Linear interpolation: add 2 intermediate points between each pair
+                const v1 = rotatedVolume[i];
+                const v2 = rotatedVolume[i + 1];
+                interpolatedVolume.push(v1 + (v2 - v1) * 0.333);
+                interpolatedVolume.push(v1 + (v2 - v1) * 0.667);
+              }
+              interpolatedVolume.push(rotatedVolume[rotatedVolume.length - 1]);
+
+              // Create SVG histogram bars (10-min intervals = 144 bars)
               const chartWidth = 1000;
               const chartHeight = 100;
-              const barWidth = chartWidth / 48; // One bar per data point
+              const barWidth = chartWidth / interpolatedVolume.length; // One bar per 10-min interval
               const volumeScale = chartHeight * 0.85;
               const baselineY = chartHeight - 5;
 
@@ -375,13 +387,13 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                   <defs>
                     {/* Gradient from red (bottom) to orange to green (top), bottom-to-top direction */}
                     <linearGradient id="volumeHistogramGradient" x1="0%" y1="100%" x2="0%" y2="0%">
-                      <stop offset="0%" stopColor="rgb(220, 38, 38)" stopOpacity="0.25" />
-                      <stop offset="50%" stopColor="rgb(234, 88, 12)" stopOpacity="0.25" />
-                      <stop offset="100%" stopColor="rgb(34, 197, 94)" stopOpacity="0.25" />
+                      <stop offset="0%" stopColor="rgb(220, 38, 38)" stopOpacity="0.10" />
+                      <stop offset="50%" stopColor="rgb(234, 88, 12)" stopOpacity="0.10" />
+                      <stop offset="100%" stopColor="rgb(34, 197, 94)" stopOpacity="0.10" />
                     </linearGradient>
                   </defs>
                   {/* Draw histogram bars */}
-                  {rotatedVolume.map((volume, i) => {
+                  {interpolatedVolume.map((volume, i) => {
                     const x = i * barWidth;
                     const barHeight = (volume / 100) * volumeScale;
                     const y = baselineY - barHeight;
