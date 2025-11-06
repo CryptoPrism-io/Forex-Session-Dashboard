@@ -60,7 +60,7 @@ const CustomVolumeTooltip: React.FC<any> = ({ active, payload, label, getSession
     const sessionEvents = getSessionEventsAtTime?.(hoveredLocalTime);
 
     return (
-      <div className="bg-slate-900/95 border border-slate-700 rounded-lg p-3 shadow-xl max-w-sm">
+      <div className="bg-slate-900/95 border border-slate-700 rounded-lg p-3 shadow-xl max-w-sm" style={{ position: 'relative', left: '10px', top: '25px' }}>
         <p className="text-xs text-slate-400 mb-2">Time: <span className="text-cyan-400 font-medium">{timeStr}</span></p>
         <p className="text-xs text-slate-300 mb-2">Volume: <span className="text-slate-100 font-medium">{payload[0].value}</span></p>
 

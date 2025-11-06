@@ -82,9 +82,11 @@ const ChartTooltip: React.FC<{
   const tooltipHeight = 200;
   const horizontalPadding = 10;
   const verticalPadding = 16;
+  const offsetX = 10;
+  const offsetY = 25;
 
-  let left = position.x - tooltipWidth / 2;
-  let top = position.y - tooltipHeight - verticalPadding;
+  let left = position.x + offsetX;
+  let top = position.y + offsetY;
 
   if (left < horizontalPadding) {
     left = horizontalPadding;
@@ -245,25 +247,13 @@ const ForexChart: React.FC<ForexChartProps> = ({
   }, [timezoneOffset]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, block: TimeBlock) => {
-    const rect = chartContainerRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    // Only update if this is a higher-priority block (higher yLevel)
+    // This prevents lower-priority blocks from overriding higher-priority ones
+    if (hoveredBlock && hoveredBlock.yLevel > block.yLevel) {
+      return;
+    }
 
-    // Calculate X position as percentage (0-100)
-    const relativeX = e.clientX - rect.left;
-    const xPercent = (relativeX / rect.width) * 100;
-
-    // Find all blocks that overlap at this X position
-    const overlappingBlocks = timeBlocks.filter(
-      b => b.left <= xPercent && xPercent < (b.left + b.width)
-    );
-
-    // Select the block with the highest yLevel (most specific: killzone > overlap > session)
-    // If multiple blocks have same yLevel, pick the first one
-    const mostSpecificBlock = overlappingBlocks.reduce((prev, current) =>
-      current.yLevel > prev.yLevel ? current : prev
-    );
-
-    setHoveredBlock(mostSpecificBlock);
+    setHoveredBlock(block);
     setTooltipPosition({ x: e.clientX, y: e.clientY });
 
     // Clear previous timeout if exists
@@ -273,7 +263,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
 
     // Set tooltip to show after 1 second
     tooltipTimeoutRef.current = setTimeout(() => {
-      setDisplayedBlock(mostSpecificBlock);
+      setDisplayedBlock(block);
     }, 1000);
   };
 
