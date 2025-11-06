@@ -633,7 +633,6 @@ const ForexChart: React.FC<ForexChartProps> = ({
                     onMouseMove={(e) => handleMouseMove(e, block)}
                     onMouseLeave={handleMouseLeave}
                     aria-label={block.details.name}
-                    title={block.sessionName}
                   />
                 );
               })}
