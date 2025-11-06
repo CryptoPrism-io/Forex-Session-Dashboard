@@ -87,40 +87,6 @@ const CustomVolumeTooltip: React.FC<any> = ({ active, payload, label, getSession
   return null;
 };
 
-// Simple time label component
-const TimeLabel: React.FC<{
-  value?: string;
-  x?: number;
-  y?: number;
-  currentTime: Date;
-  timezoneOffset: number;
-}> = ({ x = 0, y = 0, currentTime, timezoneOffset }) => {
-  // Get local time in user's timezone
-  const utcHours = currentTime.getUTCHours();
-  const utcMinutes = currentTime.getUTCMinutes();
-  const totalUTCMinutes = utcHours * 60 + utcMinutes;
-  const totalLocalMinutes = totalUTCMinutes + timezoneOffset * 60;
-  const localHours = Math.floor((totalLocalMinutes / 60) % 24);
-  const localMinutes = Math.round(totalLocalMinutes % 60);
-
-  const timeStr = `${String(localHours).padStart(2, '0')}:${String(localMinutes).padStart(2, '0')}`;
-
-  return (
-    <text
-      x={x}
-      y={y}
-      textAnchor="middle"
-      dominantBaseline="middle"
-      fill="#fde047"
-      fontSize={10}
-      fontWeight={500}
-      transform={`rotate(270 ${x} ${y})`}
-    >
-      {timeStr}
-    </text>
-  );
-};
-
 const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, currentTimezoneLabel, currentTime = new Date() }) => {
   // Convert local time (nowLine) back to UTC for accurate session detection
   const getUTCHour = (localHour: number, offset: number): number => {
