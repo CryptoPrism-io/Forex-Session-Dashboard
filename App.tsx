@@ -197,9 +197,9 @@ const App: React.FC = () => {
   const topTimezones = [
     TIMEZONES.find(tz => tz.label === 'UTC'),
     TIMEZONES.find(tz => tz.label === 'GMT'),
+    TIMEZONES.find(tz => tz.label === 'IST (UTC+5:30)'),     // India
     TIMEZONES.find(tz => tz.label === 'JST'),     // Tokyo
     TIMEZONES.find(tz => tz.label === 'EST'),     // New York
-    TIMEZONES.find(tz => tz.label === 'AEST'),    // Sydney
   ].filter(Boolean) as Timezone[];
 
   // Add user's selected timezone if not already in the list
