@@ -55,12 +55,16 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
   const chartData = useMemo(() => {
     // Calculate rotation amount based on timezone offset
     // Each 0.5-hour step = 1 data point, so multiply offset by 2
-    const rotationSteps = Math.round((timezoneOffset % 24) * 2);
+    // Normalize to 0-47 range (48 data points for 24 hours)
+    let rotationSteps = Math.round((timezoneOffset % 24) * 2);
+    rotationSteps = ((rotationSteps % 48) + 48) % 48;
 
-    // Rotate the volume data array to align peaks with user's timezone
+    // Rotate BACKWARDS: move data from end to beginning
+    // This aligns UTC times to local timezone perspective
+    // At 00:00 local = (00:00 - offset) UTC = (24 - offset) UTC from previous day
     const rotatedVolumeData = [
-      ...VOLUME_DATA.slice(rotationSteps),
-      ...VOLUME_DATA.slice(0, rotationSteps)
+      ...VOLUME_DATA.slice(48 - rotationSteps),
+      ...VOLUME_DATA.slice(0, 48 - rotationSteps)
     ];
 
     return rotatedVolumeData.map((volume, index) => {
