@@ -222,6 +222,20 @@ const App: React.FC = () => {
       background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%)',
       backdropFilter: 'blur(10px)'
     }}>
+      {/* Portrait Mode Blocker for Mobile */}
+      <div className="portrait-blocker fixed inset-0 flex items-center justify-center z-[10000] bg-gradient-to-br from-slate-950 to-slate-900">
+        <div className="text-center space-y-6 px-6">
+          <div className="text-6xl">📱</div>
+          <h1 className="text-3xl font-bold text-cyan-400">Rotate Your Device</h1>
+          <p className="text-lg text-slate-300 max-w-sm">
+            This application is optimized for <span className="font-semibold text-cyan-300">landscape mode</span> on mobile devices for the best trading experience.
+          </p>
+          <p className="text-sm text-slate-400">
+            Please rotate your device to landscape orientation to continue.
+          </p>
+        </div>
+      </div>
+
       <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 flex flex-col items-center">
         {/* HEADER ROW: Left Section (Title/Time/Timezone) + Right Section (Clocks) */}
         <div className="w-full mb-6 flex gap-6">
