@@ -130,6 +130,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
 
       return {
         time: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
+        hour: localHours,  // ✅ continuous numeric x-axis value
         volume,
       };
     });
@@ -317,7 +318,12 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" vertical={true} />
 
             <XAxis
-              dataKey="time"
+              dataKey="hour"
+              type="number"
+              domain={[0, 24]}
+              tickFormatter={(h) =>
+                `${String(Math.floor(h)).padStart(2, '0')}:${(h % 1 ? '30' : '00')}`
+              }
               stroke="rgba(148, 163, 184, 0.5)"
               tick={{ fill: 'rgba(148, 163, 184, 0.7)', fontSize: 12 }}
               interval={3} // Show every 2 hours
@@ -351,31 +357,45 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
 
             {/* "Now" Reference Line - Vertical Line for Current Time */}
             <ReferenceLine
-              x={Math.floor(nowLine * 2)} // Chart data is now rotated to local timezone, so use local time directly
+              x={nowLine}
               stroke="#facc15"
-              strokeWidth={5}
-              strokeDasharray="2 4"
+              strokeWidth={3}
+              strokeDasharray="3 3"
+              ifOverflow="visible"
               label={{
                 value: 'NOW',
                 position: 'top',
                 fill: '#facc15',
                 fontSize: 14,
                 fontWeight: 'bold',
-                offset: 10,
               }}
               style={{
-                filter: 'drop-shadow(0 0 15px rgba(250, 204, 21, 1))',
+                filter: 'drop-shadow(0 0 15px rgba(250, 204, 21, 0.9))',
+                transition: 'all 0.6s ease-in-out',
               }}
             />
 
             {/* Yellow Pulsating Dot at Current Time */}
             <ReferenceDot
-              x={Math.floor(nowLine * 2)}
-              y={chartData[Math.floor(nowLine * 2)]?.volume || 50}
-              r={6}
+              x={nowLine}
+              y={
+                (() => {
+                  // Linear interpolation between bins for smooth dot placement
+                  const lowerIndex = Math.floor(nowLine * 2);
+                  const upperIndex = Math.ceil(nowLine * 2);
+                  const t = nowLine * 2 - lowerIndex;
+                  const lower = VOLUME_DATA[lowerIndex % 48];
+                  const upper = VOLUME_DATA[upperIndex % 48];
+                  return lower + (upper - lower) * t;
+                })()
+              }
+              r={5}
               fill="#facc15"
               className="pulse-yellow-dot"
               strokeWidth={0}
+              style={{
+                transition: 'all 0.6s ease-in-out',
+              }}
             />
           </AreaChart>
         </ResponsiveContainer>
