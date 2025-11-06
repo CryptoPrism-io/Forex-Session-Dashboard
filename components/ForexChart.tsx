@@ -75,16 +75,18 @@ const UnifiedTooltip: React.FC<{
   let left = position.x;
   let top = position.y;
 
-  // Keep within viewport
+  // Clamp within container bounds
+  const maxLeft = window.innerWidth - tooltipWidth - padding;
   if (left + tooltipWidth > window.innerWidth - padding) {
-    left = window.innerWidth - tooltipWidth - padding;
+    left = maxLeft > 0 ? maxLeft : padding;
   }
   if (left < padding) {
     left = padding;
   }
 
+  const maxTop = window.innerHeight - tooltipHeight - padding;
   if (top + tooltipHeight > window.innerHeight - padding) {
-    top = window.innerHeight - tooltipHeight - padding;
+    top = maxTop > 0 ? maxTop : padding;
   }
   if (top < padding) {
     top = padding;
@@ -93,7 +95,7 @@ const UnifiedTooltip: React.FC<{
   return (
     <div
       style={{
-        position: 'fixed',
+        position: 'absolute',
         left,
         top,
         zIndex: 50,
@@ -245,9 +247,16 @@ const ForexChart: React.FC<ForexChartProps> = ({
 
     // Show tooltip after 1 second delay
     tooltipTimeoutRef.current = setTimeout(() => {
+      // Calculate container-relative coordinates
+      const rect = chartContainerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const relativeX = e.clientX - rect.left;
+      const relativeY = e.clientY - rect.top;
+
       setTooltip({
         block,
-        position: { x: e.clientX, y: e.clientY },
+        position: { x: relativeX, y: relativeY },
       });
     }, 1000);
   };
@@ -303,7 +312,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
   }, [timezoneOffset, visibleLayers.volume]);
 
   return (
-    <div ref={chartContainerRef} className="w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 p-6 rounded-2xl shadow-2xl shadow-black/30 hover:border-slate-600/50 transition-all duration-300">
+    <div ref={chartContainerRef} className="relative w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 p-6 rounded-2xl shadow-2xl shadow-black/30 hover:border-slate-600/50 transition-all duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-slate-100">Session Timeline</h3>
