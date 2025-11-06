@@ -27,15 +27,15 @@ const VOLUME_DATA = [
 ];
 
 const SESSION_NOTES = [
-  { hour: 0, label: '00:00–02:30', desc: 'Sydney-only, thin overnight baseline' },
-  { hour: 3, label: '03:00–05:30', desc: 'Tokyo ramps, Asia desks online' },
-  { hour: 6, label: '06:00–08:30', desc: 'Tokyo peak, London open lift' },
-  { hour: 9, label: '09:00–11:30', desc: 'Europe flow, lunch dip at 11:00' },
-  { hour: 12, label: '12:00–14:30', desc: 'Peak overlap (100 at 13:30), US data spikes' },
-  { hour: 15, label: '15:00–17:30', desc: 'Orderly decline, overlap winds down' },
-  { hour: 18, label: '18:00–20:30', desc: 'NY-only, afternoon fade' },
-  { hour: 21, label: '21:00–23:30', desc: 'Rollover lull (21:00–22:00), pre-open baseline' }
-];
+  { hour: 0, label: '00:00–02:30', desc: 'Sydney-only, thin overnight baseline', utcRange: [0, 2.5] },
+  { hour: 3, label: '03:00–05:30', desc: 'Tokyo ramps, Asia desks online', utcRange: [3, 5.5] },
+  { hour: 6, label: '06:00–08:30', desc: 'Tokyo peak, London open lift', utcRange: [6, 8.5] },
+  { hour: 9, label: '09:00–11:30', desc: 'Europe flow, lunch dip at 11:00 UTC', utcRange: [9, 11.5], lunchDip: 11 },
+  { hour: 12, label: '12:00–14:30', desc: 'Peak overlap (100 at 13:30 UTC), US data spikes', utcRange: [12, 14.5], peak: 13.5 },
+  { hour: 15, label: '15:00–17:30', desc: 'Orderly decline, overlap winds down', utcRange: [15, 17.5] },
+  { hour: 18, label: '18:00–20:30', desc: 'NY-only, afternoon fade', utcRange: [18, 20.5] },
+  { hour: 21, label: '21:00–23:30', desc: 'Rollover lull (21:00–22:00 UTC), pre-open baseline', utcRange: [21, 23.5], rolloverLull: [21, 22] }
+] as const;
 
 const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, currentTimezoneLabel }) => {
   // Convert local time (nowLine) back to UTC for accurate session detection
@@ -103,11 +103,34 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
     const startTimeLocal = formatTimeInTimezone(sessionStartUTC, timezoneOffset);
     const endTimeLocal = formatTimeInTimezone(sessionEndUTC, timezoneOffset);
 
+    // Add timezone-aware details to description
+    let descWithTimezone = baseSession.desc;
+
+    // Add lunch dip timezone conversion if present
+    if ('lunchDip' in baseSession) {
+      const lunchDipLocal = formatTimeInTimezone(baseSession.lunchDip, timezoneOffset);
+      descWithTimezone = descWithTimezone.replace('11:00 UTC', `11:00 UTC (${lunchDipLocal} ${currentTimezoneLabel})`);
+    }
+
+    // Add peak timezone conversion if present
+    if ('peak' in baseSession) {
+      const peakLocal = formatTimeInTimezone(baseSession.peak, timezoneOffset);
+      descWithTimezone = descWithTimezone.replace('13:30 UTC', `13:30 UTC (${peakLocal} ${currentTimezoneLabel})`);
+    }
+
+    // Add rollover lull timezone conversion if present
+    if ('rolloverLull' in baseSession) {
+      const rolloverStart = formatTimeInTimezone(baseSession.rolloverLull[0], timezoneOffset);
+      const rolloverEnd = formatTimeInTimezone(baseSession.rolloverLull[1], timezoneOffset);
+      descWithTimezone = descWithTimezone.replace('21:00–22:00 UTC', `21:00–22:00 UTC (${rolloverStart}–${rolloverEnd} ${currentTimezoneLabel})`);
+    }
+
     return {
       ...baseSession,
       label: `${startTimeLocal}–${endTimeLocal}`,
+      desc: descWithTimezone,
     };
-  }, [nowLine, timezoneOffset]);
+  }, [nowLine, timezoneOffset, currentTimezoneLabel]);
 
   return (
     <div className="w-full mt-6 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-6 shadow-lg shadow-black/20">
