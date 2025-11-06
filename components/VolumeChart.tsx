@@ -367,6 +367,24 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
               }}
             />
 
+            {/* Horizontal Line for Current Volume Level */}
+            <ReferenceLine
+              y={chartData[Math.floor(nowLine * 2)]?.volume || 50}
+              stroke="#facc15"
+              strokeWidth={2}
+              strokeDasharray="5 5"
+              label={{
+                value: `Volume: ${chartData[Math.floor(nowLine * 2)]?.volume || 50}`,
+                position: 'right',
+                fill: '#facc15',
+                fontSize: 11,
+                fontWeight: 'bold',
+              }}
+              style={{
+                filter: 'drop-shadow(0 0 8px rgba(250, 204, 21, 0.6))',
+              }}
+            />
+
             {/* Yellow Pulsating Dot at Current Time */}
             <ReferenceDot
               x={Math.floor(nowLine * 2)}
