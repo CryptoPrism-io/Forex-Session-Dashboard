@@ -62,7 +62,8 @@
       }
       /* Portrait Mode Lock - Mobile Only */
       .portrait-blocker {
-        display: none;
+        display: none !important;
+        visibility: hidden !important;
       }
       @media (orientation: portrait) and (max-width: 768px) {
         main, footer {
@@ -70,6 +71,7 @@
         }
         .portrait-blocker {
           display: flex !important;
+          visibility: visible !important;
         }
       }
     </style>

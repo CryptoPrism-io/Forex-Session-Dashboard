@@ -223,7 +223,14 @@ const App: React.FC = () => {
       backdropFilter: 'blur(10px)'
     }}>
       {/* Portrait Mode Blocker for Mobile */}
-      <div className="portrait-blocker fixed inset-0 flex items-center justify-center z-[10000] bg-gradient-to-br from-slate-950 to-slate-900">
+      <div className="portrait-blocker bg-gradient-to-br from-slate-950 to-slate-900" style={{
+        position: 'fixed',
+        inset: 0,
+        display: 'none',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10000
+      }}>
         <div className="text-center space-y-6 px-6">
           <div className="text-6xl">📱</div>
           <h1 className="text-3xl font-bold text-cyan-400">Rotate Your Device</h1>
