@@ -7,28 +7,34 @@ interface VolumeChartProps {
   currentTimezoneLabel: string;
 }
 
-// Volume data for 24 hours (48 values = 2 per hour)
-// Based on realistic forex trading session patterns
+// Ultra-realistic 24-hour FX volume profile (UTC; 30-min steps, 00:00 → 23:30)
+// Normalized 0–100 volumes with micro-features:
+// - Sydney-only baseline
+// - Tokyo ramp, London open lift
+// - London lunch dip (11:00–12:00)
+// - US data spikes (12:30, 14:00 UTC)
+// - Peak overlap (13:30 UTC = 100)
+// - NY fade, rollover lull (21:00–22:00)
 const VOLUME_DATA = [
-  22, 21, 19, 18, 17, 18,   // 0:00–2:30, Sydney only, quiet
-  20, 25, 30, 38, 42, 45,   // 3:00–5:30, Tokyo ramps up
-  48, 52, 60, 65, 70, 62,   // 6:00–8:30, Tokyo peak, London opens
-  68, 75, 85, 90, 98, 100,  // 9:00–11:30, London–Tokyo/Europe overlap starts
-  93, 95, 100, 98, 95, 90,  // 12:00–14:30, London–NY peak overlap, max volume
-  90, 92, 87, 82, 75, 68,   // 15:00–17:30, London–NY overlap ending, US active
-  60, 52, 45, 40, 38, 35,   // 18:00–20:30, NY-only, volume declining
-  32, 26, 22, 20, 19, 18    // 21:00–23:30, Sydney-only quiet, pre-open
+  18, 17, 17, 18, 19, 21,        // 00:00–02:30  Sydney-only quiet, baseline liquidity
+  24, 28, 33, 38, 42, 46,        // 03:00–05:30  Tokyo ramps as Asia desks come online
+  50, 55, 60, 64, 70, 74,        // 06:00–08:30  Tokyo peak, London pre-open → open lift
+  78, 82, 86, 88, 85, 82,        // 09:00–11:30  Strong Europe flow, then London-lunch dip (11:00–12:00)
+  90, 96, 98, 100, 98, 96,       // 12:00–14:30  Overlap starts; 12:30 data spike; 13:30 PEAK; 14:00 event
+  94, 92, 90, 86, 82, 78,        // 15:00–17:30  Orderly ease as overlap winds down
+  72, 66, 60, 55, 50, 45,        // 18:00–20:30  NY-only, volume declining through afternoon
+  40, 36, 32, 30, 28, 26         // 21:00–23:30  Rollover lull (21:00–22:00) into Sydney pre-open baseline
 ];
 
 const SESSION_NOTES = [
-  { hour: 0, label: '0:00–2:30', desc: 'Sydney only, quiet' },
-  { hour: 3, label: '3:00–5:30', desc: 'Tokyo ramps up' },
-  { hour: 6, label: '6:00–8:30', desc: 'Tokyo peak, London opens' },
-  { hour: 9, label: '9:00–11:30', desc: 'London–Tokyo overlap' },
-  { hour: 12, label: '12:00–14:30', desc: 'London–NY peak, max volume' },
-  { hour: 15, label: '15:00–17:30', desc: 'London–NY overlap ending' },
-  { hour: 18, label: '18:00–20:30', desc: 'NY-only, declining' },
-  { hour: 21, label: '21:00–23:30', desc: 'Sydney-only, pre-open' }
+  { hour: 0, label: '00:00–02:30', desc: 'Sydney-only, thin overnight baseline' },
+  { hour: 3, label: '03:00–05:30', desc: 'Tokyo ramps, Asia desks online' },
+  { hour: 6, label: '06:00–08:30', desc: 'Tokyo peak, London open lift' },
+  { hour: 9, label: '09:00–11:30', desc: 'Europe flow, lunch dip at 11:00' },
+  { hour: 12, label: '12:00–14:30', desc: 'Peak overlap (100 at 13:30), US data spikes' },
+  { hour: 15, label: '15:00–17:30', desc: 'Orderly decline, overlap winds down' },
+  { hour: 18, label: '18:00–20:30', desc: 'NY-only, afternoon fade' },
+  { hour: 21, label: '21:00–23:30', desc: 'Rollover lull (21:00–22:00), pre-open baseline' }
 ];
 
 const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, currentTimezoneLabel }) => {
