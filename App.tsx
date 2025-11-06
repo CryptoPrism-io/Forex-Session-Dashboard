@@ -396,8 +396,18 @@ const App: React.FC = () => {
             )}
           </div>
 
-          {/* RIGHT SECTION: Session Clocks */}
-          <div className="flex justify-end">
+          {/* RIGHT SECTION: Clocks Container with Buttons */}
+          <div className="w-fit bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 shadow-lg shadow-black/20">
+            {/* Buttons Row */}
+            <div className="flex gap-2 mb-4">
+              <button className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 hover:border-cyan-400/60 transition-all duration-200">
+                World Clock
+              </button>
+              <button className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60 transition-all duration-200">
+                Economic Calendar
+              </button>
+            </div>
+            {/* Clocks */}
             <SessionClocks compact sessionStatus={sessionStatus} />
           </div>
         </div>
