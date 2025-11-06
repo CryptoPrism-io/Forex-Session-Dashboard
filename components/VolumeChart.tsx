@@ -5,6 +5,7 @@ interface VolumeChartProps {
   nowLine: number;
   timezoneOffset: number;
   currentTimezoneLabel: string;
+  currentTime?: Date;
 }
 
 // Global Forex Trading Volume Model (UTC)
@@ -33,7 +34,53 @@ const SESSION_NOTES = [
   { hour: 21, label: '21:00–23:30', desc: 'Rollover lull (21:00–22:00 UTC), swap-settlement hour, Sydney pre-open', utcRange: [21, 23.5], rolloverLull: [21, 22] }
 ] as const;
 
-const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, currentTimezoneLabel }) => {
+// Format elapsed/remaining time in HH MM SS format
+const formatSessionDuration = (seconds: number): string => {
+  const isNegative = seconds < 0;
+  const absSeconds = Math.abs(seconds);
+
+  const hours = Math.floor(absSeconds / 3600);
+  const minutes = Math.floor((absSeconds % 3600) / 60);
+  const secs = Math.floor(absSeconds % 60);
+
+  const sign = isNegative ? '-' : '';
+  return `${sign}${hours}h ${minutes}m ${secs}s`;
+};
+
+// Custom Tooltip Component
+const CustomVolumeTooltip: React.FC<any> = ({ active, payload, label, currentSessionData }) => {
+  if (active && payload && payload[0]) {
+    return (
+      <div className="bg-slate-900/95 border border-slate-700 rounded-lg p-3 shadow-xl">
+        <p className="text-xs text-slate-400 mb-2">Time: <span className="text-cyan-400 font-medium">{payload[0].payload.time}</span></p>
+        <p className="text-xs text-slate-300 mb-2">Volume: <span className="text-slate-100 font-medium">{payload[0].value}</span></p>
+
+        {currentSessionData && (
+          <div className="border-t border-slate-700 pt-2 mt-2">
+            <p className="text-xs text-slate-300 font-semibold mb-1">Current Session</p>
+            <p className="text-xs text-slate-300 mb-1">
+              <span className="text-cyan-400 font-medium">{currentSessionData.sessionRange}</span>
+            </p>
+            <p className="text-xs text-slate-400 mb-1">{currentSessionData.sessionName}</p>
+            <div className="flex gap-4 mt-1.5">
+              <div>
+                <span className="text-xs text-slate-400">Elapsed:</span>
+                <p className="text-xs text-slate-200 font-medium">{currentSessionData.elapsed}</p>
+              </div>
+              <div>
+                <span className="text-xs text-slate-400">Remaining:</span>
+                <p className="text-xs text-slate-200 font-medium">{currentSessionData.remaining}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+  return null;
+};
+
+const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, currentTimezoneLabel, currentTime = new Date() }) => {
   // Convert local time (nowLine) back to UTC for accurate session detection
   const getUTCHour = (localHour: number, offset: number): number => {
     let utcHour = localHour - offset;
@@ -137,6 +184,42 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
     };
   }, [nowLine, timezoneOffset, currentTimezoneLabel]);
 
+  // Calculate session timing data for tooltip
+  const sessionTimingData = useMemo(() => {
+    const utcHour = getUTCHour(nowLine, timezoneOffset);
+
+    // Get the session start/end times from SESSION_NOTES
+    const baseSession = getCurrentSession();
+    const sessionStartUTC = baseSession.utcRange[0];
+    const sessionEndUTC = baseSession.utcRange[1];
+
+    // Calculate elapsed and remaining in seconds
+    const utcSeconds = currentTime.getUTCHours() * 3600 + currentTime.getUTCMinutes() * 60 + currentTime.getUTCSeconds();
+    const sessionStartSeconds = sessionStartUTC * 3600;
+    const sessionEndSeconds = sessionEndUTC * 3600;
+
+    const elapsedSeconds = utcSeconds - sessionStartSeconds;
+    const remainingSeconds = sessionEndSeconds - utcSeconds;
+
+    // Format times in user's timezone
+    const startTimeLocal = formatTimeInTimezone(sessionStartUTC, timezoneOffset);
+    const endTimeLocal = formatTimeInTimezone(sessionEndUTC, timezoneOffset);
+
+    // Determine session name based on session hours
+    const hour = Math.floor(utcHour);
+    let sessionName = 'Trading Session';
+    if (hour >= 0 && hour < 9) sessionName = 'Asia Session';
+    else if (hour >= 9 && hour < 17) sessionName = 'Europe Session';
+    else if (hour >= 17 && hour < 24) sessionName = 'New York Session';
+
+    return {
+      sessionRange: `${startTimeLocal}–${endTimeLocal}`,
+      sessionName: sessionName,
+      elapsed: formatSessionDuration(elapsedSeconds),
+      remaining: formatSessionDuration(remainingSeconds),
+    };
+  }, [nowLine, timezoneOffset, currentTime]);
+
   return (
     <div className="w-full mt-6 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-6 shadow-lg shadow-black/20">
       {/* Header with Title and Session Info */}
@@ -185,14 +268,10 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
             />
 
             <Tooltip
-              contentStyle={{
-                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                border: '1px solid rgba(148, 163, 184, 0.3)',
-                borderRadius: '8px',
-                color: 'rgba(203, 213, 225, 1)',
-              }}
-              labelStyle={{ color: 'rgba(34, 211, 238, 1)' }}
-              formatter={(value) => [`Volume: ${value}`, 'Trading Volume']}
+              content={
+                <CustomVolumeTooltip currentSessionData={sessionTimingData} />
+              }
+              cursor={{ strokeDasharray: '3 3', stroke: 'rgba(148, 163, 184, 0.5)' }}
             />
 
             {/* "Now" Reference Line */}

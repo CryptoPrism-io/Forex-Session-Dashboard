@@ -97,13 +97,14 @@ export const MAJOR_TIMEZONES: Timezone[] = [
   { label: "NZST", offset: 12, ianaTimezone: "Pacific/Auckland" },   // New Zealand Standard Time
 ];
 
-export const SESSIONS: SessionData[] = [
+// Standard Time Session Ranges (Winter: no DST)
+export const SESSIONS_STANDARD: SessionData[] = [
   {
     name: "Sydney",
     main: {
       key: 'sydney_session',
       name: "Sydney Session",
-      range: [21, 30], // 9pm to 6am UTC
+      range: [21, 30], // 9pm to 6am UTC (standard time)
       color: "hsl(195, 74%, 62%)",
       opacity: 0.7,
       tooltip: {
@@ -119,7 +120,7 @@ export const SESSIONS: SessionData[] = [
     main: {
       key: 'tokyo_session',
       name: "Asian Session (Tokyo)",
-      range: [23, 32], // 11pm to 8am UTC
+      range: [23, 32], // 11pm to 8am UTC (no DST in Japan)
       color: "hsl(320, 82%, 60%)",
       opacity: 0.7,
       tooltip: {
@@ -135,7 +136,140 @@ export const SESSIONS: SessionData[] = [
     main: {
       key: 'london_session',
       name: "London Session",
-      range: [7, 16], // 7am to 4pm UTC
+      range: [8, 17], // 8am to 5pm UTC (GMT, no daylight saving)
+      color: "hsl(45, 100%, 50%)",
+      opacity: 0.7,
+      tooltip: {
+        title: "London Session",
+        volatility: "High",
+        bestPairs: "EUR/USD, GBP/USD",
+        strategy: "High volume, focus on breakouts and trend-following."
+      }
+    },
+    overlapAsia: {
+      key: 'asia_london_overlap',
+      name: "Asia-London Overlap",
+      range: [8, 9],
+      color: "hsl(255, 80%, 70%)",
+      opacity: 0.9,
+      tooltip: {
+        title: "Asia-London Overlap",
+        volatility: "High",
+        bestPairs: "GBP/JPY, EUR/JPY",
+        strategy: "Look for trend continuation from the Asian session or reversals as London volume enters."
+      }
+    },
+    killzone: {
+      key: 'london_killzone',
+      name: "London Killzone",
+      range: [7, 10],
+      color: "hsl(0, 80%, 60%)",
+      opacity: 0.8,
+      tooltip: {
+        title: "London Killzone (LKZ)",
+        volatility: "Very High",
+        bestPairs: "EUR/USD, GBP/USD",
+        strategy: "Classic 'stop hunt' and 'seek and destroy' patterns. Look for liquidity grabs above/below Asia's range, then a reversal."
+      }
+    }
+  },
+  {
+    name: "New York",
+    main: {
+      key: 'ny_session',
+      name: "New York Session",
+      range: [13, 22], // 1pm to 10pm UTC (EST, UTC-5)
+      color: "hsl(120, 60%, 50%)",
+      opacity: 0.7,
+      tooltip: {
+        title: "New York Session",
+        volatility: "High",
+        bestPairs: "USD Majors",
+        strategy: "Key economic data releases. Trade the news or wait for post-news trends to establish."
+      }
+    },
+    overlapLondon: {
+      key: 'london_ny_overlap',
+      name: "London-NY Overlap",
+      range: [13, 17],
+      color: "hsl(20, 100%, 60%)",
+      opacity: 0.9,
+      tooltip: {
+        title: "London-NY Overlap",
+        volatility: "Very High",
+        bestPairs: "EUR/USD, USD/JPY, GBP/USD",
+        strategy: "Highest liquidity period. Ideal for breakout strategies and short-term trend following."
+      }
+    },
+    killzoneAM: {
+      key: 'ny_am_killzone',
+      name: "NY AM Killzone",
+      range: [12, 15],
+      color: "hsl(0, 80%, 60%)",
+      opacity: 0.8,
+      tooltip: {
+        title: "NY AM Killzone",
+        volatility: "Very High",
+        bestPairs: "USD Majors, Indices (US30, NAS100)",
+        strategy: "Similar to London Killzone. Look for manipulation moves around the NY open to engineer liquidity before the true move."
+      }
+    },
+    killzonePM: {
+      key: 'ny_pm_killzone',
+      name: "NY PM Killzone",
+      range: [18, 20],
+      color: "hsl(0, 60%, 55%)",
+      opacity: 0.6,
+      tooltip: {
+        title: "NY PM Killzone",
+        volatility: "Medium",
+        bestPairs: "USD Majors",
+        strategy: "Often a period of reversal or retracement as the London session closes and profit-taking occurs."
+      }
+    },
+  },
+];
+
+// Daylight Saving Time Session Ranges (Summer: DST active)
+export const SESSIONS_DAYLIGHT: SessionData[] = [
+  {
+    name: "Sydney",
+    main: {
+      key: 'sydney_session',
+      name: "Sydney Session",
+      range: [20, 29], // 8pm to 5am UTC (AEDT, UTC+11)
+      color: "hsl(195, 74%, 62%)",
+      opacity: 0.7,
+      tooltip: {
+        title: "Sydney Session",
+        volatility: "Low",
+        bestPairs: "AUD/USD, AUD/JPY",
+        strategy: "Range trading, breakouts during session open."
+      }
+    }
+  },
+  {
+    name: "Asia",
+    main: {
+      key: 'tokyo_session',
+      name: "Asian Session (Tokyo)",
+      range: [23, 32], // 11pm to 8am UTC (JST, no DST)
+      color: "hsl(320, 82%, 60%)",
+      opacity: 0.7,
+      tooltip: {
+        title: "Asian Session (Tokyo)",
+        volatility: "Low-Medium",
+        bestPairs: "USD/JPY, GBP/JPY",
+        strategy: "Follow JPY pairs, watch for Bank of Japan announcements."
+      }
+    },
+  },
+  {
+    name: "London",
+    main: {
+      key: 'london_session',
+      name: "London Session",
+      range: [7, 16], // 7am to 4pm UTC (BST, UTC+1)
       color: "hsl(45, 100%, 50%)",
       opacity: 0.7,
       tooltip: {
@@ -177,7 +311,7 @@ export const SESSIONS: SessionData[] = [
     main: {
       key: 'ny_session',
       name: "New York Session",
-      range: [12, 21], // 12pm to 9pm UTC
+      range: [12, 21], // 12pm to 9pm UTC (EDT, UTC-4)
       color: "hsl(120, 60%, 50%)",
       opacity: 0.7,
       tooltip: {
@@ -228,3 +362,6 @@ export const SESSIONS: SessionData[] = [
     },
   },
 ];
+
+// Default to standard time (will be overridden by App based on DST status)
+export const SESSIONS: SessionData[] = SESSIONS_STANDARD;

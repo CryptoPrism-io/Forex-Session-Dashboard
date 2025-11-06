@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { SESSIONS } from '../constants';
+import { SESSIONS, SESSIONS_STANDARD, SESSIONS_DAYLIGHT } from '../constants';
 import { ChartBarDetails, TooltipInfo } from '../types';
 import { SessionStatus } from '../App';
 import { IconChevronDown } from './icons';
@@ -22,6 +22,13 @@ interface ForexChartProps {
   currentTimezoneLabel: string;
   timezoneOffset: number;
   sessionStatus: { [key: string]: SessionStatus };
+  currentTime?: Date;
+  isDSTActive?: boolean;
+  activeSessions?: SessionData[];
+  isAutoDetectDST?: boolean;
+  manualDSTOverride?: boolean | null;
+  onToggleDSTOverride?: (override: boolean | null) => void;
+  onAutoDetectToggle?: (enabled: boolean) => void;
 }
 
 interface TimeBlock {
@@ -121,11 +128,16 @@ const ChartTooltip: React.FC<{
   );
 };
 
-const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, timezoneOffset, sessionStatus }) => {
+const ForexChart: React.FC<ForexChartProps> = ({
+  nowLine, currentTimezoneLabel, timezoneOffset, sessionStatus, currentTime = new Date(),
+  isDSTActive = false, activeSessions, isAutoDetectDST = true, manualDSTOverride,
+  onToggleDSTOverride, onAutoDetectToggle
+}) => {
   const [hoveredBlock, setHoveredBlock] = useState<TimeBlock | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [viewMode, setViewMode] = useState<'unified' | 'separate' | 'guide' | 'volume'>('unified');
   const [chartsVisible, setChartsVisible] = useState(true);
+  const [showDSTMenu, setShowDSTMenu] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({ mainSessions: false, overlaps: false, killzones: false });
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
   const [nowBlinkVisible, setNowBlinkVisible] = useState(true);
@@ -138,6 +150,15 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
     volume: true,
     news: false
   });
+
+  // Use activeSessions from props if provided, otherwise fall back to SESSIONS constant
+  const sessions = activeSessions || SESSIONS;
+
+  // State for guide view tab selection (Standard vs Daylight)
+  const [guideTab, setGuideTab] = useState<'standard' | 'daylight'>('standard');
+
+  // Get guide sessions based on selected tab
+  const guideSessions = guideTab === 'standard' ? SESSIONS_STANDARD : SESSIONS_DAYLIGHT;
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -275,7 +296,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
 
   return (
     <div ref={chartContainerRef} className="w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 p-6 rounded-2xl shadow-2xl shadow-black/30 hover:border-slate-600/50 transition-all duration-300">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-slate-100">Session Timeline</h3>
           <div className="flex items-center gap-2">
@@ -321,12 +342,136 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
             </button>
           </div>
         </div>
+
+        <div className="flex items-center gap-2">
+          {/* Show/Hide Button */}
+          {(viewMode === 'separate' || viewMode === 'unified') && (
+            <div className="relative">
+              <button
+                onClick={() => setShowLayersMenu(!showLayersMenu)}
+                className="px-2 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 opacity-50 hover:opacity-70 transition-all duration-300"
+                title={visibleLayers.sessions ? "Hide layers" : "Show layers"}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              </button>
+
+              {/* Layers Menu */}
+              {showLayersMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-3 z-50 space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={visibleLayers.sessions}
+                      onChange={(e) => setVisibleLayers({ ...visibleLayers, sessions: e.target.checked })}
+                      className="cursor-pointer"
+                    />
+                    <span className="text-xs text-slate-300">Sessions</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={visibleLayers.overlaps}
+                      onChange={(e) => setVisibleLayers({ ...visibleLayers, overlaps: e.target.checked })}
+                      className="cursor-pointer"
+                    />
+                    <span className="text-xs text-slate-300">Overlaps</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={visibleLayers.killzones}
+                      onChange={(e) => setVisibleLayers({ ...visibleLayers, killzones: e.target.checked })}
+                      className="cursor-pointer"
+                    />
+                    <span className="text-xs text-slate-300">Killzones</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={visibleLayers.volume}
+                      onChange={(e) => setVisibleLayers({ ...visibleLayers, volume: e.target.checked })}
+                      className="cursor-pointer"
+                    />
+                    <span className="text-xs text-slate-300">Volume</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors border-t border-slate-700 pt-2 mt-2">
+                    <input
+                      type="checkbox"
+                      checked={visibleLayers.news}
+                      onChange={(e) => setVisibleLayers({ ...visibleLayers, news: e.target.checked })}
+                      className="cursor-pointer"
+                    />
+                    <span className="text-xs text-slate-300">📰 News</span>
+                  </label>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* DST Toggle Button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowDSTMenu(!showDSTMenu)}
+              className="px-2.5 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 transition-all duration-300"
+              title={isDSTActive ? "Summer Time (DST Active)" : "Standard Time"}
+            >
+              {isDSTActive ? '🌞 DST' : '❄️ ST'}
+            </button>
+
+            {/* DST Menu */}
+            {showDSTMenu && (
+              <div className="absolute right-0 mt-2 w-56 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-3 z-50 space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={isAutoDetectDST}
+                    onChange={(e) => onAutoDetectToggle?.(e.target.checked)}
+                    className="cursor-pointer"
+                  />
+                  <span className="text-xs text-slate-300">Auto-detect DST</span>
+                </label>
+                <div className="border-t border-slate-700 pt-2 mt-2">
+                  <p className="text-xs text-slate-400 px-2 pb-2">Manual Override:</p>
+                  <button
+                    onClick={() => {
+                      onToggleDSTOverride?.(true);
+                      setShowDSTMenu(false);
+                    }}
+                    className={`w-full px-3 py-1.5 text-xs rounded-lg border transition-all ${ manualDSTOverride === true
+                      ? 'bg-amber-500/30 border-amber-400/50 text-amber-100'
+                      : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 text-slate-300'
+                    }`}
+                  >
+                    🌞 Summer (DST)
+                  </button>
+                  <button
+                    onClick={() => {
+                      onToggleDSTOverride?.(false);
+                      setShowDSTMenu(false);
+                    }}
+                    className={`w-full px-3 py-1.5 text-xs rounded-lg border transition-all mt-1 ${
+                      manualDSTOverride === false
+                        ? 'bg-blue-500/30 border-blue-400/50 text-blue-100'
+                        : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 text-slate-300'
+                    }`}
+                  >
+                    ❄️ Winter (Standard)
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {viewMode === 'separate' ? (
         // Separate view - individual rows per session
         <div>
-        {[SESSIONS[3], SESSIONS[2], SESSIONS[0], SESSIONS[1]].map(session => {
+        {[sessions[3], sessions[2], sessions[0], sessions[1]].map(session => {
           const status = sessionStatus[session.name];
           const statusColors = getStatusColor(status);
 
@@ -397,69 +542,6 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
       ) : viewMode === 'unified' ? (
         // Unified view - all sessions on one timeline
         <div className="mb-5">
-          {/* Layers Toggle Button */}
-          <div className="flex justify-end mb-3">
-            <div className="relative">
-              <button
-                onClick={() => setShowLayersMenu(!showLayersMenu)}
-                className="px-3 py-2 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 transition-all duration-300 flex items-center gap-2"
-              >
-                <span>👁️ Layers</span>
-              </button>
-
-              {/* Layers Menu */}
-              {showLayersMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-3 z-50 space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={visibleLayers.sessions}
-                      onChange={(e) => setVisibleLayers({ ...visibleLayers, sessions: e.target.checked })}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-xs text-slate-300">Sessions</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={visibleLayers.overlaps}
-                      onChange={(e) => setVisibleLayers({ ...visibleLayers, overlaps: e.target.checked })}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-xs text-slate-300">Overlaps</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={visibleLayers.killzones}
-                      onChange={(e) => setVisibleLayers({ ...visibleLayers, killzones: e.target.checked })}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-xs text-slate-300">Killzones</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={visibleLayers.volume}
-                      onChange={(e) => setVisibleLayers({ ...visibleLayers, volume: e.target.checked })}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-xs text-slate-300">Volume</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors border-t border-slate-700 pt-2 mt-2">
-                    <input
-                      type="checkbox"
-                      checked={visibleLayers.news}
-                      onChange={(e) => setVisibleLayers({ ...visibleLayers, news: e.target.checked })}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-xs text-slate-300">📰 News</span>
-                  </label>
-                </div>
-              )}
-            </div>
-          </div>
-
           <div className="relative w-full h-32 bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
             {/* Volume Histogram Background */}
             {volumeHistogramSVG && (
@@ -555,7 +637,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
 
           {/* Legend for unified view */}
           <div className="mt-3 flex flex-wrap gap-3 text-xs">
-            {[SESSIONS[3], SESSIONS[2], SESSIONS[0], SESSIONS[1]].map(session => {
+            {[sessions[3], sessions[2], sessions[0], sessions[1]].map(session => {
               const status = sessionStatus[session.name];
               const statusColors = getStatusColor(status);
               return (
@@ -579,13 +661,39 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
           nowLine={nowLine}
           currentTimezoneLabel={currentTimezoneLabel}
           timezoneOffset={timezoneOffset}
+          currentTime={currentTime}
         />
       ) : (
         // Guide view - Trading Session Guide with Master Table and Collapsible Sections
         <section className="w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 rounded-2xl shadow-2xl shadow-black/30 overflow-hidden transition-all duration-300 hover:border-slate-600/50">
           <div className="p-6 text-sm space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-100">Trading Session Guide ({currentTimezoneLabel})</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-semibold text-slate-100">Trading Session Guide ({currentTimezoneLabel})</h3>
+                {/* Tabs for Standard / Daylight Times */}
+                <div className="flex items-center gap-1 bg-slate-800/40 backdrop-blur-md border border-slate-700/40 rounded-lg p-1">
+                  <button
+                    onClick={() => setGuideTab('standard')}
+                    className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
+                      guideTab === 'standard'
+                        ? 'bg-blue-500/30 border border-blue-400/50 text-blue-100'
+                        : 'text-slate-400 hover:text-slate-300'
+                    }`}
+                  >
+                    ❄️ Winter
+                  </button>
+                  <button
+                    onClick={() => setGuideTab('daylight')}
+                    className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
+                      guideTab === 'daylight'
+                        ? 'bg-amber-500/30 border border-amber-400/50 text-amber-100'
+                        : 'text-slate-400 hover:text-slate-300'
+                    }`}
+                  >
+                    🌞 Summer
+                  </button>
+                </div>
+              </div>
               <button
                 onClick={() => setChartsVisible(!chartsVisible)}
                 className="px-3 py-1 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 transition-all duration-300"
@@ -630,7 +738,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                       </tr>
                     </thead>
                     <tbody>
-                      {[SESSIONS[0], SESSIONS[1], SESSIONS[2], SESSIONS[3]].map((session, idx) => {
+                      {[guideSessions[0], guideSessions[1], guideSessions[2], guideSessions[3]].map((session, idx) => {
                         const hasOverlap = (session.overlapAsia || session.overlapLondon) ? 'Yes' : 'No';
                         const overlapHours = (() => {
                           let hours = 0;
@@ -704,11 +812,11 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                     <tbody>
                       {(() => {
                         const overlaps = [];
-                        if (SESSIONS[2].overlapAsia) {
-                          overlaps.push({ name: SESSIONS[2].overlapAsia.name, range: SESSIONS[2].overlapAsia.range });
+                        if (guideSessions[2].overlapAsia) {
+                          overlaps.push({ name: guideSessions[2].overlapAsia.name, range: guideSessions[2].overlapAsia.range });
                         }
-                        if (SESSIONS[3].overlapLondon) {
-                          overlaps.push({ name: SESSIONS[3].overlapLondon.name, range: SESSIONS[3].overlapLondon.range });
+                        if (guideSessions[3].overlapLondon) {
+                          overlaps.push({ name: guideSessions[3].overlapLondon.name, range: guideSessions[3].overlapLondon.range });
                         }
                         return overlaps.map((overlap, idx) => (
                           <tr key={overlap.name} className={idx % 2 === 0 ? 'bg-slate-800/30' : ''}>
@@ -758,14 +866,14 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                     <tbody>
                       {(() => {
                         const killzones = [];
-                        if (SESSIONS[2].killzone) {
-                          killzones.push({ name: SESSIONS[2].killzone.name, range: SESSIONS[2].killzone.range });
+                        if (guideSessions[2].killzone) {
+                          killzones.push({ name: guideSessions[2].killzone.name, range: guideSessions[2].killzone.range });
                         }
-                        if (SESSIONS[3].killzoneAM) {
-                          killzones.push({ name: SESSIONS[3].killzoneAM.name, range: SESSIONS[3].killzoneAM.range });
+                        if (guideSessions[3].killzoneAM) {
+                          killzones.push({ name: guideSessions[3].killzoneAM.name, range: guideSessions[3].killzoneAM.range });
                         }
-                        if (SESSIONS[3].killzonePM) {
-                          killzones.push({ name: SESSIONS[3].killzonePM.name, range: SESSIONS[3].killzonePM.range });
+                        if (guideSessions[3].killzonePM) {
+                          killzones.push({ name: guideSessions[3].killzonePM.name, range: guideSessions[3].killzonePM.range });
                         }
                         return killzones.map((kz, idx) => (
                           <tr key={kz.name} className={idx % 2 === 0 ? 'bg-slate-800/30' : ''}>

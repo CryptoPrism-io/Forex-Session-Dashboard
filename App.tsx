@@ -7,9 +7,10 @@ import InstallModal from './components/InstallModal';
 import AlertsToggleHeader from './components/AlertsToggleHeader';
 import { usePWAInstall } from './hooks/usePWAInstall';
 import { useSessionAlerts } from './hooks/useSessionAlerts';
-import { TIMEZONES, MAJOR_TIMEZONES, SESSIONS } from './constants';
+import { TIMEZONES, MAJOR_TIMEZONES, SESSIONS_STANDARD, SESSIONS_DAYLIGHT } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
 import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow } from './components/icons';
+import { isDSTActive } from './utils/dstUtils';
 
 export type SessionStatus = 'OPEN' | 'CLOSED' | 'WARNING';
 
@@ -22,6 +23,8 @@ const App: React.FC = () => {
 
   const [selectedTimezone, setSelectedTimezone] = useState<Timezone>(getInitialTimezone());
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isAutoDetectDST, setIsAutoDetectDST] = useState(true);
+  const [manualDSTOverride, setManualDSTOverride] = useState<boolean | null>(null);
 
   // PWA Installation management
   const {
@@ -74,6 +77,17 @@ const App: React.FC = () => {
 
     detectTimezoneFromBrowser();
   }, []);
+
+  // Determine DST status: use manual override if set, otherwise auto-detect
+  const currentDSTStatus = useMemo(() => {
+    if (manualDSTOverride !== null) {
+      return manualDSTOverride;
+    }
+    return isDSTActive(currentTime);
+  }, [currentTime, manualDSTOverride]);
+
+  // Select session data based on DST status
+  const activeSessions_config = currentDSTStatus ? SESSIONS_DAYLIGHT : SESSIONS_STANDARD;
 
   const { nowLine, activeSessions, sessionStatus } = useMemo(() => {
     const now = currentTime;
@@ -135,7 +149,7 @@ const App: React.FC = () => {
         return { isActive, status, elapsedSeconds, remainingSeconds, startUTC: s, endUTC: e };
     };
 
-    SESSIONS.forEach(session => {
+    activeSessions_config.forEach(session => {
       // Calculate status for main sessions (for the chart's Y-axis indicators)
       const { main, name } = session;
       if (main) {
@@ -159,9 +173,9 @@ const App: React.FC = () => {
         }
       });
     });
-    
+
     return { nowLine: localTime, activeSessions: currentlyActive, sessionStatus: statusMap };
-  }, [currentTime, selectedTimezone]);
+  }, [currentTime, selectedTimezone, activeSessions_config]);
   
   const handleTimezoneChange = (tz: Timezone) => {
     setSelectedTimezone(tz);
@@ -401,6 +415,16 @@ const App: React.FC = () => {
           currentTimezoneLabel={selectedTimezone.label}
           timezoneOffset={selectedTimezone.offset}
           sessionStatus={sessionStatus}
+          currentTime={currentTime}
+          isDSTActive={currentDSTStatus}
+          activeSessions={activeSessions_config}
+          isAutoDetectDST={isAutoDetectDST}
+          manualDSTOverride={manualDSTOverride}
+          onToggleDSTOverride={(override) => setManualDSTOverride(override)}
+          onAutoDetectToggle={(enabled) => {
+            setIsAutoDetectDST(enabled);
+            if (enabled) setManualDSTOverride(null);
+          }}
         />
 
         {/* FOOTER: Action Row with PWA + Social */}
