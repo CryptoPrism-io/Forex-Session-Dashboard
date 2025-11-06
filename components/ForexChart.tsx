@@ -347,7 +347,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
         // Unified view - all sessions on one timeline
         <div className="mb-5">
           <div className="relative w-full h-32 bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
-            {/* Volume Profile Background - Color-coded by Session */}
+            {/* Volume Profile Background */}
             {useMemo(() => {
               // Rotate volume data based on timezone
               let rotationSteps = Math.round((timezoneOffset % 24) * 2);
@@ -358,75 +358,21 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                 ...VOLUME_DATA.slice(0, 48 - rotationSteps)
               ];
 
-              // Session color mapping
-              const sessionColors: { [key: string]: { line: string; fill: string } } = {
-                sydney: { line: 'hsl(195, 74%, 62%)', fill: 'hsl(195, 74%, 62%)' },      // Cyan
-                asia: { line: 'hsl(320, 82%, 60%)', fill: 'hsl(320, 82%, 60%)' },        // Pink
-                london: { line: 'hsl(45, 100%, 50%)', fill: 'hsl(45, 100%, 50%)' },      // Yellow
-                newyork: { line: 'hsl(120, 60%, 50%)', fill: 'hsl(120, 60%, 50%)' }      // Green
-              };
-
-              // Determine which session each UTC hour belongs to
-              const getSessionColor = (utcHour: number) => {
-                const hour = Math.floor(utcHour);
-                // Sydney: 21-30 (9pm-6am)
-                if (hour >= 21 || hour < 6) return sessionColors.sydney;
-                // Asia/Tokyo: 23-32, but for simplicity, 3-8
-                if (hour >= 3 && hour < 7) return sessionColors.asia;
-                // London: 7-16
-                if (hour >= 7 && hour < 16) return sessionColors.london;
-                // New York: 12-21
-                if (hour >= 12 && hour < 21) return sessionColors.newyork;
-                // Default
-                return sessionColors.sydney;
-              };
-
-              // Create SVG path for volume profile with session colors
+              // Create SVG path for volume profile
+              // ViewBox: 0-1000 for x (width), 0-100 for y (height) for precision
               const chartWidth = 1000;
               const chartHeight = 100;
-              const pointSpacing = chartWidth / 48;
-              const volumeScale = chartHeight * 0.85;
-              const baselineY = chartHeight - 5;
+              const pointSpacing = chartWidth / 48; // 48 data points
+              const volumeScale = chartHeight * 0.85; // Use 85% of height for volume
+              const baselineY = chartHeight - 5; // Leave 5 units at bottom
 
-              // Build path segments with colors
-              const pathSegments: { path: string; color: string; sessionName: string }[] = [];
-              let currentPath = '';
-              let currentColor = '';
-              let currentSession = '';
-
+              let pathData = `M 0 ${baselineY}`;
               rotatedVolume.forEach((volume, i) => {
-                // Map rotated index back to original UTC hours for session detection
-                const originalIndex = (i + rotationSteps) % 48;
-                const utcHour = originalIndex * 0.5;
-                const sessionColor = getSessionColor(utcHour);
-                const sessionName = Object.keys(sessionColors).find(
-                  key => sessionColors[key].fill === sessionColor.fill
-                ) || 'sydney';
-
                 const x = i * pointSpacing;
                 const y = baselineY - (volume / 100) * volumeScale;
-
-                if (i === 0) {
-                  currentPath = `M 0 ${baselineY} L ${x} ${y}`;
-                  currentColor = sessionColor.fill;
-                  currentSession = sessionName;
-                } else if (sessionColor.fill !== currentColor) {
-                  // Session color changed - save current segment and start new one
-                  currentPath += ` L ${x} ${baselineY} Z`;
-                  pathSegments.push({ path: currentPath, color: currentColor, sessionName: currentSession });
-                  currentPath = `M ${x} ${baselineY} L ${x} ${y}`;
-                  currentColor = sessionColor.fill;
-                  currentSession = sessionName;
-                } else {
-                  currentPath += ` L ${x} ${y}`;
-                }
+                pathData += ` L ${x} ${y}`;
               });
-
-              // Close final segment
-              if (currentPath) {
-                currentPath += ` L ${chartWidth} ${baselineY} Z`;
-                pathSegments.push({ path: currentPath, color: currentColor, sessionName: currentSession });
-              }
+              pathData += ` L ${chartWidth} ${baselineY} Z`;
 
               return (
                 <svg
@@ -436,23 +382,12 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                   preserveAspectRatio="none"
                 >
                   <defs>
-                    {Object.entries(sessionColors).map(([session, colors]) => (
-                      <linearGradient key={`gradient-${session}`} id={`volumeGradient-${session}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor={colors.fill} stopOpacity="0.25" />
-                        <stop offset="100%" stopColor={colors.fill} stopOpacity="0.05" />
-                      </linearGradient>
-                    ))}
+                    <linearGradient id="volumeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="rgba(34, 211, 238, 0.15)" />
+                      <stop offset="100%" stopColor="rgba(34, 211, 238, 0.02)" />
+                    </linearGradient>
                   </defs>
-                  {pathSegments.map((segment, idx) => (
-                    <path
-                      key={`volume-${idx}`}
-                      d={segment.path}
-                      fill={`url(#volumeGradient-${segment.sessionName})`}
-                      stroke={segment.color}
-                      strokeWidth="1.2"
-                      strokeOpacity="0.7"
-                    />
-                  ))}
+                  <path d={pathData} fill="url(#volumeGradient)" stroke="rgba(34, 211, 238, 0.3)" strokeWidth="0.8" />
                 </svg>
               );
             }, [timezoneOffset])}
