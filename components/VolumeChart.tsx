@@ -353,17 +353,18 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
             <ReferenceLine
               x={Math.floor(nowLine * 2)} // Chart data is now rotated to local timezone, so use local time directly
               stroke="#facc15"
-              strokeWidth={3}
-              strokeDasharray="0"
+              strokeWidth={5}
+              strokeDasharray="2 4"
               label={{
                 value: 'NOW',
                 position: 'top',
                 fill: '#facc15',
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: 'bold',
+                offset: 10,
               }}
               style={{
-                filter: 'drop-shadow(0 0 12px rgba(250, 204, 21, 0.8))',
+                filter: 'drop-shadow(0 0 15px rgba(250, 204, 21, 1))',
               }}
             />
 
