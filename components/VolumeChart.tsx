@@ -389,20 +389,42 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
               isAnimationActive={false}
             />
 
-            {/* "Now" Reference Line with Time Label */}
+            {/* "Now" Reference Line with centered time label */}
             <ReferenceLine
               x={nowLine}
               stroke="rgba(250, 204, 21, 0.85)"
               strokeWidth={0.75}
               ifOverflow="visible"
               label={{
-                content: () => (
-                  <TimeLabel
-                    currentTime={currentTime}
-                    timezoneOffset={timezoneOffset}
-                  />
-                ),
-                position: 'top',
+                content: ({ viewBox }: any) => {
+                  // Get local time
+                  const utcHours = currentTime.getUTCHours();
+                  const utcMinutes = currentTime.getUTCMinutes();
+                  const totalUTCMinutes = utcHours * 60 + utcMinutes;
+                  const totalLocalMinutes = totalUTCMinutes + timezoneOffset * 60;
+                  const localHours = Math.floor((totalLocalMinutes / 60) % 24);
+                  const localMinutes = Math.round(totalLocalMinutes % 60);
+                  const timeStr = `${String(localHours).padStart(2, '0')}:${String(localMinutes).padStart(2, '0')}`;
+
+                  // Center the label vertically on the chart
+                  const centerY = viewBox.height / 2;
+
+                  return (
+                    <text
+                      x={viewBox.x}
+                      y={centerY}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill="#fde047"
+                      fontSize={10}
+                      fontWeight={500}
+                      transform={`rotate(270 ${viewBox.x} ${centerY})`}
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      {timeStr}
+                    </text>
+                  );
+                },
               }}
               style={{
                 filter: 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.4))',
