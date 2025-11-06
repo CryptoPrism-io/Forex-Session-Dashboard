@@ -60,6 +60,18 @@
       .pulse-yellow-dot {
         animation: pulse-yellow 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
       }
+      @keyframes pulse-colon {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+      .pulse-colon {
+        animation: pulse-colon 1s ease-in-out infinite;
+      }
       /* Glassmorphic smooth transitions */
       * {
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

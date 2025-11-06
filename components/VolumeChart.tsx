@@ -355,7 +355,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
               isAnimationActive={false}
             />
 
-            {/* "Now" Reference Line with centered time label */}
+            {/* "Now" Reference Line with centered time label in capsule */}
             <ReferenceLine
               x={nowLine}
               stroke="rgba(250, 204, 21, 0.85)"
@@ -370,25 +370,47 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
                   const totalLocalMinutes = totalUTCMinutes + timezoneOffset * 60;
                   const localHours = Math.floor((totalLocalMinutes / 60) % 24);
                   const localMinutes = Math.round(totalLocalMinutes % 60);
-                  const timeStr = `${String(localHours).padStart(2, '0')}:${String(localMinutes).padStart(2, '0')}`;
+                  const hoursStr = String(localHours).padStart(2, '0');
+                  const minutesStr = String(localMinutes).padStart(2, '0');
 
                   // Center the label vertically on the chart
                   const centerY = viewBox.height / 2;
+                  const capsuleWidth = 42;
+                  const capsuleHeight = 22;
 
                   return (
-                    <text
-                      x={viewBox.x}
-                      y={centerY}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fill="#fde047"
-                      fontSize={10}
-                      fontWeight={500}
-                      transform={`rotate(270 ${viewBox.x} ${centerY})`}
-                      style={{ pointerEvents: 'none' }}
-                    >
-                      {timeStr}
-                    </text>
+                    <g>
+                      {/* Capsule background */}
+                      <rect
+                        x={viewBox.x - capsuleWidth / 2}
+                        y={centerY - capsuleHeight / 2}
+                        width={capsuleWidth}
+                        height={capsuleHeight}
+                        rx={capsuleHeight / 2}
+                        ry={capsuleHeight / 2}
+                        fill="#fbbf24"
+                        stroke="#b45309"
+                        strokeWidth={0.5}
+                        transform={`rotate(270 ${viewBox.x} ${centerY})`}
+                      />
+
+                      {/* Time text with pulsating colon */}
+                      <text
+                        x={viewBox.x}
+                        y={centerY}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill="#78350f"
+                        fontSize={11}
+                        fontWeight={600}
+                        transform={`rotate(270 ${viewBox.x} ${centerY})`}
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        <tspan>{hoursStr}</tspan>
+                        <tspan className="pulse-colon" style={{ animation: 'pulse-colon 1s ease-in-out infinite' }}>:</tspan>
+                        <tspan>{minutesStr}</tspan>
+                      </text>
+                    </g>
                   );
                 },
               }}
