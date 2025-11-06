@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot } from 'recharts';
 
 interface VolumeChartProps {
   nowLine: number;
@@ -66,7 +66,7 @@ const CustomVolumeTooltip: React.FC<any> = ({ active, payload, label, getSession
 
         {/* Events at this time */}
         {sessionEvents && sessionEvents.length > 0 && (
-          <div className="border-t border-slate-700 pt-2 mt-2 mb-3">
+          <div className="border-t border-slate-700 pt-2 mt-2">
             <p className="text-xs text-slate-300 font-semibold mb-2">At This Time:</p>
             <div className="space-y-1">
               {sessionEvents.map((event, idx) => (
@@ -78,26 +78,6 @@ const CustomVolumeTooltip: React.FC<any> = ({ active, payload, label, getSession
                   <span className="text-xs text-slate-300">{event.name}</span>
                 </div>
               ))}
-            </div>
-          </div>
-        )}
-
-        {sessionData && (
-          <div className="border-t border-slate-700 pt-2 mt-2 mb-3">
-            <p className="text-xs text-slate-300 font-semibold mb-1">Session Range</p>
-            <p className="text-xs text-slate-300 mb-1">
-              <span className="text-cyan-400 font-medium">{sessionData.sessionRange}</span>
-            </p>
-            <p className="text-xs text-slate-400 mb-2">{sessionData.sessionName}</p>
-            <div className="flex gap-4">
-              <div>
-                <span className="text-xs text-slate-400">Elapsed:</span>
-                <p className="text-xs text-slate-200 font-medium">{sessionData.elapsed}</p>
-              </div>
-              <div>
-                <span className="text-xs text-slate-400">Remaining:</span>
-                <p className="text-xs text-slate-200 font-medium">{sessionData.remaining}</p>
-              </div>
             </div>
           </div>
         )}
@@ -359,6 +339,16 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
               cursor={{ strokeDasharray: '3 3', stroke: 'rgba(148, 163, 184, 0.5)' }}
             />
 
+            <Area
+              type="monotone"
+              dataKey="volume"
+              stroke="rgba(34, 211, 238, 1)"
+              strokeWidth={2}
+              fill="url(#volumeGradient)"
+              dot={false}
+              isAnimationActive={false}
+            />
+
             {/* "Now" Reference Line */}
             <ReferenceLine
               x={Math.floor(nowLine * 2)} // Chart data is now rotated to local timezone, so use local time directly
@@ -374,14 +364,14 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
               }}
             />
 
-            <Area
-              type="monotone"
-              dataKey="volume"
-              stroke="rgba(34, 211, 238, 1)"
-              strokeWidth={2}
-              fill="url(#volumeGradient)"
-              dot={false}
-              isAnimationActive={false}
+            {/* Yellow Pulsating Dot at Current Time */}
+            <ReferenceDot
+              x={Math.floor(nowLine * 2)}
+              y={chartData[Math.floor(nowLine * 2)]?.volume || 50}
+              r={6}
+              fill="#facc15"
+              className="pulse-yellow-dot"
+              strokeWidth={0}
             />
           </AreaChart>
         </ResponsiveContainer>

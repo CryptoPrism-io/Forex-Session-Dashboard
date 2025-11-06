@@ -46,6 +46,20 @@
           opacity: 0.6;
         }
       }
+      @keyframes pulse-yellow {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.4;
+          transform: scale(1.2);
+        }
+      }
+      .pulse-yellow-dot {
+        animation: pulse-yellow 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
       /* Glassmorphic smooth transitions */
       * {
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
