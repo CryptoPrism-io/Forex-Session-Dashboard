@@ -3,6 +3,7 @@ import { SESSIONS } from '../constants';
 import { ChartBarDetails, TooltipInfo } from '../types';
 import { SessionStatus } from '../App';
 import { IconChevronDown } from './icons';
+import VolumeChart from './VolumeChart';
 
 // Global Forex Trading Volume Profile (UTC, 30-min intervals, 48 points = 24 hours)
 const VOLUME_DATA = [
@@ -123,7 +124,7 @@ const ChartTooltip: React.FC<{
 const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, timezoneOffset, sessionStatus }) => {
   const [hoveredBlock, setHoveredBlock] = useState<TimeBlock | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const [viewMode, setViewMode] = useState<'unified' | 'separate' | 'guide'>('unified');
+  const [viewMode, setViewMode] = useState<'unified' | 'separate' | 'guide' | 'volume'>('unified');
   const [chartsVisible, setChartsVisible] = useState(true);
   const [collapsedSections, setCollapsedSections] = useState({ mainSessions: false, overlaps: false, killzones: false });
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
@@ -299,6 +300,16 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
               Unified
             </button>
             <button
+              onClick={() => setViewMode('volume')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
+                viewMode === 'volume'
+                  ? 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
+                  : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
+              }`}
+            >
+              Volume
+            </button>
+            <button
               onClick={() => setViewMode('guide')}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
                 viewMode === 'guide'
@@ -306,7 +317,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                   : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
               }`}
             >
-              Guide
+              Sessions Guide
             </button>
           </div>
         </div>
@@ -562,6 +573,13 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
             })}
           </div>
         </div>
+      ) : viewMode === 'volume' ? (
+        // Volume view - Trading Volume Chart
+        <VolumeChart
+          nowLine={nowLine}
+          currentTimezoneLabel={currentTimezoneLabel}
+          timezoneOffset={timezoneOffset}
+        />
       ) : (
         // Guide view - Trading Session Guide with Master Table and Collapsible Sections
         <section className="w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 rounded-2xl shadow-2xl shadow-black/30 overflow-hidden transition-all duration-300 hover:border-slate-600/50">
