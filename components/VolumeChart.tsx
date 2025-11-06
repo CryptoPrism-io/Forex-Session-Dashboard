@@ -292,7 +292,6 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
       <div className="flex justify-between items-start mb-4">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-slate-100 mb-1">Trading Volume</h2>
-          <p className="text-xs text-slate-400">{currentTimezoneLabel} Timezone</p>
         </div>
 
         {/* Session Info - Top Right (Current Session Only) */}
