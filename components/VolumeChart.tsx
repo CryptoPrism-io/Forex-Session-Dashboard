@@ -56,6 +56,22 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
   // Calculate "now" line position as percentage (0-100%)
   const nowLinePercent = (nowLine / 24) * 100;
 
+  // Determine current session based on nowLine (UTC hours)
+  const getCurrentSession = () => {
+    const hour = Math.floor(nowLine);
+
+    if (hour >= 0 && hour < 3) return SESSION_NOTES[0];      // 0:00–2:30
+    if (hour >= 3 && hour < 6) return SESSION_NOTES[1];      // 3:00–5:30
+    if (hour >= 6 && hour < 9) return SESSION_NOTES[2];      // 6:00–8:30
+    if (hour >= 9 && hour < 12) return SESSION_NOTES[3];     // 9:00–11:30
+    if (hour >= 12 && hour < 15) return SESSION_NOTES[4];    // 12:00–14:30
+    if (hour >= 15 && hour < 18) return SESSION_NOTES[5];    // 15:00–17:30
+    if (hour >= 18 && hour < 21) return SESSION_NOTES[6];    // 18:00–20:30
+    return SESSION_NOTES[7];                                   // 21:00–23:30
+  };
+
+  const currentSession = getCurrentSession();
+
   return (
     <div className="w-full mt-6 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-6 shadow-lg shadow-black/20">
       {/* Header with Title and Session Info */}
@@ -65,15 +81,13 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
           <p className="text-xs text-slate-400">{currentTimezoneLabel} Timezone</p>
         </div>
 
-        {/* Session Info - Top Right */}
-        <div className="hidden sm:block text-xs text-slate-300 space-y-1 max-w-xs">
-          <div className="font-semibold text-slate-200 mb-2">Session Activity</div>
-          {SESSION_NOTES.map((note, idx) => (
-            <div key={idx} className="text-slate-400">
-              <span className="font-medium text-slate-300">{note.label}</span>
-              <span className="text-slate-500"> — {note.desc}</span>
-            </div>
-          ))}
+        {/* Session Info - Top Right (Current Session Only) */}
+        <div className="hidden sm:block text-xs text-slate-300 space-y-1 max-w-xs bg-slate-800/50 border border-slate-700/50 rounded-lg p-3">
+          <div className="font-semibold text-slate-200 mb-1">Current Session</div>
+          <div className="text-slate-300">
+            <span className="font-medium text-cyan-400">{currentSession.label}</span>
+            <span className="text-slate-400"> — {currentSession.desc}</span>
+          </div>
         </div>
       </div>
 
