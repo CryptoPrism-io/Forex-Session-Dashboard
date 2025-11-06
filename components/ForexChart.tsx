@@ -621,7 +621,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
                 return (
                   <div
                     key={block.key}
-                    className="absolute rounded transition-all duration-200 ease-in-out hover:scale-y-125 cursor-pointer group"
+                    className="absolute rounded transition-all duration-200 ease-in-out hover:scale-y-125 cursor-pointer"
                     style={{
                       left: `${block.left}%`,
                       width: `${block.width}%`,
@@ -634,11 +634,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
                     onMouseLeave={handleMouseLeave}
                     aria-label={block.details.name}
                     title={block.sessionName}
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      {block.sessionName}
-                    </div>
-                  </div>
+                  />
                 );
               })}
 
