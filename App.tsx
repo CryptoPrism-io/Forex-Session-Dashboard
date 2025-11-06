@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ForexChart from './components/ForexChart';
+import VolumeChart from './components/VolumeChart';
 import SocialLinks from './components/SocialLinks';
 import SessionClocks from './components/SessionClocks';
 import InstallButton from './components/InstallButton';
@@ -380,6 +381,13 @@ const App: React.FC = () => {
           currentTimezoneLabel={selectedTimezone.label}
           timezoneOffset={selectedTimezone.offset}
           sessionStatus={sessionStatus}
+        />
+
+        {/* VOLUME CHART */}
+        <VolumeChart
+          nowLine={nowLine}
+          currentTimezoneLabel={selectedTimezone.label}
+          timezoneOffset={selectedTimezone.offset}
         />
 
         {/* FOOTER: Action Row with PWA + Social */}
