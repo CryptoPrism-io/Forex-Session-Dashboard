@@ -57,13 +57,19 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
 
   // Prepare chart data with timezone-adjusted times
   const chartData = useMemo(() => {
-    return VOLUME_DATA.map((volume, index) => {
-      // index 0-47 represents 0:00-23:30 UTC in 30-minute intervals
-      const utcHours = index * 0.5; // Each index is 30 minutes (0.5 hours)
+    // Calculate rotation amount based on timezone offset
+    // Each 0.5-hour step = 1 data point, so multiply offset by 2
+    const rotationSteps = Math.round((timezoneOffset % 24) * 2);
 
-      // Adjust for timezone
-      let localHours = (utcHours + timezoneOffset) % 24;
-      localHours = localHours < 0 ? localHours + 24 : localHours;
+    // Rotate the volume data array to align peaks with user's timezone
+    const rotatedVolumeData = [
+      ...VOLUME_DATA.slice(rotationSteps),
+      ...VOLUME_DATA.slice(0, rotationSteps)
+    ];
+
+    return rotatedVolumeData.map((volume, index) => {
+      // index 0-47 represents 0:00-23:30 in user's LOCAL timezone (after rotation)
+      const localHours = index * 0.5;
 
       const hours = Math.floor(localHours);
       const minutes = Math.round((localHours - hours) * 60);
@@ -71,7 +77,6 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
       return {
         time: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
         volume,
-        utcTime: `${String(Math.floor(utcHours)).padStart(2, '0')}:${String(Math.round((utcHours % 1) * 60)).padStart(2, '0')}`,
       };
     });
   }, [timezoneOffset]);
@@ -192,7 +197,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
 
             {/* "Now" Reference Line */}
             <ReferenceLine
-              x={Math.floor(getUTCHour(nowLine, timezoneOffset) * 2)} // Convert local time back to UTC, then to data index
+              x={Math.floor(nowLine * 2)} // Chart data is now rotated to local timezone, so use local time directly
               stroke="rgba(34, 211, 238, 0.8)"
               strokeWidth={2}
               strokeDasharray="0"
