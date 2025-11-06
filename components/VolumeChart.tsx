@@ -87,8 +87,8 @@ const CustomVolumeTooltip: React.FC<any> = ({ active, payload, label, getSession
   return null;
 };
 
-// Custom clock label component
-const TimeClockLabel: React.FC<{
+// Simple time label component
+const TimeLabel: React.FC<{
   value?: string;
   x?: number;
   y?: number;
@@ -106,30 +106,18 @@ const TimeClockLabel: React.FC<{
   const timeStr = `${String(localHours).padStart(2, '0')}:${String(localMinutes).padStart(2, '0')}`;
 
   return (
-    <g>
-      {/* Circle background */}
-      <circle
-        cx={x}
-        cy={y}
-        r={24}
-        fill="rgba(250, 204, 21, 0.15)"
-        stroke="rgba(250, 204, 21, 0.6)"
-        strokeWidth={1.5}
-      />
-      {/* Time text rotated 270 degrees */}
-      <text
-        x={x}
-        y={y}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill="#fde047"
-        fontSize={11}
-        fontWeight={600}
-        transform={`rotate(270 ${x} ${y})`}
-      >
-        {timeStr}
-      </text>
-    </g>
+    <text
+      x={x}
+      y={y}
+      textAnchor="middle"
+      dominantBaseline="middle"
+      fill="#fde047"
+      fontSize={10}
+      fontWeight={500}
+      transform={`rotate(270 ${x} ${y})`}
+    >
+      {timeStr}
+    </text>
   );
 };
 
@@ -401,7 +389,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
               isAnimationActive={false}
             />
 
-            {/* "Now" Reference Line with Digital Clock Badge */}
+            {/* "Now" Reference Line with Time Label */}
             <ReferenceLine
               x={nowLine}
               stroke="rgba(250, 204, 21, 0.85)"
@@ -409,7 +397,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
               ifOverflow="visible"
               label={{
                 content: () => (
-                  <TimeClockLabel
+                  <TimeLabel
                     currentTime={currentTime}
                     timezoneOffset={timezoneOffset}
                   />
