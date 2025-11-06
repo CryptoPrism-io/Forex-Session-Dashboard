@@ -128,6 +128,15 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
   const [collapsedSections, setCollapsedSections] = useState({ mainSessions: false, overlaps: false, killzones: false });
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
   const [nowBlinkVisible, setNowBlinkVisible] = useState(true);
+  const [showLayersMenu, setShowLayersMenu] = useState(false);
+  const [visibleLayers, setVisibleLayers] = useState({
+    sessions: true,
+    zones: true,
+    overlaps: true,
+    killzones: true,
+    volume: true,
+    news: false
+  });
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -346,9 +355,74 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
       ) : viewMode === 'unified' ? (
         // Unified view - all sessions on one timeline
         <div className="mb-5">
+          {/* Layers Toggle Button */}
+          <div className="flex justify-end mb-3">
+            <div className="relative">
+              <button
+                onClick={() => setShowLayersMenu(!showLayersMenu)}
+                className="px-3 py-2 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 transition-all duration-300 flex items-center gap-2"
+              >
+                <span>👁️ Layers</span>
+              </button>
+
+              {/* Layers Menu */}
+              {showLayersMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-3 z-50 space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={visibleLayers.sessions}
+                      onChange={(e) => setVisibleLayers({ ...visibleLayers, sessions: e.target.checked })}
+                      className="cursor-pointer"
+                    />
+                    <span className="text-xs text-slate-300">Sessions</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={visibleLayers.overlaps}
+                      onChange={(e) => setVisibleLayers({ ...visibleLayers, overlaps: e.target.checked })}
+                      className="cursor-pointer"
+                    />
+                    <span className="text-xs text-slate-300">Overlaps</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={visibleLayers.killzones}
+                      onChange={(e) => setVisibleLayers({ ...visibleLayers, killzones: e.target.checked })}
+                      className="cursor-pointer"
+                    />
+                    <span className="text-xs text-slate-300">Killzones</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={visibleLayers.volume}
+                      onChange={(e) => setVisibleLayers({ ...visibleLayers, volume: e.target.checked })}
+                      className="cursor-pointer"
+                    />
+                    <span className="text-xs text-slate-300">Volume</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors border-t border-slate-700 pt-2 mt-2">
+                    <input
+                      type="checkbox"
+                      checked={visibleLayers.news}
+                      onChange={(e) => setVisibleLayers({ ...visibleLayers, news: e.target.checked })}
+                      className="cursor-pointer"
+                    />
+                    <span className="text-xs text-slate-300">📰 News</span>
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="relative w-full h-32 bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
             {/* Volume Histogram Background */}
             {useMemo(() => {
+              if (!visibleLayers.volume) return null;
+
               // Rotate volume data based on timezone
               let rotationSteps = Math.round((timezoneOffset % 24) * 2);
               rotationSteps = ((rotationSteps % 48) + 48) % 48;
@@ -411,7 +485,7 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
                   })}
                 </svg>
               );
-            }, [timezoneOffset])}
+            }, [timezoneOffset, visibleLayers.volume])}
 
             {/* Vertical hour grid lines */}
             {ticks.map(hour => (
@@ -422,34 +496,42 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
               />
             ))}
 
-            {/* All session blocks */}
-            {timeBlocks.map(block => {
-              const yPositions = ['75%', '50%', '25%'];
-              const heights = ['35%', '25%', '20%'];
+            {/* All session blocks - Filtered by visibility */}
+            {timeBlocks
+              .filter(block => {
+                // Filter based on visibility settings
+                if (block.yLevel === 0 && !visibleLayers.sessions) return false; // Main sessions
+                if (block.yLevel === 1 && !visibleLayers.overlaps) return false; // Overlaps
+                if (block.yLevel === 2 && !visibleLayers.killzones) return false; // Killzones
+                return true;
+              })
+              .map(block => {
+                const yPositions = ['75%', '50%', '25%'];
+                const heights = ['35%', '25%', '20%'];
 
-              return (
-                <div
-                  key={block.key}
-                  className="absolute rounded transition-all duration-200 ease-in-out hover:scale-y-125 cursor-pointer group"
-                  style={{
-                    left: `${block.left}%`,
-                    width: `${block.width}%`,
-                    top: yPositions[block.yLevel],
-                    height: heights[block.yLevel],
-                    backgroundColor: block.details.color,
-                    opacity: block.details.opacity,
-                  }}
-                  onMouseMove={(e) => handleMouseMove(e, block)}
-                  onMouseLeave={handleMouseLeave}
-                  aria-label={block.details.name}
-                  title={block.sessionName}
-                >
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 px-2 py-1 rounded whitespace-nowrap z-10">
-                    {block.sessionName}
+                return (
+                  <div
+                    key={block.key}
+                    className="absolute rounded transition-all duration-200 ease-in-out hover:scale-y-125 cursor-pointer group"
+                    style={{
+                      left: `${block.left}%`,
+                      width: `${block.width}%`,
+                      top: yPositions[block.yLevel],
+                      height: heights[block.yLevel],
+                      backgroundColor: block.details.color,
+                      opacity: block.details.opacity,
+                    }}
+                    onMouseMove={(e) => handleMouseMove(e, block)}
+                    onMouseLeave={handleMouseLeave}
+                    aria-label={block.details.name}
+                    title={block.sessionName}
+                  >
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 px-2 py-1 rounded whitespace-nowrap z-10">
+                      {block.sessionName}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
             <div
               className="absolute top-0 bottom-0 w-0.5 bg-yellow-400"
