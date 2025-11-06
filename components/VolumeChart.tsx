@@ -48,28 +48,55 @@ const formatSessionDuration = (seconds: number): string => {
 };
 
 // Custom Tooltip Component
-const CustomVolumeTooltip: React.FC<any> = ({ active, payload, label, currentSessionData }) => {
+const CustomVolumeTooltip: React.FC<any> = ({ active, payload, label, getSessionAtTime, getSessionEventsAtTime }) => {
   if (active && payload && payload[0]) {
+    // Extract the time string from the chart (e.g., "18:00")
+    const timeStr = payload[0].payload.time;
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const hoveredLocalTime = hours + minutes / 60;
+
+    // Get session data for the hovered time
+    const sessionData = getSessionAtTime?.(hoveredLocalTime);
+    const sessionEvents = getSessionEventsAtTime?.(hoveredLocalTime);
+
     return (
-      <div className="bg-slate-900/95 border border-slate-700 rounded-lg p-3 shadow-xl">
-        <p className="text-xs text-slate-400 mb-2">Time: <span className="text-cyan-400 font-medium">{payload[0].payload.time}</span></p>
+      <div className="bg-slate-900/95 border border-slate-700 rounded-lg p-3 shadow-xl max-w-sm">
+        <p className="text-xs text-slate-400 mb-2">Time: <span className="text-cyan-400 font-medium">{timeStr}</span></p>
         <p className="text-xs text-slate-300 mb-2">Volume: <span className="text-slate-100 font-medium">{payload[0].value}</span></p>
 
-        {currentSessionData && (
-          <div className="border-t border-slate-700 pt-2 mt-2">
-            <p className="text-xs text-slate-300 font-semibold mb-1">Current Session</p>
+        {/* Events at this time */}
+        {sessionEvents && sessionEvents.length > 0 && (
+          <div className="border-t border-slate-700 pt-2 mt-2 mb-3">
+            <p className="text-xs text-slate-300 font-semibold mb-2">At This Time:</p>
+            <div className="space-y-1">
+              {sessionEvents.map((event, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <div
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: event.color }}
+                  ></div>
+                  <span className="text-xs text-slate-300">{event.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {sessionData && (
+          <div className="border-t border-slate-700 pt-2 mt-2 mb-3">
+            <p className="text-xs text-slate-300 font-semibold mb-1">Session Range</p>
             <p className="text-xs text-slate-300 mb-1">
-              <span className="text-cyan-400 font-medium">{currentSessionData.sessionRange}</span>
+              <span className="text-cyan-400 font-medium">{sessionData.sessionRange}</span>
             </p>
-            <p className="text-xs text-slate-400 mb-1">{currentSessionData.sessionName}</p>
-            <div className="flex gap-4 mt-1.5">
+            <p className="text-xs text-slate-400 mb-2">{sessionData.sessionName}</p>
+            <div className="flex gap-4">
               <div>
                 <span className="text-xs text-slate-400">Elapsed:</span>
-                <p className="text-xs text-slate-200 font-medium">{currentSessionData.elapsed}</p>
+                <p className="text-xs text-slate-200 font-medium">{sessionData.elapsed}</p>
               </div>
               <div>
                 <span className="text-xs text-slate-400">Remaining:</span>
-                <p className="text-xs text-slate-200 font-medium">{currentSessionData.remaining}</p>
+                <p className="text-xs text-slate-200 font-medium">{sessionData.remaining}</p>
               </div>
             </div>
           </div>
@@ -184,41 +211,99 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
     };
   }, [nowLine, timezoneOffset, currentTimezoneLabel]);
 
-  // Calculate session timing data for tooltip
-  const sessionTimingData = useMemo(() => {
-    const utcHour = getUTCHour(nowLine, timezoneOffset);
+  // Function to detect what events are at a given local time
+  const getSessionEventsAtTime = useMemo(() => {
+    return (localHour: number) => {
+      const utcHour = getUTCHour(localHour, timezoneOffset);
+      const events: { name: string; color: string }[] = [];
 
-    // Get the session start/end times from SESSION_NOTES
-    const baseSession = getCurrentSession();
-    const sessionStartUTC = baseSession.utcRange[0];
-    const sessionEndUTC = baseSession.utcRange[1];
+      // Define all session events with their UTC ranges and colors
+      const sessionRanges = [
+        { name: 'Main Session (Sydney)', range: [21, 30], color: 'hsl(195, 74%, 62%)' },
+        { name: 'Main Session (Asia)', range: [23, 32], color: 'hsl(320, 82%, 60%)' },
+        { name: 'Main Session (London)', range: [8, 17], color: 'hsl(45, 100%, 50%)' },
+        { name: 'Main Session (NY)', range: [13, 22], color: 'hsl(120, 60%, 50%)' },
+        { name: 'Asia-London Overlap', range: [8, 9], color: 'hsl(255, 80%, 70%)' },
+        { name: 'London-NY Overlap', range: [13, 17], color: 'hsl(20, 100%, 60%)' },
+        { name: 'London Killzone', range: [7, 10], color: 'hsl(0, 80%, 60%)' },
+        { name: 'NY AM Killzone', range: [12, 15], color: 'hsl(0, 80%, 60%)' },
+        { name: 'NY PM Killzone', range: [18, 20], color: 'hsl(0, 60%, 55%)' },
+      ];
 
-    // Calculate elapsed and remaining in seconds
-    const utcSeconds = currentTime.getUTCHours() * 3600 + currentTime.getUTCMinutes() * 60 + currentTime.getUTCSeconds();
-    const sessionStartSeconds = sessionStartUTC * 3600;
-    const sessionEndSeconds = sessionEndUTC * 3600;
+      // Check which events are active at this UTC hour
+      sessionRanges.forEach(({ name, range, color }) => {
+        const [start, end] = range;
+        let isActive = false;
 
-    const elapsedSeconds = utcSeconds - sessionStartSeconds;
-    const remainingSeconds = sessionEndSeconds - utcSeconds;
+        // Handle overnight sessions (e.g., Sydney 21-30, Asia 23-32)
+        if (end > 24) {
+          // Session crosses midnight
+          isActive = utcHour >= start || utcHour < (end - 24);
+        } else {
+          // Regular session within same day
+          isActive = utcHour >= start && utcHour < end;
+        }
 
-    // Format times in user's timezone
-    const startTimeLocal = formatTimeInTimezone(sessionStartUTC, timezoneOffset);
-    const endTimeLocal = formatTimeInTimezone(sessionEndUTC, timezoneOffset);
+        if (isActive) {
+          events.push({ name, color });
+        }
+      });
 
-    // Determine session name based on session hours
-    const hour = Math.floor(utcHour);
-    let sessionName = 'Trading Session';
-    if (hour >= 0 && hour < 9) sessionName = 'Asia Session';
-    else if (hour >= 9 && hour < 17) sessionName = 'Europe Session';
-    else if (hour >= 17 && hour < 24) sessionName = 'New York Session';
-
-    return {
-      sessionRange: `${startTimeLocal}–${endTimeLocal}`,
-      sessionName: sessionName,
-      elapsed: formatSessionDuration(elapsedSeconds),
-      remaining: formatSessionDuration(remainingSeconds),
+      return events;
     };
-  }, [nowLine, timezoneOffset, currentTime]);
+  }, [timezoneOffset]);
+
+  // Function to get session data for any given local time (used by tooltip)
+  const getSessionAtTime = useMemo(() => {
+    return (localHour: number) => {
+      const utcHour = getUTCHour(localHour, timezoneOffset);
+      const hour = Math.floor(utcHour);
+
+      // Get the session start/end times from SESSION_NOTES
+      let baseSession;
+      if (hour >= 0 && hour < 3) baseSession = SESSION_NOTES[0];
+      else if (hour >= 3 && hour < 6) baseSession = SESSION_NOTES[1];
+      else if (hour >= 6 && hour < 9) baseSession = SESSION_NOTES[2];
+      else if (hour >= 9 && hour < 12) baseSession = SESSION_NOTES[3];
+      else if (hour >= 12 && hour < 15) baseSession = SESSION_NOTES[4];
+      else if (hour >= 15 && hour < 18) baseSession = SESSION_NOTES[5];
+      else if (hour >= 18 && hour < 21) baseSession = SESSION_NOTES[6];
+      else baseSession = SESSION_NOTES[7];
+
+      const sessionStartUTC = baseSession.utcRange[0];
+      const sessionEndUTC = baseSession.utcRange[1];
+
+      // Calculate elapsed and remaining based on the hovered time
+      const hoveredUTCSeconds = utcHour * 3600;
+      const sessionStartSeconds = sessionStartUTC * 3600;
+      const sessionEndSeconds = sessionEndUTC * 3600;
+
+      const elapsedSeconds = hoveredUTCSeconds - sessionStartSeconds;
+      const remainingSeconds = sessionEndSeconds - hoveredUTCSeconds;
+
+      // Format times in user's timezone
+      const startTimeLocal = formatTimeInTimezone(sessionStartUTC, timezoneOffset);
+      const endTimeLocal = formatTimeInTimezone(sessionEndUTC, timezoneOffset);
+
+      // Determine session name
+      let sessionName = 'Trading Session';
+      if (hour >= 0 && hour < 9) sessionName = 'Asia Session';
+      else if (hour >= 9 && hour < 17) sessionName = 'Europe Session';
+      else if (hour >= 17 && hour < 24) sessionName = 'New York Session';
+
+      return {
+        sessionRange: `${startTimeLocal}–${endTimeLocal}`,
+        sessionName: sessionName,
+        elapsed: formatSessionDuration(elapsedSeconds),
+        remaining: formatSessionDuration(remainingSeconds),
+      };
+    };
+  }, [timezoneOffset]);
+
+  // Current session data (for header display)
+  const sessionTimingData = useMemo(() => {
+    return getSessionAtTime(nowLine);
+  }, [nowLine, getSessionAtTime]);
 
   return (
     <div className="w-full mt-6 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-6 shadow-lg shadow-black/20">
@@ -269,7 +354,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
 
             <Tooltip
               content={
-                <CustomVolumeTooltip currentSessionData={sessionTimingData} />
+                <CustomVolumeTooltip getSessionAtTime={getSessionAtTime} getSessionEventsAtTime={getSessionEventsAtTime} />
               }
               cursor={{ strokeDasharray: '3 3', stroke: 'rgba(148, 163, 184, 0.5)' }}
             />
