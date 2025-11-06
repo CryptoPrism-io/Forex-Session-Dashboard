@@ -82,11 +82,9 @@ const ChartTooltip: React.FC<{
   const tooltipHeight = 200;
   const horizontalPadding = 10;
   const verticalPadding = 16;
-  const offsetX = 10;
-  const offsetY = 25;
 
-  let left = position.x + offsetX;
-  let top = position.y + offsetY;
+  let left = position.x;
+  let top = position.y;
 
   if (left < horizontalPadding) {
     left = horizontalPadding;
