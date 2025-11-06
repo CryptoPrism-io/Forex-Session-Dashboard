@@ -58,8 +58,9 @@ const UnifiedTooltip: React.FC<{
   tooltip: TooltipState | null;
   timezoneOffset: number;
   timezoneLabel: string;
-}> = ({ tooltip, timezoneOffset, timezoneLabel }) => {
-  if (!tooltip || !tooltip.block) return null;
+  isVisible?: boolean;
+}> = ({ tooltip, timezoneOffset, timezoneLabel, isVisible = true }) => {
+  if (!isVisible || !tooltip || !tooltip.block) return null;
 
   const { block, position } = tooltip;
   const { details, range } = block;
@@ -945,11 +946,14 @@ const ForexChart: React.FC<ForexChartProps> = ({
         </>
       )}
 
-      <UnifiedTooltip
-        tooltip={tooltip}
-        timezoneOffset={timezoneOffset}
-        timezoneLabel={currentTimezoneLabel}
-      />
+      {viewMode === 'unified' && (
+        <UnifiedTooltip
+          tooltip={tooltip}
+          timezoneOffset={timezoneOffset}
+          timezoneLabel={currentTimezoneLabel}
+          isVisible={true}
+        />
+      )}
     </div>
   );
 };
