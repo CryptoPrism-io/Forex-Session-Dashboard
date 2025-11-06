@@ -49,81 +49,70 @@ const formatTime = (hour: number, offset: number): string => {
   return `${String(finalHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 };
 
-const ChartTooltip: React.FC<{
+interface TooltipState {
   block: TimeBlock | null;
   position: { x: number; y: number };
+}
+
+const UnifiedTooltip: React.FC<{
+  tooltip: TooltipState | null;
   timezoneOffset: number;
   timezoneLabel: string;
-  chartRef?: React.RefObject<HTMLDivElement>;
-}> = ({ block, position, timezoneOffset, timezoneLabel, chartRef }) => {
-  if (!block) return null;
+}> = ({ tooltip, timezoneOffset, timezoneLabel }) => {
+  if (!tooltip || !tooltip.block) return null;
 
-  const tooltipData = block.tooltip;
-  const range = block.range;
-
+  const { block, position } = tooltip;
+  const { details, range } = block;
   const [startUTC, endUTC] = range;
   const startTimeLocal = formatTime(startUTC, timezoneOffset);
   const endTimeLocal = formatTime(endUTC, timezoneOffset);
 
-  // Calculate current hover time based on cursor position
-  // Note: The chart bars are already positioned in the selected timezone, so we don't add offset again
-  let hoverTimeLocal = '';
-  if (chartRef?.current) {
-    const rect = chartRef.current.getBoundingClientRect();
-    const relativeX = position.x - rect.left;
-    const chartWidth = rect.width;
-    const hoverHour = (relativeX / chartWidth) * 24;
-    const finalHour = (Math.floor(hoverHour) % 24 + 24) % 24;
-    const minutes = Math.round((hoverHour - Math.floor(hoverHour)) * 60);
-    hoverTimeLocal = `${String(finalHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-  }
-
-  const tooltipWidth = 280;
-  const tooltipHeight = 200;
-  const horizontalPadding = 10;
-  const verticalPadding = 16;
+  const tooltipWidth = 300;
+  const tooltipHeight = 160;
+  const padding = 10;
 
   let left = position.x;
   let top = position.y;
 
-  if (left < horizontalPadding) {
-    left = horizontalPadding;
+  // Keep within viewport
+  if (left + tooltipWidth > window.innerWidth - padding) {
+    left = window.innerWidth - tooltipWidth - padding;
+  }
+  if (left < padding) {
+    left = padding;
   }
 
-  if (left + tooltipWidth > window.innerWidth - horizontalPadding) {
-    left = window.innerWidth - tooltipWidth - horizontalPadding;
+  if (top + tooltipHeight > window.innerHeight - padding) {
+    top = window.innerHeight - tooltipHeight - padding;
   }
-
-  if (top < horizontalPadding) {
-    top = position.y + verticalPadding;
+  if (top < padding) {
+    top = padding;
   }
-
-  if (top + tooltipHeight > window.innerHeight - horizontalPadding) {
-    top = window.innerHeight - tooltipHeight - horizontalPadding;
-  }
-
-  const style: React.CSSProperties = {
-    position: 'fixed',
-    top,
-    left,
-    pointerEvents: 'none',
-    zIndex: 50,
-  };
 
   return (
-    <div style={style} className="p-4 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl text-sm text-slate-200 w-72 transition-all duration-100">
-      <h3 className="font-bold text-base mb-2 text-white">{tooltipData.title}</h3>
-      {hoverTimeLocal && (
-        <div className="text-xs text-yellow-300 mb-2 font-semibold">
-          {`Hover Time (${timezoneLabel}): ${hoverTimeLocal}`}
-        </div>
-      )}
-      <div className="text-xs text-cyan-300 mb-3 font-semibold">
-        {`Hours (${timezoneLabel}): ${startTimeLocal} - ${endTimeLocal}`}
-      </div>
-      <p><strong className="font-semibold text-slate-400">Volatility:</strong> {tooltipData.volatility}</p>
-      <p><strong className="font-semibold text-slate-400">Best Pairs:</strong> {tooltipData.bestPairs}</p>
-      <p className="mt-2 pt-2 border-t border-slate-700"><strong className="font-semibold text-slate-400">Strategy:</strong> {tooltipData.strategy}</p>
+    <div
+      style={{
+        position: 'fixed',
+        left,
+        top,
+        zIndex: 50,
+        pointerEvents: 'none',
+      }}
+      className="bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-3 text-sm text-slate-200 w-80"
+    >
+      <h3 className="font-bold text-base text-white mb-2">{details.name}</h3>
+      <p className="text-xs text-cyan-300 mb-2">
+        <span className="font-semibold">{startTimeLocal}</span> - <span className="font-semibold">{endTimeLocal}</span> {timezoneLabel}
+      </p>
+      <p className="text-xs text-slate-400">
+        <strong>Volatility:</strong> {block.tooltip.volatility}
+      </p>
+      <p className="text-xs text-slate-400">
+        <strong>Best Pairs:</strong> {block.tooltip.bestPairs}
+      </p>
+      <p className="text-xs text-slate-400 pt-2 border-t border-slate-700 mt-2">
+        <strong>Strategy:</strong> {block.tooltip.strategy}
+      </p>
     </div>
   );
 };
@@ -133,9 +122,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
   isDSTActive = false, activeSessions, isAutoDetectDST = true, manualDSTOverride,
   onToggleDSTOverride, onAutoDetectToggle
 }) => {
-  const [hoveredBlock, setHoveredBlock] = useState<TimeBlock | null>(null);
-  const [displayedBlock, setDisplayedBlock] = useState<TimeBlock | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [viewMode, setViewMode] = useState<'unified' | 'separate' | 'guide' | 'volume'>('unified');
   const [chartsVisible, setChartsVisible] = useState(true);
   const [showDSTMenu, setShowDSTMenu] = useState(false);
@@ -245,33 +232,30 @@ const ForexChart: React.FC<ForexChartProps> = ({
   }, [timezoneOffset]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, block: TimeBlock) => {
-    // Only update if this is a higher-priority block (higher yLevel)
-    // This prevents lower-priority blocks from overriding higher-priority ones
-    if (hoveredBlock && hoveredBlock.yLevel > block.yLevel) {
+    // Only show tooltip for highest priority block (highest yLevel)
+    if (tooltip?.block && tooltip.block.yLevel > block.yLevel) {
       return;
     }
 
-    setHoveredBlock(block);
-    setTooltipPosition({ x: e.clientX, y: e.clientY });
-
-    // Clear previous timeout if exists
+    // Clear previous timeout
     if (tooltipTimeoutRef.current) {
       clearTimeout(tooltipTimeoutRef.current);
     }
 
-    // Set tooltip to show after 1 second
+    // Show tooltip after 1 second delay
     tooltipTimeoutRef.current = setTimeout(() => {
-      setDisplayedBlock(block);
+      setTooltip({
+        block,
+        position: { x: e.clientX, y: e.clientY },
+      });
     }, 1000);
   };
 
   const handleMouseLeave = () => {
-    // Clear the timeout so tooltip doesn't show if user leaves too quickly
     if (tooltipTimeoutRef.current) {
       clearTimeout(tooltipTimeoutRef.current);
     }
-    setHoveredBlock(null);
-    setDisplayedBlock(null);
+    setTooltip(null);
   };
 
   const getStatusColor = (status: SessionStatus) => {
@@ -961,12 +945,10 @@ const ForexChart: React.FC<ForexChartProps> = ({
         </>
       )}
 
-      <ChartTooltip
-        block={displayedBlock}
-        position={tooltipPosition}
+      <UnifiedTooltip
+        tooltip={tooltip}
         timezoneOffset={timezoneOffset}
         timezoneLabel={currentTimezoneLabel}
-        chartRef={chartContainerRef}
       />
     </div>
   );
