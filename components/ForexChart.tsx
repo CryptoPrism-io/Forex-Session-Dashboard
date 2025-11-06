@@ -359,29 +359,35 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
               ];
 
               // Create SVG path for volume profile
-              const chartHeight = 128; // h-32 = 128px
-              const chartWidth = 100; // percentage
+              // ViewBox: 0-1000 for x (width), 0-100 for y (height) for precision
+              const chartWidth = 1000;
+              const chartHeight = 100;
               const pointSpacing = chartWidth / 48; // 48 data points
-              const volumeScale = chartHeight * 0.8; // Use 80% of height for volume
-              const baselineY = chartHeight - 20; // Leave 20px at bottom
+              const volumeScale = chartHeight * 0.85; // Use 85% of height for volume
+              const baselineY = chartHeight - 5; // Leave 5 units at bottom
 
               let pathData = `M 0 ${baselineY}`;
               rotatedVolume.forEach((volume, i) => {
-                const x = (i * pointSpacing);
+                const x = i * pointSpacing;
                 const y = baselineY - (volume / 100) * volumeScale;
                 pathData += ` L ${x} ${y}`;
               });
               pathData += ` L ${chartWidth} ${baselineY} Z`;
 
               return (
-                <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }}>
+                <svg
+                  className="absolute inset-0 w-full h-full"
+                  style={{ pointerEvents: 'none' }}
+                  viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                  preserveAspectRatio="none"
+                >
                   <defs>
                     <linearGradient id="volumeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                       <stop offset="0%" stopColor="rgba(34, 211, 238, 0.15)" />
                       <stop offset="100%" stopColor="rgba(34, 211, 238, 0.02)" />
                     </linearGradient>
                   </defs>
-                  <path d={pathData} fill="url(#volumeGradient)" stroke="rgba(34, 211, 238, 0.3)" strokeWidth="1.5" />
+                  <path d={pathData} fill="url(#volumeGradient)" stroke="rgba(34, 211, 238, 0.3)" strokeWidth="0.8" />
                 </svg>
               );
             }, [timezoneOffset])}
