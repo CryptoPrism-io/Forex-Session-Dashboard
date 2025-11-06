@@ -241,6 +241,37 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
   const ticks = Array.from({ length: 24 }, (_, i) => i); // Every hour
   const majorTicks = Array.from({ length: 24 }, (_, i) => i); // All 24 hours for labels
 
+  // Pre-calculate volume histogram data (hooks must be called at top level)
+  const volumeHistogramSVG = useMemo(() => {
+    if (!visibleLayers.volume) return null;
+
+    let rotationSteps = Math.round((timezoneOffset % 24) * 2);
+    rotationSteps = ((rotationSteps % 48) + 48) % 48;
+
+    const rotatedVolume = [
+      ...VOLUME_DATA.slice(48 - rotationSteps),
+      ...VOLUME_DATA.slice(0, 48 - rotationSteps)
+    ];
+
+    const interpolatedVolume: number[] = [];
+    for (let i = 0; i < rotatedVolume.length - 1; i++) {
+      interpolatedVolume.push(rotatedVolume[i]);
+      const v1 = rotatedVolume[i];
+      const v2 = rotatedVolume[i + 1];
+      interpolatedVolume.push(v1 + (v2 - v1) * 0.333);
+      interpolatedVolume.push(v1 + (v2 - v1) * 0.667);
+    }
+    interpolatedVolume.push(rotatedVolume[rotatedVolume.length - 1]);
+
+    const chartWidth = 1000;
+    const chartHeight = 100;
+    const barWidth = chartWidth / interpolatedVolume.length;
+    const volumeScale = chartHeight * 0.85;
+    const baselineY = chartHeight - 5;
+
+    return { interpolatedVolume, chartWidth, chartHeight, barWidth, volumeScale, baselineY };
+  }, [timezoneOffset, visibleLayers.volume]);
+
   return (
     <div ref={chartContainerRef} className="w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 p-6 rounded-2xl shadow-2xl shadow-black/30 hover:border-slate-600/50 transition-all duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
@@ -420,72 +451,40 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
 
           <div className="relative w-full h-32 bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
             {/* Volume Histogram Background */}
-            {useMemo(() => {
-              if (!visibleLayers.volume) return null;
+            {volumeHistogramSVG && (
+              <svg
+                className="absolute inset-0 w-full h-full"
+                style={{ pointerEvents: 'none' }}
+                viewBox={`0 0 ${volumeHistogramSVG.chartWidth} ${volumeHistogramSVG.chartHeight}`}
+                preserveAspectRatio="none"
+              >
+                <defs>
+                  {/* Gradient from red (bottom) to orange to green (top), bottom-to-top direction */}
+                  <linearGradient id="volumeHistogramGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+                    <stop offset="0%" stopColor="rgb(220, 38, 38)" stopOpacity="0.10" />
+                    <stop offset="50%" stopColor="rgb(234, 88, 12)" stopOpacity="0.10" />
+                    <stop offset="100%" stopColor="rgb(34, 197, 94)" stopOpacity="0.10" />
+                  </linearGradient>
+                </defs>
+                {/* Draw histogram bars */}
+                {volumeHistogramSVG.interpolatedVolume.map((volume, i) => {
+                  const x = i * volumeHistogramSVG.barWidth;
+                  const barHeight = (volume / 100) * volumeHistogramSVG.volumeScale;
+                  const y = volumeHistogramSVG.baselineY - barHeight;
 
-              // Rotate volume data based on timezone
-              let rotationSteps = Math.round((timezoneOffset % 24) * 2);
-              rotationSteps = ((rotationSteps % 48) + 48) % 48;
-
-              const rotatedVolume = [
-                ...VOLUME_DATA.slice(48 - rotationSteps),
-                ...VOLUME_DATA.slice(0, 48 - rotationSteps)
-              ];
-
-              // Interpolate from 48 points (30-min) to 144 points (10-min intervals)
-              const interpolatedVolume: number[] = [];
-              for (let i = 0; i < rotatedVolume.length - 1; i++) {
-                interpolatedVolume.push(rotatedVolume[i]);
-                // Linear interpolation: add 2 intermediate points between each pair
-                const v1 = rotatedVolume[i];
-                const v2 = rotatedVolume[i + 1];
-                interpolatedVolume.push(v1 + (v2 - v1) * 0.333);
-                interpolatedVolume.push(v1 + (v2 - v1) * 0.667);
-              }
-              interpolatedVolume.push(rotatedVolume[rotatedVolume.length - 1]);
-
-              // Create SVG histogram bars (10-min intervals = 144 bars)
-              const chartWidth = 1000;
-              const chartHeight = 100;
-              const barWidth = chartWidth / interpolatedVolume.length; // One bar per 10-min interval
-              const volumeScale = chartHeight * 0.85;
-              const baselineY = chartHeight - 5;
-
-              return (
-                <svg
-                  className="absolute inset-0 w-full h-full"
-                  style={{ pointerEvents: 'none' }}
-                  viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                  preserveAspectRatio="none"
-                >
-                  <defs>
-                    {/* Gradient from red (bottom) to orange to green (top), bottom-to-top direction */}
-                    <linearGradient id="volumeHistogramGradient" x1="0%" y1="100%" x2="0%" y2="0%">
-                      <stop offset="0%" stopColor="rgb(220, 38, 38)" stopOpacity="0.10" />
-                      <stop offset="50%" stopColor="rgb(234, 88, 12)" stopOpacity="0.10" />
-                      <stop offset="100%" stopColor="rgb(34, 197, 94)" stopOpacity="0.10" />
-                    </linearGradient>
-                  </defs>
-                  {/* Draw histogram bars */}
-                  {interpolatedVolume.map((volume, i) => {
-                    const x = i * barWidth;
-                    const barHeight = (volume / 100) * volumeScale;
-                    const y = baselineY - barHeight;
-
-                    return (
-                      <rect
-                        key={`bar-${i}`}
-                        x={x}
-                        y={y}
-                        width={barWidth}
-                        height={barHeight}
-                        fill="url(#volumeHistogramGradient)"
-                      />
-                    );
-                  })}
-                </svg>
-              );
-            }, [timezoneOffset, visibleLayers.volume])}
+                  return (
+                    <rect
+                      key={`bar-${i}`}
+                      x={x}
+                      y={y}
+                      width={volumeHistogramSVG.barWidth}
+                      height={barHeight}
+                      fill="url(#volumeHistogramGradient)"
+                    />
+                  );
+                })}
+              </svg>
+            )}
 
             {/* Vertical hour grid lines */}
             {ticks.map(hour => (
