@@ -291,13 +291,6 @@ const App: React.FC = () => {
                   </div>
                 )}
 
-                {/* Alerts Toggle Header with Gradient Glow */}
-                <AlertsToggleHeader
-                  alertConfig={alertConfig}
-                  onToggle={toggleAlerts}
-                  onToggleSound={toggleSound}
-                />
-
                 <h1
                   className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
                   style={{
@@ -431,6 +424,11 @@ const App: React.FC = () => {
         <footer className="w-full mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 text-slate-500 text-xs font-light">
           <p>Data is illustrative. Always verify times with your broker. Not financial advice.</p>
           <div className="flex items-center gap-3">
+            <AlertsToggleHeader
+              alertConfig={alertConfig}
+              onToggle={toggleAlerts}
+              onToggleSound={toggleSound}
+            />
             <InstallButton
               onClick={handleInstallClick}
               show={installState === 'available' || installState === 'dismissed'}
