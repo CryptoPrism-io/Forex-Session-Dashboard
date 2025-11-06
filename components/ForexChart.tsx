@@ -4,6 +4,18 @@ import { ChartBarDetails, TooltipInfo } from '../types';
 import { SessionStatus } from '../App';
 import { IconChevronDown } from './icons';
 
+// Global Forex Trading Volume Profile (UTC, 30-min intervals, 48 points = 24 hours)
+const VOLUME_DATA = [
+  18, 17, 17, 18, 19, 21,        // 00:00–02:30 — Sydney-only quiet; slow Asian liquidity build
+  23, 26, 30, 35, 39, 42,        // 03:00–05:30 — Asia begins, Tokyo desks warming up
+  46, 50, 55, 60, 65, 70,        // 06:00–08:30 — Tokyo peak, early Europe pre-open buildup
+  75, 82, 88, 92, 89, 84,        // 09:00–11:30 — Europe volatility, London open burst then lunch dip
+  90, 95, 98, 100, 99, 96,       // 12:00–14:30 — NY AM KZ (11:00–14:00); data spikes & trend runs
+  94, 90, 86, 80, 75, 70,        // 15:00–17:30 — overlap winds down, London exits, NY active
+  68, 63, 58, 52, 48, 44,        // 18:00–20:30 — NY-only, declining flow, US close nearing
+  40, 36, 32, 30, 28, 26         // 21:00–23:30 — rollover lull, swap-settlement hour, Sydney pre-open
+];
+
 interface ForexChartProps {
   nowLine: number;
   currentTimezoneLabel: string;
@@ -335,6 +347,45 @@ const ForexChart: React.FC<ForexChartProps> = ({ nowLine, currentTimezoneLabel, 
         // Unified view - all sessions on one timeline
         <div className="mb-5">
           <div className="relative w-full h-32 bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
+            {/* Volume Profile Background */}
+            {useMemo(() => {
+              // Rotate volume data based on timezone
+              let rotationSteps = Math.round((timezoneOffset % 24) * 2);
+              rotationSteps = ((rotationSteps % 48) + 48) % 48;
+
+              const rotatedVolume = [
+                ...VOLUME_DATA.slice(48 - rotationSteps),
+                ...VOLUME_DATA.slice(0, 48 - rotationSteps)
+              ];
+
+              // Create SVG path for volume profile
+              const chartHeight = 128; // h-32 = 128px
+              const chartWidth = 100; // percentage
+              const pointSpacing = chartWidth / 48; // 48 data points
+              const volumeScale = chartHeight * 0.8; // Use 80% of height for volume
+              const baselineY = chartHeight - 20; // Leave 20px at bottom
+
+              let pathData = `M 0 ${baselineY}`;
+              rotatedVolume.forEach((volume, i) => {
+                const x = (i * pointSpacing);
+                const y = baselineY - (volume / 100) * volumeScale;
+                pathData += ` L ${x} ${y}`;
+              });
+              pathData += ` L ${chartWidth} ${baselineY} Z`;
+
+              return (
+                <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }}>
+                  <defs>
+                    <linearGradient id="volumeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="rgba(34, 211, 238, 0.15)" />
+                      <stop offset="100%" stopColor="rgba(34, 211, 238, 0.02)" />
+                    </linearGradient>
+                  </defs>
+                  <path d={pathData} fill="url(#volumeGradient)" stroke="rgba(34, 211, 238, 0.3)" strokeWidth="1.5" />
+                </svg>
+              );
+            }, [timezoneOffset])}
+
             {/* Vertical hour grid lines */}
             {ticks.map(hour => (
               <div
