@@ -193,13 +193,16 @@ const App: React.FC = () => {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   };
 
-  // Display top 5 forex trading timezones + user's selected timezone
+  // Display major forex trading timezones + user's selected timezone
   const topTimezones = [
     TIMEZONES.find(tz => tz.label === 'UTC'),
     TIMEZONES.find(tz => tz.label === 'GMT'),
     TIMEZONES.find(tz => tz.label === 'IST (UTC+5:30)'),     // India
     TIMEZONES.find(tz => tz.label === 'JST'),     // Tokyo
     TIMEZONES.find(tz => tz.label === 'EST'),     // New York
+    TIMEZONES.find(tz => tz.label === 'PST'),     // Los Angeles
+    TIMEZONES.find(tz => tz.label === 'AEST'),    // Sydney
+    TIMEZONES.find(tz => tz.label === 'BST'),     // London
   ].filter(Boolean) as Timezone[];
 
   // Add user's selected timezone if not already in the list
@@ -272,20 +275,24 @@ const App: React.FC = () => {
               </div>
 
               {/* Timezone Selector - Top Right */}
-              <div className="flex flex-wrap gap-1.5 justify-end">
-                {displayedTimezones.map(tz => (
-                  <button
-                    key={tz.label}
-                    onClick={() => handleTimezoneChange(tz)}
-                    className={`px-2.5 py-1 text-xs font-semibold rounded-full transition-all duration-300 backdrop-blur-md ${
-                      selectedTimezone.label === tz.label
-                        ? 'bg-cyan-500/30 border border-cyan-400/60 text-cyan-100 shadow-md shadow-cyan-500/20'
-                        : 'bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300'
-                    }`}
-                  >
-                    {tz.label}
-                  </button>
-                ))}
+              <div className="grid grid-cols-4 gap-1.5">
+                {displayedTimezones.map(tz => {
+                  // Display short label for IST to remove the offset text
+                  const displayLabel = tz.label.includes('UTC+5:30') ? 'IST' : tz.label;
+                  return (
+                    <button
+                      key={tz.label}
+                      onClick={() => handleTimezoneChange(tz)}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-full transition-all duration-300 backdrop-blur-md ${
+                        selectedTimezone.label === tz.label
+                          ? 'bg-cyan-500/30 border border-cyan-400/60 text-cyan-100 shadow-md shadow-cyan-500/20'
+                          : 'bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300'
+                      }`}
+                    >
+                      {displayLabel}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <p className="text-xs sm:text-sm text-slate-300 font-light tracking-wide mb-4">
