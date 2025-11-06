@@ -32,6 +32,23 @@ const SESSION_NOTES = [
 ];
 
 const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, currentTimezoneLabel }) => {
+  // Convert local time (nowLine) back to UTC for accurate session detection
+  const getUTCHour = (localHour: number, offset: number): number => {
+    let utcHour = localHour - offset;
+    utcHour = (utcHour % 24 + 24) % 24; // Normalize to 0-24
+    return utcHour;
+  };
+
+  // Format time with timezone conversion
+  const formatTimeInTimezone = (utcHour: number, offset: number): string => {
+    let localHour = (utcHour + offset) % 24;
+    localHour = localHour < 0 ? localHour + 24 : localHour;
+
+    const hours = Math.floor(localHour);
+    const minutes = Math.round((localHour - hours) * 60);
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  };
+
   // Prepare chart data with timezone-adjusted times
   const chartData = useMemo(() => {
     return VOLUME_DATA.map((volume, index) => {
@@ -53,24 +70,38 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
     });
   }, [timezoneOffset]);
 
-  // Calculate "now" line position as percentage (0-100%)
-  const nowLinePercent = (nowLine / 24) * 100;
-
-  // Determine current session based on nowLine (UTC hours)
+  // Determine current session based on UTC hours (converted from local nowLine)
   const getCurrentSession = () => {
-    const hour = Math.floor(nowLine);
+    const utcHour = getUTCHour(nowLine, timezoneOffset);
+    const hour = Math.floor(utcHour);
 
-    if (hour >= 0 && hour < 3) return SESSION_NOTES[0];      // 0:00–2:30
-    if (hour >= 3 && hour < 6) return SESSION_NOTES[1];      // 3:00–5:30
-    if (hour >= 6 && hour < 9) return SESSION_NOTES[2];      // 6:00–8:30
-    if (hour >= 9 && hour < 12) return SESSION_NOTES[3];     // 9:00–11:30
-    if (hour >= 12 && hour < 15) return SESSION_NOTES[4];    // 12:00–14:30
-    if (hour >= 15 && hour < 18) return SESSION_NOTES[5];    // 15:00–17:30
-    if (hour >= 18 && hour < 21) return SESSION_NOTES[6];    // 18:00–20:30
-    return SESSION_NOTES[7];                                   // 21:00–23:30
+    if (hour >= 0 && hour < 3) return SESSION_NOTES[0];      // 0:00–2:30 UTC
+    if (hour >= 3 && hour < 6) return SESSION_NOTES[1];      // 3:00–5:30 UTC
+    if (hour >= 6 && hour < 9) return SESSION_NOTES[2];      // 6:00–8:30 UTC
+    if (hour >= 9 && hour < 12) return SESSION_NOTES[3];     // 9:00–11:30 UTC
+    if (hour >= 12 && hour < 15) return SESSION_NOTES[4];    // 12:00–14:30 UTC
+    if (hour >= 15 && hour < 18) return SESSION_NOTES[5];    // 15:00–17:30 UTC
+    if (hour >= 18 && hour < 21) return SESSION_NOTES[6];    // 18:00–20:30 UTC
+    return SESSION_NOTES[7];                                   // 21:00–23:30 UTC
   };
 
-  const currentSession = getCurrentSession();
+  const currentSession = useMemo(() => {
+    const baseSession = getCurrentSession();
+    const utcHour = getUTCHour(nowLine, timezoneOffset);
+
+    // Calculate start and end times in UTC for the current session
+    const sessionStartUTC = Math.floor(utcHour / 3) * 3; // Round down to nearest 3-hour block
+    const sessionEndUTC = (sessionStartUTC + 3) % 24;
+
+    // Format times in user's timezone
+    const startTimeLocal = formatTimeInTimezone(sessionStartUTC, timezoneOffset);
+    const endTimeLocal = formatTimeInTimezone(sessionEndUTC, timezoneOffset);
+
+    return {
+      ...baseSession,
+      label: `${startTimeLocal}–${endTimeLocal}`,
+    };
+  }, [nowLine, timezoneOffset]);
 
   return (
     <div className="w-full mt-6 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-6 shadow-lg shadow-black/20">
