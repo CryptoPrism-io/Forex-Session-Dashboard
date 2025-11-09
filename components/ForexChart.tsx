@@ -7,15 +7,59 @@ import VolumeChart from './VolumeChart';
 
 // Global Forex Trading Volume Profile (UTC, 30-min intervals, 48 points = 24 hours)
 const VOLUME_DATA = [
-  18, 17, 17, 18, 19, 21,        // 00:00–02:30 — Sydney-only quiet; slow Asian liquidity build
-  23, 26, 30, 35, 39, 42,        // 03:00–05:30 — Asia begins, Tokyo desks warming up
-  46, 50, 55, 60, 65, 70,        // 06:00–08:30 — Tokyo peak, early Europe pre-open buildup
+  18, 17, 17, 18, 19, 21,        // 00:00–02:30 – Sydney-only quiet; slow Asian liquidity build
+  23, 26, 30, 35, 39, 42,        // 03:00–05:30 – Asia begins, Tokyo desks warming up
+  46, 50, 55, 60, 65, 70,        // 06:00–08:30 – Tokyo peak, early Europe pre-open buildup
   75, 82, 88, 92, 89, 84,        // 09:00–11:30 — Europe volatility, London open burst then lunch dip
   90, 95, 98, 100, 99, 96,       // 12:00–14:30 — NY AM KZ (11:00–14:00); data spikes & trend runs
   94, 90, 86, 80, 75, 70,        // 15:00–17:30 — overlap winds down, London exits, NY active
   68, 63, 58, 52, 48, 44,        // 18:00–20:30 — NY-only, declining flow, US close nearing
-  40, 36, 32, 30, 28, 26         // 21:00–23:30 — rollover lull, swap-settlement hour, Sydney pre-open
+  40, 36, 32, 30, 28, 26         // 21:00–23:30 – rollover lull, swap-settlement hour, Sydney pre-open
 ];
+
+const SESSION_CITY_REFERENCES = [
+  { label: 'Sydney', timezone: 'Australia/Sydney', accent: '#38bdf8' },
+  { label: 'Tokyo', timezone: 'Asia/Tokyo', accent: '#f472b6' },
+  { label: 'London', timezone: 'Europe/London', accent: '#facc15' },
+  { label: 'New York', timezone: 'America/New_York', accent: '#34d399' },
+];
+
+const formatOffsetFromMinutes = (minutes: number): string => {
+  const sign = minutes >= 0 ? '+' : '-';
+  const absMin = Math.abs(minutes);
+  const hours = Math.floor(absMin / 60);
+  const mins = absMin % 60;
+  return `UTC${sign}${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+};
+
+const formatOffsetFromHours = (hoursValue: number): string => {
+  const minutes = Math.round(hoursValue * 60);
+  return formatOffsetFromMinutes(minutes);
+};
+
+const getTimezoneOffsetLabel = (timezone: string): string => {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'shortOffset',
+    });
+    const parts = formatter.formatToParts(new Date());
+    const offsetPart = parts.find((part) => part.type === 'timeZoneName')?.value?.replace('GMT', 'UTC');
+    if (offsetPart) return offsetPart;
+  } catch (error) {
+    // Fallback below
+  }
+
+  try {
+    const now = new Date();
+    const utc = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+    const zoned = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+    const offsetMinutes = (zoned.getTime() - utc.getTime()) / 60000;
+    return formatOffsetFromMinutes(offsetMinutes);
+  } catch {
+    return 'UTC';
+  }
+};
 
 interface ForexChartProps {
   nowLine: number;
@@ -278,6 +322,18 @@ const ForexChart: React.FC<ForexChartProps> = ({
   };
 
   const ticks = Array.from({ length: 24 }, (_, i) => i); // Every hour
+  const cityBadges = useMemo(
+    () =>
+      SESSION_CITY_REFERENCES.map((city) => ({
+        ...city,
+        offsetLabel: getTimezoneOffsetLabel(city.timezone),
+      })),
+    [currentTime]
+  );
+  const timezoneAxisNote = useMemo(
+    () => `All times in ${currentTimezoneLabel} (${formatOffsetFromHours(timezoneOffset)})`,
+    [currentTimezoneLabel, timezoneOffset]
+  );
   const majorTicks = Array.from({ length: 24 }, (_, i) => i); // All 24 hours for labels
 
   // Pre-calculate volume histogram data (hooks must be called at top level)
@@ -485,6 +541,22 @@ const ForexChart: React.FC<ForexChartProps> = ({
         </div>
       </div>
 
+      <div className="mb-4 flex flex-wrap gap-2 text-[11px] text-slate-300">
+        {cityBadges.map((city) => (
+          <div
+            key={city.label}
+            className="flex items-center gap-2 px-2.5 py-1 rounded-2xl border border-slate-700/60 bg-slate-800/30 backdrop-blur"
+          >
+            <span
+              className="w-2.5 h-2.5 rounded-full shadow"
+              style={{ backgroundColor: city.accent, boxShadow: `0 0 10px ${city.accent}60` }}
+            />
+            <span className="font-semibold text-slate-100">{city.label}</span>
+            <span className="text-[10px] text-slate-400">{city.offsetLabel}</span>
+          </div>
+        ))}
+      </div>
+
       {viewMode === 'separate' ? (
         // Separate view - individual rows per session
         <div>
@@ -524,18 +596,20 @@ const ForexChart: React.FC<ForexChartProps> = ({
                     const yPositions = ['60%', '40%', '10%'];
                     const heights = ['35%', '25%', '20%'];
 
+                    const style: React.CSSProperties = {
+                      left: `${block.left}%`,
+                      width: `${block.width}%`,
+                      top: yPositions[block.yLevel],
+                      height: heights[block.yLevel],
+                      backgroundColor: block.details.color,
+                      opacity: block.details.opacity,
+                    };
+
                     return (
                       <div
                         key={block.key}
                         className="absolute rounded transition-all duration-200 ease-in-out hover:scale-y-125 cursor-pointer"
-                        style={{
-                          left: `${block.left}%`,
-                          width: `${block.width}%`,
-                          top: yPositions[block.yLevel],
-                          height: heights[block.yLevel],
-                          backgroundColor: block.details.color,
-                          opacity: block.details.opacity,
-                        }}
+                        style={style}
                         onMouseMove={(e) => handleMouseMove(e, block)}
                         onMouseLeave={handleMouseLeave}
                         aria-label={block.details.name}
@@ -555,6 +629,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
             </div>
           );
         })}
+        <p className="mt-3 text-[11px] text-slate-500 text-right italic">{timezoneAxisNote}</p>
         </div>
       ) : viewMode === 'unified' ? (
         // Unified view - all sessions on one timeline
@@ -617,19 +692,21 @@ const ForexChart: React.FC<ForexChartProps> = ({
               .map(block => {
                 const yPositions = ['75%', '50%', '25%'];
                 const heights = ['35%', '25%', '20%'];
+                const style: React.CSSProperties = {
+                  left: `${block.left}%`,
+                  width: `${block.width}%`,
+                  top: yPositions[block.yLevel],
+                  height: heights[block.yLevel],
+                  backgroundColor: block.details.color,
+                  opacity: block.details.opacity,
+                  mixBlendMode: 'normal',
+                };
 
                 return (
                   <div
                     key={block.key}
-                    className="absolute rounded transition-all duration-200 ease-in-out hover:scale-y-125 cursor-pointer"
-                    style={{
-                      left: `${block.left}%`,
-                      width: `${block.width}%`,
-                      top: yPositions[block.yLevel],
-                      height: heights[block.yLevel],
-                      backgroundColor: block.details.color,
-                      opacity: block.details.opacity,
-                    }}
+                    className="absolute rounded transition-all duration-200 ease-in-out hover:scale-y-110 cursor-pointer"
+                    style={style}
                     onMouseMove={(e) => handleMouseMove(e, block)}
                     onMouseLeave={handleMouseLeave}
                     aria-label={block.details.name}
@@ -666,15 +743,19 @@ const ForexChart: React.FC<ForexChartProps> = ({
               );
             })}
           </div>
+          <p className="mt-3 text-[11px] text-slate-500 text-right italic">{timezoneAxisNote}</p>
         </div>
       ) : viewMode === 'volume' ? (
         // Volume view - Trading Volume Chart
-        <VolumeChart
-          nowLine={nowLine}
-          currentTimezoneLabel={currentTimezoneLabel}
-          timezoneOffset={timezoneOffset}
-          currentTime={currentTime}
-        />
+        <div>
+          <VolumeChart
+            nowLine={nowLine}
+            currentTimezoneLabel={currentTimezoneLabel}
+            timezoneOffset={timezoneOffset}
+            currentTime={currentTime}
+          />
+          <p className="mt-3 text-[11px] text-slate-500 text-right italic">{timezoneAxisNote}</p>
+        </div>
       ) : (
         // Guide view - Trading Session Guide with Master Table and Collapsible Sections
         <section className="w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 rounded-2xl shadow-2xl shadow-black/30 overflow-hidden transition-all duration-300 hover:border-slate-600/50">

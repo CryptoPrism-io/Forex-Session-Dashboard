@@ -1,5 +1,16 @@
 import React, { useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot } from 'recharts';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+  ReferenceArea,
+  Customized,
+} from 'recharts';
 
 interface VolumeChartProps {
   nowLine: number;
@@ -34,6 +45,31 @@ const SESSION_NOTES = [
   { hour: 21, label: '21:00–23:30', desc: 'Rollover lull (21:00–22:00 UTC), swap-settlement hour, Sydney pre-open', utcRange: [21, 23.5], rolloverLull: [21, 22] }
 ] as const;
 
+type SessionLayerType = 'main' | 'overlap' | 'killzone';
+
+const SESSION_LAYER_DEFS: Array<{
+  name: string;
+  type: SessionLayerType;
+  color: string;
+  range: [number, number];
+}> = [
+  { name: 'Sydney Session', type: 'main', color: 'hsl(195, 74%, 62%)', range: [21, 30] },
+  { name: 'Asian Session (Tokyo)', type: 'main', color: 'hsl(320, 82%, 60%)', range: [23, 32] },
+  { name: 'London Session', type: 'main', color: 'hsl(45, 100%, 50%)', range: [8, 17] },
+  { name: 'New York Session', type: 'main', color: 'hsl(120, 60%, 50%)', range: [13, 22] },
+  { name: 'Asia-London Overlap', type: 'overlap', color: 'hsl(255, 80%, 70%)', range: [8, 9] },
+  { name: 'London-NY Overlap', type: 'overlap', color: 'hsl(20, 100%, 60%)', range: [13, 17] },
+  { name: 'London Killzone', type: 'killzone', color: 'hsl(0, 80%, 60%)', range: [7, 10] },
+  { name: 'NY AM Killzone', type: 'killzone', color: 'hsl(0, 80%, 60%)', range: [12, 15] },
+  { name: 'NY PM Killzone', type: 'killzone', color: 'hsl(0, 60%, 55%)', range: [18, 20] },
+];
+
+const SESSION_LANE_STYLES: Record<SessionLayerType, { y1: number; y2: number; opacity: number }> = {
+  main: { y1: 60, y2: 100, opacity: 0.08 },
+  overlap: { y1: 35, y2: 60, opacity: 0.12 },
+  killzone: { y1: 12, y2: 35, opacity: 0.18 },
+};
+
 // Format elapsed/remaining time in HH MM SS format
 const formatSessionDuration = (seconds: number): string => {
   const isNegative = seconds < 0;
@@ -45,6 +81,45 @@ const formatSessionDuration = (seconds: number): string => {
 
   const sign = isNegative ? '-' : '';
   return `${sign}${hours}h ${minutes}m ${secs}s`;
+};
+
+const formatHourLabel = (hourValue: number): string => {
+  const hours = Math.floor(hourValue) % 24;
+  const minutes = Math.round((hourValue - Math.floor(hourValue)) * 60);
+  return `${String((hours + 24) % 24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+};
+
+const normalizeHour = (value: number): number => ((value % 24) + 24) % 24;
+
+const buildLocalSegments = (
+  startUTC: number,
+  endUTC: number,
+  timezoneOffset: number,
+  color: string,
+  type: SessionLayerType,
+  name: string
+) => {
+  const segments: { start: number; end: number; color: string; type: SessionLayerType; name: string }[] = [];
+  const localStartAbs = startUTC + timezoneOffset;
+  const localEndAbs = endUTC + timezoneOffset;
+
+  let cursor = localStartAbs;
+  while (cursor < localEndAbs) {
+    const startNormalized = normalizeHour(cursor);
+    const nextBoundary = Math.floor(cursor / 24 + 1e-9) * 24 + 24;
+    const segmentLength = Math.min(localEndAbs - cursor, nextBoundary - cursor);
+    const endNormalized = startNormalized + segmentLength;
+    segments.push({
+      start: startNormalized,
+      end: Math.min(endNormalized, 24),
+      color,
+      type,
+      name,
+    });
+    cursor += segmentLength;
+  }
+
+  return segments;
 };
 
 // Custom Tooltip Component
@@ -176,21 +251,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
       const utcHour = getUTCHour(localHour, timezoneOffset);
       const events: { name: string; color: string }[] = [];
 
-      // Define all session events with their UTC ranges and colors
-      const sessionRanges = [
-        { name: 'Main Session (Sydney)', range: [21, 30], color: 'hsl(195, 74%, 62%)' },
-        { name: 'Main Session (Asia)', range: [23, 32], color: 'hsl(320, 82%, 60%)' },
-        { name: 'Main Session (London)', range: [8, 17], color: 'hsl(45, 100%, 50%)' },
-        { name: 'Main Session (NY)', range: [13, 22], color: 'hsl(120, 60%, 50%)' },
-        { name: 'Asia-London Overlap', range: [8, 9], color: 'hsl(255, 80%, 70%)' },
-        { name: 'London-NY Overlap', range: [13, 17], color: 'hsl(20, 100%, 60%)' },
-        { name: 'London Killzone', range: [7, 10], color: 'hsl(0, 80%, 60%)' },
-        { name: 'NY AM Killzone', range: [12, 15], color: 'hsl(0, 80%, 60%)' },
-        { name: 'NY PM Killzone', range: [18, 20], color: 'hsl(0, 60%, 55%)' },
-      ];
-
-      // Check which events are active at this UTC hour
-      sessionRanges.forEach(({ name, range, color }) => {
+      SESSION_LAYER_DEFS.forEach(({ name, range, color }) => {
         const [start, end] = range;
         let isActive = false;
 
@@ -260,9 +321,27 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
   }, [timezoneOffset]);
 
   // Current session data (for header display)
-  const sessionTimingData = useMemo(() => {
-    return getSessionAtTime(nowLine);
-  }, [nowLine, getSessionAtTime]);
+  const normalizedNowLine = useMemo(() => normalizeHour(nowLine), [nowLine]);
+
+  const sessionLayerSegments = useMemo(() => {
+    const segmentsByType: Record<SessionLayerType, Array<{ start: number; end: number; color: string; name: string }>> = {
+      main: [],
+      overlap: [],
+      killzone: [],
+    };
+
+    SESSION_LAYER_DEFS.forEach((layer) => {
+      const segments = buildLocalSegments(layer.range[0], layer.range[1], timezoneOffset, layer.color, layer.type, layer.name);
+      segmentsByType[layer.type].push(...segments);
+    });
+
+    // Sort segments by start for consistent rendering
+    (Object.keys(segmentsByType) as SessionLayerType[]).forEach((type) => {
+      segmentsByType[type].sort((a, b) => a.start - b.start);
+    });
+
+    return segmentsByType;
+  }, [timezoneOffset]);
 
   return (
     <div className="w-full mt-6 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-6 shadow-lg shadow-black/20">
@@ -292,21 +371,18 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
               </linearGradient>
             </defs>
 
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" vertical={true} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.12)" vertical={false} />
 
             <XAxis
               dataKey="hour"
               type="number"
               domain={[0, 24]}
-              tickFormatter={(h) =>
-                `${String(Math.floor(h)).padStart(2, '0')}:${(h % 1 ? '30' : '00')}`
-              }
+              ticks={Array.from({ length: 13 }, (_, idx) => idx * 2)}
+              tickFormatter={(h) => formatHourLabel(h)}
               stroke="rgba(148, 163, 184, 0.5)"
               tick={{ fill: 'rgba(148, 163, 184, 0.7)', fontSize: 12 }}
-              interval={3} // Show every 2 hours
-              angle={-45}
-              textAnchor="end"
-              height={60}
+              interval={0}
+              height={40}
             />
 
             <YAxis
@@ -322,6 +398,26 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
               cursor={{ strokeDasharray: '3 3', stroke: 'rgba(148, 163, 184, 0.5)' }}
             />
 
+            {/* Session bands stacked inside the chart */}
+            {(['main', 'overlap', 'killzone'] as SessionLayerType[]).map((type) =>
+              sessionLayerSegments[type].map((segment, idx) => {
+                const lane = SESSION_LANE_STYLES[type];
+                return (
+                  <ReferenceArea
+                    key={`${type}-area-${idx}-${segment.start}`}
+                    x1={segment.start}
+                    x2={segment.end}
+                    y1={lane.y1}
+                    y2={lane.y2}
+                    fill={segment.color}
+                    fillOpacity={lane.opacity}
+                    ifOverflow="visible"
+                    stroke="none"
+                  />
+                );
+              })
+            )}
+
             <Area
               type="monotone"
               dataKey="volume"
@@ -332,72 +428,71 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
               isAnimationActive={false}
             />
 
-            {/* "Now" Reference Line with centered time label in capsule */}
+            {/* "Now" Reference Line */}
             <ReferenceLine
-              x={nowLine}
-              stroke="rgba(250, 204, 21, 0.85)"
-              strokeWidth={0.75}
+              x={normalizedNowLine}
+              stroke="rgba(251, 191, 36, 0.9)"
+              strokeWidth={1.2}
               ifOverflow="visible"
-              label={{
-                content: ({ viewBox }: any) => {
-                  // Get local time
-                  const utcHours = currentTime.getUTCHours();
-                  const utcMinutes = currentTime.getUTCMinutes();
-                  const totalUTCMinutes = utcHours * 60 + utcMinutes;
-                  const totalLocalMinutes = totalUTCMinutes + timezoneOffset * 60;
-                  const localHours = Math.floor((totalLocalMinutes / 60) % 24);
-                  const localMinutes = Math.round(totalLocalMinutes % 60);
-                  const hoursStr = String(localHours).padStart(2, '0');
-                  const minutesStr = String(localMinutes).padStart(2, '0');
+              strokeDasharray="0"
+              strokeOpacity={1}
+              strokeLinecap="round"
+            />
+            <Customized
+              component={({ xAxisMap, offset }) => {
+                const axisKey = Object.keys(xAxisMap)[0];
+                const xAxis = xAxisMap[axisKey];
+                if (!xAxis || typeof xAxis.scale !== 'function' || !offset) return null;
 
-                  // Center the label vertically on the chart
-                  const centerY = viewBox.height / 2;
-                  const capsuleWidth = 42;
-                  const capsuleHeight = 22;
+                const cx = xAxis.scale(normalizedNowLine);
+                const cy = offset.top + offset.height / 2;
+                const capsuleWidth = 48;
+                const capsuleHeight = 18;
+                const labelText = formatHourLabel(normalizedNowLine);
+                const rotation = `rotate(270 ${cx} ${cy})`;
 
-                  return (
-                    <g>
-                      {/* Capsule background */}
-                      <rect
-                        x={viewBox.x - capsuleWidth / 2}
-                        y={centerY - capsuleHeight / 2}
-                        width={capsuleWidth}
-                        height={capsuleHeight}
-                        rx={capsuleHeight / 2}
-                        ry={capsuleHeight / 2}
-                        fill="#fbbf24"
-                        stroke="#b45309"
-                        strokeWidth={0.5}
-                        transform={`rotate(270 ${viewBox.x} ${centerY})`}
-                      />
-
-                      {/* Time text with pulsating colon */}
-                      <text
-                        x={viewBox.x}
-                        y={centerY}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        fill="#78350f"
-                        fontSize={11}
-                        fontWeight={600}
-                        transform={`rotate(270 ${viewBox.x} ${centerY})`}
-                        style={{ pointerEvents: 'none' }}
-                      >
-                        <tspan>{hoursStr}</tspan>
-                        <tspan className="pulse-colon" style={{ animation: 'pulse-colon 1s ease-in-out infinite' }}>:</tspan>
-                        <tspan>{minutesStr}</tspan>
-                      </text>
-                    </g>
-                  );
-                },
-              }}
-              style={{
-                filter: 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.4))',
-                transition: 'transform 1s ease-in-out',
+                return (
+                  <g transform={rotation} style={{ pointerEvents: 'none' }}>
+                    <rect
+                      x={cx - capsuleWidth / 2}
+                      y={cy - capsuleHeight / 2}
+                      width={capsuleWidth}
+                      height={capsuleHeight}
+                      rx={capsuleHeight / 2}
+                      ry={capsuleHeight / 2}
+                      fill="rgba(15, 23, 42, 0.98)"
+                      stroke="rgba(251, 191, 36, 0.95)"
+                      strokeWidth={0.9}
+                    />
+                    <text
+                      x={cx}
+                      y={cy}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill="rgba(251, 191, 36, 0.98)"
+                      fontSize={11}
+                      fontWeight={600}
+                    >
+                      {labelText}
+                    </text>
+                  </g>
+                );
               }}
             />
           </AreaChart>
         </ResponsiveContainer>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-4 text-[10px] uppercase tracking-[0.35em] text-slate-400">
+        {(['main', 'overlap', 'killzone'] as SessionLayerType[]).map((type) => (
+          <span key={`${type}-legend`} className="flex items-center gap-2">
+            <span
+              className="h-2 w-6 rounded-full"
+              style={{ backgroundColor: sessionLayerSegments[type][0]?.color ?? '#94a3b8' }}
+            />
+            {type === 'main' ? 'Main Sessions' : type === 'overlap' ? 'Session Overlaps' : 'Killzones'}
+          </span>
+        ))}
       </div>
     </div>
   );

@@ -242,3 +242,62 @@ export const IconTradingFlow: React.FC<{className?: string}> = ({className}) => 
     `}</style>
   </svg>
 );
+
+export const IconEye: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+export const IconEyeOff: React.FC<{className?: string}> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-5 0-9.27-3.11-11-7.5a11.78 11.78 0 0 1 2.17-3.5" />
+    <path d="M1 1l22 22" />
+    <path d="M9.5 9.5a3.5 3.5 0 0 0 5 5" />
+    <path d="M14.12 14.12A3.5 3.5 0 0 0 9.88 9.88" />
+    <path d="M10.73 5.08A10.06 10.06 0 0 1 12 5c5 0 9.27 3.11 11 7.5a11.76 11.76 0 0 1-2.22 3.62" />
+  </svg>
+);
+
+export const IconRefreshCcw: React.FC<{className?: string}> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M3 2v6h6" />
+    <path d="M21 12A9 9 0 1 1 6 5.3L9 8" />
+    <path d="M21 22v-6h-6" />
+    <path d="M3 12a9 9 0 0 1 15-6.7L15 8" />
+  </svg>
+);

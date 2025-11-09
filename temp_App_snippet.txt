@@ -1,0 +1,160 @@
+import ForexChart from './components/ForexChart';
+import SocialLinks from './components/SocialLinks';
+import SessionClocks from './components/SessionClocks';
+import EconomicCalendar from './components/EconomicCalendar';
+import InstallButton from './components/InstallButton';
+import InstallModal from './components/InstallModal';
+import AlertsToggleHeader from './components/AlertsToggleHeader';
+import { usePWAInstall } from './hooks/usePWAInstall';
+import { useSessionAlerts } from './hooks/useSessionAlerts';
+import { TIMEZONES, SESSIONS_STANDARD, SESSIONS_DAYLIGHT } from './constants';
+import { Timezone, SessionData, ChartBarDetails } from './types';
+import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow } from './components/icons';
+import { isDSTActive } from './utils/dstUtils';
+
+export type SessionStatus = 'OPEN' | 'CLOSED' | 'WARNING';
+
+const App: React.FC = () => {
+  const getInitialTimezone = (): Timezone => {
+    const userOffset = -new Date().getTimezoneOffset() / 60;
+    const matchedTimezone = TIMEZONES.find(tz => tz.offset === userOffset);
+    return matchedTimezone || TIMEZONES[0];
+  };
+
+  const [selectedTimezone, setSelectedTimezone] = useState<Timezone>(getInitialTimezone());
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [isAutoDetectDST, setIsAutoDetectDST] = useState(true);
+  const [manualDSTOverride, setManualDSTOverride] = useState<boolean | null>(null);
+  const [activeView, setActiveView] = useState<'clocks' | 'calendar'>('clocks');
+  const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
+
+  // PWA Installation management
+  const {
+    installState,
+    browserInfo,
+    showInstallModal,
+    setShowInstallModal,
+    handleInstallClick,
+    handleDismissModal,
+  } = usePWAInstall();
+
+  // Session Alerts management
+  const {
+    alertConfig,
+    toggleAlerts,
+    toggleSound,
+  } = useSessionAlerts();
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000); // Update every 1 second for real-time countdown
+    return () => clearInterval(timer);
+  }, []);
+
+  // Auto-detect timezone based on browser's native timezone
+  useEffect(() => {
+    const detectTimezoneFromBrowser = () => {
+      try {
+        // Use native JavaScript Intl API to get browser's timezone
+        const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        // Find matching timezone by IANA name
+        const detectedTz = TIMEZONES.find(tz => tz.ianaTimezone === browserTimezone);
+        if (detectedTz) {
+          setSelectedTimezone(detectedTz);
+          return;
+        }
+
+        // Fallback: try matching by UTC offset if IANA match fails
+        const now = new Date();
+        const userOffset = -now.getTimezoneOffset() / 60;
+        const matchedTz = TIMEZONES.find(tz => Math.abs(tz.offset - userOffset) < 0.1);
+        if (matchedTz) {
+          setSelectedTimezone(matchedTz);
+        }
+      } catch (error) {
+        console.log('Timezone detection failed, using default:', error);
+        // Silently fall back to default (UTC) timezone
+      }
+    };
+
+    detectTimezoneFromBrowser();
+  }, []);
+
+  // Determine DST status: use manual override if set, otherwise auto-detect
+  const currentDSTStatus = useMemo(() => {
+    if (manualDSTOverride !== null) {
+      return manualDSTOverride;
+    }
+    return isDSTActive(currentTime);
+  }, [currentTime, manualDSTOverride]);
+
+  // Select session data based on DST status
+  const activeSessions_config = currentDSTStatus ? SESSIONS_DAYLIGHT : SESSIONS_STANDARD;
+
+  const { nowLine, activeSessions, sessionStatus } = useMemo(() => {
+    const now = currentTime;
+    const utcHours =
+      now.getUTCHours() +
+      now.getUTCMinutes() / 60 +
+      now.getUTCSeconds() / 3600;
+
+    let localTime = (utcHours + selectedTimezone.offset) % 24;
+    localTime = localTime < 0 ? localTime + 24 : localTime;
+
+    const currentlyActive: ({ name: string; color: string; type: 'main' | 'overlap' | 'killzone'; state: SessionStatus; elapsedSeconds: number; remainingSeconds: number; startUTC: number; endUTC: number })[] = [];
+    const statusMap: { [key: string]: SessionStatus } = {};
+    const fifteenMinutesInHours = 15 / 60;
+
+    const checkSession = (s: number, e: number) => {
+        // A session is active if the current time falls within its range, checking both "today" and "yesterday"
+        // to correctly handle overnight sessions that cross the 00:00 UTC mark.
+        const isActive = (utcHours >= s && utcHours < e) || (utcHours >= s - 24 && utcHours < e - 24);
+
+        let status: SessionStatus | null = null;
+        let elapsedSeconds = 0;
+        let remainingSeconds = 0;
+
+        // Determine adjusted start/end times for overnight sessions
+        let adjustedStart = s;
+        let adjustedEnd = e;
+
+        // For overnight sessions, adjust if we're in the "next day" portion
+        if (e > 24 && utcHours < s) {
+          adjustedStart = s - 24;
+          adjustedEnd = e - 24;
+        }
+
+        if (isActive) {
+            status = 'OPEN';
+            // Calculate elapsed and remaining time in seconds
+            elapsedSeconds = (utcHours - adjustedStart) * 3600;
+            remainingSeconds = (adjustedEnd - utcHours) * 3600;
+
+            // Check if closing soon by calculating time to end for both possible session occurrences
+            const timeToEnd = e - utcHours;
+            const timeToEndYesterday = (e - 24) - utcHours;
+            if ((timeToEnd > 0 && timeToEnd <= fifteenMinutesInHours) || (timeToEndYesterday > 0 && timeToEndYesterday <= fifteenMinutesInHours)) {
+                status = 'WARNING';
+            }
+        } else {
+            // Check if opening soon by calculating time to start
+            const timeToStart = s - utcHours;
+            const timeToStartYesterday = (s - 24) - utcHours;
+            if ((timeToStart > 0 && timeToStart <= fifteenMinutesInHours) || (timeToStartYesterday > 0 && timeToStartYesterday <= fifteenMinutesInHours)) {
+                status = 'WARNING';
+                // For pre-start countdown, show negative countdown on both sides
+                const timeUntilStart = timeToStart > 0 ? timeToStart : timeToStartYesterday;
+                elapsedSeconds = -(timeUntilStart * 3600);
+                remainingSeconds = -(timeUntilStart * 3600);
+            }
+        }
+        return { isActive, status, elapsedSeconds, remainingSeconds, startUTC: s, endUTC: e };
+    };
+
+    activeSessions_config.forEach(session => {
+      // Calculate status for main sessions (for the chart's Y-axis indicators)
+      const { main, name } = session;
+      if (main) {
+        const { isActive, status } = checkSession(main.range[0], main.range[1]);
+        statusMap[name] = status || (isActive ? 'OPEN' : 'CLOSED');
+      }
