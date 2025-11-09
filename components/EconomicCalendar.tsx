@@ -103,15 +103,16 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
         endDate.setDate(defaultStart.getDate() + 6); // This Saturday
     }
 
-    // Convert to ISO strings respecting the selected timezone offset
-    const startISO = toLocalISO(startDate, selectedTimezone.offset);
-    const endISO = toLocalISO(endDate, selectedTimezone.offset);
+    // Convert to ISO date strings (YYYY-MM-DD)
+    // Don't apply timezone offset here - the backend handles timezone conversion
+    const startISO = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+    const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
 
     return {
       start: startISO,
       end: endISO
     };
-  }, [dateRangeFilter, selectedTimezone.offset]);
+  }, [dateRangeFilter]);
 
   const { data, loading, error, lastUpdated, refetch } = useEconomicCalendar(
     dateRange.start,
