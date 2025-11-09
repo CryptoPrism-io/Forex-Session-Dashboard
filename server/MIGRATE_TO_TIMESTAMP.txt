@@ -1,0 +1,64 @@
+========================================
+HOW TO MIGRATE DATE FIELD TO TIMESTAMP
+========================================
+
+CURRENT SETUP:
+- date field: VARCHAR (storing "2025-11-09" format)
+- time field: VARCHAR (storing IST time like "14:30")
+- time_utc field: VARCHAR (storing UTC time like "09:00")
+- SQL query: Simple string comparison (WHERE date >= $1 AND date <= $2)
+
+MIGRATION STEPS:
+================
+
+1. BACKUP DATABASE FIRST
+   - Export current data to CSV before making any changes
+   - Command: node export-csv.js
+
+2. ALTER TABLE SCHEMA
+   Run these SQL commands in PostgreSQL:
+
+   -- Add new timestamp column
+   ALTER TABLE economic_calendar_ff
+   ADD COLUMN date_timestamp TIMESTAMPTZ;
+
+   -- Migrate existing VARCHAR dates to TIMESTAMP
+   -- Assuming dates in DB are stored as IST (Asia/Kolkata)
+   UPDATE economic_calendar_ff
+   SET date_timestamp = (date || ' ' || time)::timestamp AT TIME ZONE 'Asia/Kolkata';
+
+   -- Optional: Drop old VARCHAR column and rename new one
+   ALTER TABLE economic_calendar_ff DROP COLUMN date;
+   ALTER TABLE economic_calendar_ff RENAME COLUMN date_timestamp TO date;
+
+3. UPDATE BACKEND CODE (server/routes/calendar.js)
+
+   Change query from:
+   ```javascript
+   WHERE date >= $1
+     AND date <= $2
+   ```
+
+   To:
+   ```javascript
+   WHERE (date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date >= $1::date
+     AND (date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date <= $2::date
+   ```
+
+4. FRONTEND CODE
+   - No changes needed in components/EconomicCalendar.tsx
+   - The toLocalISO helper and date conversions will work the same way
+
+BENEFITS OF TIMESTAMP FORMAT:
+- Proper timezone handling at database level
+- Better date arithmetic and comparisons
+- Built-in timezone conversion functions
+- More accurate for historical data
+
+CURRENT VARCHAR APPROACH WORKS FINE IF:
+- All dates are already in consistent format (YYYY-MM-DD)
+- No complex timezone conversions needed at DB level
+- Frontend handles all timezone display logic
+
+NOTE: Current implementation is working correctly with VARCHAR.
+Only migrate if you need database-level timezone features.

@@ -2,12 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import ForexChart from './components/ForexChart';
 import SocialLinks from './components/SocialLinks';
 import SessionClocks from './components/SessionClocks';
+import EconomicCalendar from './components/EconomicCalendar';
 import InstallButton from './components/InstallButton';
 import InstallModal from './components/InstallModal';
 import AlertsToggleHeader from './components/AlertsToggleHeader';
 import { usePWAInstall } from './hooks/usePWAInstall';
 import { useSessionAlerts } from './hooks/useSessionAlerts';
-import { TIMEZONES, MAJOR_TIMEZONES, SESSIONS_STANDARD, SESSIONS_DAYLIGHT } from './constants';
+import { TIMEZONES, SESSIONS_STANDARD, SESSIONS_DAYLIGHT } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
 import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow } from './components/icons';
 import { isDSTActive } from './utils/dstUtils';
@@ -25,6 +26,8 @@ const App: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAutoDetectDST, setIsAutoDetectDST] = useState(true);
   const [manualDSTOverride, setManualDSTOverride] = useState<boolean | null>(null);
+  const [activeView, setActiveView] = useState<'clocks' | 'calendar'>('clocks');
+  const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
 
   // PWA Installation management
   const {
@@ -207,22 +210,6 @@ const App: React.FC = () => {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   };
 
-  // Display major forex trading timezones + user's selected timezone
-  const topTimezones = [
-    TIMEZONES.find(tz => tz.label === 'UTC'),
-    TIMEZONES.find(tz => tz.label === 'GMT'),
-    TIMEZONES.find(tz => tz.label === 'IST (UTC+5:30)'),     // India
-    TIMEZONES.find(tz => tz.label === 'JST'),     // Tokyo
-    TIMEZONES.find(tz => tz.label === 'EST'),     // New York
-    TIMEZONES.find(tz => tz.label === 'PST'),     // Los Angeles
-    TIMEZONES.find(tz => tz.label === 'AEST'),    // Sydney
-    TIMEZONES.find(tz => tz.label === 'BST'),     // London
-  ].filter(Boolean) as Timezone[];
-
-  // Add user's selected timezone if not already in the list
-  const displayedTimezones = selectedTimezone && !topTimezones.some(tz => tz.label === selectedTimezone.label)
-    ? [...topTimezones, selectedTimezone]
-    : topTimezones;
   const timeFormatted = currentTime.toLocaleTimeString([], {
     timeZone: selectedTimezone.ianaTimezone || selectedTimezone.label,
     hour: '2-digit',
@@ -262,8 +249,8 @@ const App: React.FC = () => {
           {/* LEFT SECTION: Title, Subtitle, Time, and Timezone Selector */}
           <div className="flex-1 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 sm:p-5 shadow-lg shadow-black/20">
             {/* TOP ROW: Title and Timezone Selector */}
-            <div className="flex items-start justify-between gap-4 mb-4">
-              {/* Title and Icons */}
+            <div className="flex items-center justify-between gap-4 mb-4">
+              {/* Left: Icon and Title */}
               <div className="flex items-center gap-3">
                 {(installState === 'available' || installState === 'dismissed') ? (
                   <button
@@ -302,25 +289,57 @@ const App: React.FC = () => {
                 </h1>
               </div>
 
-              {/* Timezone Selector - Top Right */}
-              <div className="grid grid-cols-4 gap-1.5">
-                {displayedTimezones.map(tz => {
-                  // Display short label for IST to remove the offset text
-                  const displayLabel = tz.label.includes('UTC+5:30') ? 'IST' : tz.label;
-                  return (
+              {/* Right: Timezone Selector */}
+              <div className="relative flex-shrink-0">
+                <div className="flex items-center gap-1.5">
+                  {/* Current Selected Timezone */}
+                  <button
+                    className="px-2.5 py-1 text-xs font-semibold rounded-full transition-all duration-300 backdrop-blur-md whitespace-nowrap bg-cyan-500/30 border border-cyan-400/60 text-cyan-100 shadow-md shadow-cyan-500/20"
+                  >
+                    {selectedTimezone.label.includes('UTC+5:30') ? 'IST' : selectedTimezone.label}
+                  </button>
+
+                  {/* UTC Button (if not already selected) */}
+                  {selectedTimezone.label !== 'UTC' && (
                     <button
-                      key={tz.label}
-                      onClick={() => handleTimezoneChange(tz)}
-                      className={`px-2.5 py-1 text-xs font-semibold rounded-full transition-all duration-300 backdrop-blur-md ${
-                        selectedTimezone.label === tz.label
-                          ? 'bg-cyan-500/30 border border-cyan-400/60 text-cyan-100 shadow-md shadow-cyan-500/20'
-                          : 'bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300'
-                      }`}
+                      onClick={() => handleTimezoneChange(TIMEZONES.find(tz => tz.label === 'UTC')!)}
+                      className="px-2.5 py-1 text-xs font-semibold rounded-full transition-all duration-300 backdrop-blur-md whitespace-nowrap bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300"
                     >
-                      {displayLabel}
+                      UTC
                     </button>
-                  );
-                })}
+                  )}
+
+                  {/* More Button */}
+                  <button
+                    onClick={() => setIsMoreTimezonesOpen(!isMoreTimezonesOpen)}
+                    className="px-2.5 py-1 text-xs font-semibold rounded-full transition-all duration-300 backdrop-blur-md whitespace-nowrap bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300"
+                  >
+                    More {isMoreTimezonesOpen ? '▲' : '▼'}
+                  </button>
+                </div>
+
+                {/* Timezone Dropdown */}
+                {isMoreTimezonesOpen && (
+                  <div className="absolute top-full mt-2 right-0 z-50 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-xl p-2 shadow-lg shadow-black/30">
+                    <div className="flex gap-1.5">
+                      {TIMEZONES.filter(tz => ['GMT', 'EST', 'PST', 'BST'].includes(tz.label)).map(tz => {
+                        return (
+                          <button
+                            key={tz.label}
+                            onClick={() => handleTimezoneChange(tz)}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap ${
+                              selectedTimezone.label === tz.label
+                                ? 'bg-cyan-500/30 border border-cyan-400/60 text-cyan-100'
+                                : 'bg-slate-800/40 hover:bg-slate-700/60 text-slate-300'
+                            }`}
+                          >
+                            {tz.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <p className="text-xs sm:text-sm text-slate-300 font-light tracking-wide mb-4">
@@ -396,19 +415,39 @@ const App: React.FC = () => {
             )}
           </div>
 
-          {/* RIGHT SECTION: Clocks Container with Buttons */}
-          <div className="w-fit bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 shadow-lg shadow-black/20">
+          {/* RIGHT SECTION: Clocks/Calendar Container with Buttons */}
+          <div className="min-w-[50%] max-h-[75vh] bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 shadow-lg shadow-black/20 flex flex-col">
             {/* Buttons Row */}
-            <div className="flex gap-2 mb-4">
-              <button className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30 hover:border-cyan-400/60 transition-all duration-200">
+            <div className="flex gap-2 mb-4 flex-shrink-0">
+              <button
+                onClick={() => setActiveView('clocks')}
+                className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
+                  activeView === 'clocks'
+                    ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300'
+                    : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
+                }`}
+              >
                 World Clock
               </button>
-              <button className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60 transition-all duration-200">
+              <button
+                onClick={() => setActiveView('calendar')}
+                className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
+                  activeView === 'calendar'
+                    ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300'
+                    : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
+                }`}
+              >
                 Economic Calendar
               </button>
             </div>
-            {/* Clocks */}
-            <SessionClocks compact sessionStatus={sessionStatus} />
+            {/* Conditional Render: Clocks or Calendar */}
+            <div className="flex-1 overflow-y-auto">
+              {activeView === 'clocks' ? (
+                <SessionClocks compact sessionStatus={sessionStatus} />
+              ) : (
+                <EconomicCalendar selectedTimezone={selectedTimezone} />
+              )}
+            </div>
           </div>
         </div>
 
