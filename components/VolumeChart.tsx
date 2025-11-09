@@ -440,9 +440,10 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
             />
             <Customized
               component={({ xAxisMap, offset }) => {
+                if (!xAxisMap || !offset) return null;
                 const axisKey = Object.keys(xAxisMap)[0];
                 const xAxis = xAxisMap[axisKey];
-                if (!xAxis || typeof xAxis.scale !== 'function' || !offset) return null;
+                if (!xAxis || typeof xAxis.scale !== 'function') return null;
 
                 const cx = xAxis.scale(normalizedNowLine);
                 const cy = offset.top + offset.height / 2;
