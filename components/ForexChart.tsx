@@ -990,30 +990,6 @@ const ForexChart: React.FC<ForexChartProps> = ({
         </section>
       )}
 
-      {chartsVisible && viewMode !== 'guide' && (
-        <>
-          {/* Legend Footer */}
-          <div className="w-full mt-4 pt-3 border-t border-slate-700/30 flex flex-wrap gap-4 text-xs text-slate-300">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-              <span>Main Session</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-orange-400"></span>
-              <span>Session Overlap</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-500"></span>
-              <span>Killzone</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-yellow-400" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}></span>
-              <span>"Now" Line</span>
-            </div>
-          </div>
-        </>
-      )}
-
       {viewMode === 'unified' && (
         <UnifiedTooltip
           tooltip={tooltip}
