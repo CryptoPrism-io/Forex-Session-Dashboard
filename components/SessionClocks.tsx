@@ -47,6 +47,7 @@ const getTimePartsForTimezone = (timezone: string): ClockTimeParts => {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
+    hour12: false,
   }).format(now);
 
   const displayDate = new Intl.DateTimeFormat('en-US', {

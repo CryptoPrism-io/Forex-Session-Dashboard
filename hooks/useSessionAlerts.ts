@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { SESSIONS } from '../constants';
-import { AlertConfig, AlertEvent } from '../types';
+import { AlertConfig, AlertEvent, SessionData } from '../types';
 import { showSessionAlert, requestNotificationPermission, canSendNotifications } from '../utils/notificationManager';
 
 const ALERT_CONFIG_STORAGE_KEY = 'forex-alert-config';
@@ -8,7 +7,7 @@ const FIRED_ALERTS_STORAGE_KEY = 'forex-fired-alerts';
 const FIFTEEN_MINUTES_IN_HOURS = 15 / 60;
 const CHECK_INTERVAL_MS = 10000; // Check every 10 seconds
 
-export const useSessionAlerts = () => {
+export const useSessionAlerts = (sessions: SessionData[]) => {
   const [alertConfig, setAlertConfig] = useState<AlertConfig>(() => {
     const stored = localStorage.getItem(ALERT_CONFIG_STORAGE_KEY);
     return stored
@@ -45,7 +44,7 @@ export const useSessionAlerts = () => {
   const calculateAlertEvents = useCallback((): AlertEvent[] => {
     const alerts: AlertEvent[] = [];
 
-    SESSIONS.forEach((session) => {
+    sessions.forEach((session) => {
       Object.entries(session).forEach(([key, prop]) => {
         if (key === 'name' || typeof prop !== 'object' || prop === null || !('range' in prop)) {
           return;
@@ -102,7 +101,7 @@ export const useSessionAlerts = () => {
     });
 
     return alerts;
-  }, []);
+  }, [sessions]);
 
   // Check if an alert should be triggered
   const checkAndTriggerAlerts = useCallback(() => {

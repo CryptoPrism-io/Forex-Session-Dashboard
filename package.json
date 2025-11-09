@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:server": "cd server && npm start",
+    "dev:frontend": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },

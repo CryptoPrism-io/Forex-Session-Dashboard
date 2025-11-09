@@ -5,70 +5,58 @@
  * and adjusts session times accordingly.
  */
 
+const normalizeToStartOfDay = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const getNthWeekdayOfMonth = (year: number, month: number, weekday: number, occurrence: number): Date => {
+  const firstOfMonth = new Date(year, month, 1);
+  const firstWeekday = firstOfMonth.getDay();
+  const offset = (weekday - firstWeekday + 7) % 7;
+  const day = 1 + offset + (occurrence - 1) * 7;
+  return new Date(year, month, day);
+};
+
+const getLastWeekdayOfMonth = (year: number, month: number, weekday: number): Date => {
+  const lastOfMonth = new Date(year, month + 1, 0);
+  const lastWeekday = lastOfMonth.getDay();
+  const offset = (lastWeekday - weekday + 7) % 7;
+  const day = lastOfMonth.getDate() - offset;
+  return new Date(year, month, day);
+};
+
 /**
  * Check if a given date is within the US DST period
- * US DST: 2nd Sunday in March to 1st Sunday in November
+ * US DST: 2nd Sunday in March (inclusive) to 1st Sunday in November (exclusive)
  */
 export const isUSDST = (date: Date): boolean => {
   const year = date.getFullYear();
   const month = date.getMonth();
-  const day = date.getDate();
-  const dayOfWeek = date.getDay();
 
-  // Before March or after November
+  // Definitely not DST outside of March-November window
   if (month < 2 || month > 10) return false;
 
-  // December-February is definitely not DST
-  if (month === 0 || month === 1) return false;
+  const currentDay = normalizeToStartOfDay(date);
+  const dstStart = getNthWeekdayOfMonth(year, 2, 0, 2); // 2nd Sunday in March
+  const dstEnd = getNthWeekdayOfMonth(year, 10, 0, 1); // 1st Sunday in November
 
-  // November: DST ends on 1st Sunday
-  if (month === 10) {
-    return day < 8 || (day <= 14 && dayOfWeek !== 0) || (day > 14 && dayOfWeek !== 0 && day < 7);
-  }
-
-  // March: DST starts on 2nd Sunday
-  if (month === 2) {
-    return day > 7 && (dayOfWeek === 0 || day > 14);
-  }
-
-  // April-October: always DST
-  return true;
+  return currentDay >= dstStart && currentDay < dstEnd;
 };
 
 /**
  * Check if a given date is within the UK/Europe DST period
- * UK/EU DST: Last Sunday in March to Last Sunday in October
+ * UK/EU DST: Last Sunday in March (inclusive) to Last Sunday in October (exclusive)
  */
 export const isEuropeDST = (date: Date): boolean => {
   const year = date.getFullYear();
   const month = date.getMonth();
-  const day = date.getDate();
-  const dayOfWeek = date.getDay();
 
-  // Before March or after October
+  // Definitely not DST outside of March-October window
   if (month < 2 || month > 9) return false;
 
-  // January-February is definitely not DST
-  if (month === 0 || month === 1) return false;
+  const currentDay = normalizeToStartOfDay(date);
+  const dstStart = getLastWeekdayOfMonth(year, 2, 0); // Last Sunday in March
+  const dstEnd = getLastWeekdayOfMonth(year, 9, 0); // Last Sunday in October
 
-  // October: DST ends on last Sunday
-  if (month === 9) {
-    // Find the last Sunday of October
-    const lastDay = new Date(year, 10, 0).getDate(); // Get last day of October
-    const lastSunday = lastDay - new Date(year, 9, lastDay).getDay();
-    return day < lastSunday;
-  }
-
-  // March: DST starts on last Sunday
-  if (month === 2) {
-    // Find the last Sunday of March
-    const lastDay = new Date(year, 3, 0).getDate(); // Get last day of March
-    const lastSunday = lastDay - new Date(year, 2, lastDay).getDay();
-    return day > lastSunday;
-  }
-
-  // April-September: always DST
-  return true;
+  return currentDay >= dstStart && currentDay < dstEnd;
 };
 
 /**
