@@ -623,9 +623,9 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
               {events.map(event => {
                 const impactColor = getImpactColor(event.impact || 'low');
 
-                const convertedTime = convertUTCToTimezone(event.time_utc, selectedTimezone.offset);
                 const rawTime = event.time || event.time_utc || '';
                 const isTentative = rawTime.toLowerCase() === 'tentative';
+                const convertedTime = isTentative ? '' : convertUTCToTimezone(event.time_utc, selectedTimezone.offset);
                 const displayTime = convertedTime || rawTime;
                 return (
                   <div
