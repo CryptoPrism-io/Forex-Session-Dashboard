@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ForexChart from './components/ForexChart';
+import CalendarErrorBoundary from './components/CalendarErrorBoundary';
 import SocialLinks from './components/SocialLinks';
 import SessionClocks from './components/SessionClocks';
 import EconomicCalendar from './components/EconomicCalendar';
@@ -26,7 +27,7 @@ const App: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAutoDetectDST, setIsAutoDetectDST] = useState(true);
   const [manualDSTOverride, setManualDSTOverride] = useState<boolean | null>(null);
-  const [activeView, setActiveView] = useState<'clocks' | 'calendar'>('clocks');
+  const [activeView, setActiveView] = useState<'clocks' | 'calendar'>('calendar');
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
 
   // PWA Installation management
@@ -38,13 +39,6 @@ const App: React.FC = () => {
     handleInstallClick,
     handleDismissModal,
   } = usePWAInstall();
-
-  // Session Alerts management
-  const {
-    alertConfig,
-    toggleAlerts,
-    toggleSound,
-  } = useSessionAlerts();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000); // Update every 1 second for real-time countdown
@@ -91,6 +85,13 @@ const App: React.FC = () => {
 
   // Select session data based on DST status
   const activeSessions_config = currentDSTStatus ? SESSIONS_DAYLIGHT : SESSIONS_STANDARD;
+
+  // Session Alerts management (share the same session definition used for rendering)
+  const {
+    alertConfig,
+    toggleAlerts,
+    toggleSound,
+  } = useSessionAlerts(activeSessions_config);
 
   const { nowLine, activeSessions, sessionStatus } = useMemo(() => {
     const now = currentTime;
@@ -252,32 +253,6 @@ const App: React.FC = () => {
             <div className="flex items-center justify-between gap-4 mb-4">
               {/* Left: Icon and Title */}
               <div className="flex items-center gap-3">
-                {(installState === 'available' || installState === 'dismissed') ? (
-                  <button
-                    onClick={handleInstallClick}
-                    className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-lg active:scale-95"
-                    style={{
-                      filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.filter = 'drop-shadow(0 0 16px rgba(34, 211, 238, 0.8))';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.filter = 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))';
-                    }}
-                    title="Click to install the app"
-                    aria-label="Download and install app"
-                  >
-                    <IconTradingFlow className="w-full h-full text-cyan-400" />
-                  </button>
-                ) : (
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" style={{
-                    filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.4))'
-                  }}>
-                    <IconTradingFlow className="w-full h-full text-cyan-400" />
-                  </div>
-                )}
-
                 <h1
                   className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
                   style={{
@@ -347,7 +322,10 @@ const App: React.FC = () => {
             </p>
 
             {/* Big Time Display */}
-            <div className="mb-6">
+            <div className="mb-6 space-y-1">
+              <div className="text-[10px] uppercase tracking-[0.45em] text-slate-500">
+                Current Time
+              </div>
               <div className="text-5xl sm:text-6xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-green-400 bg-clip-text text-transparent tracking-wider font-mono">
                 {timeFormatted}
               </div>
@@ -420,16 +398,6 @@ const App: React.FC = () => {
             {/* Buttons Row */}
             <div className="flex gap-2 mb-4 flex-shrink-0">
               <button
-                onClick={() => setActiveView('clocks')}
-                className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
-                  activeView === 'clocks'
-                    ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300'
-                    : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
-                }`}
-              >
-                World Clock
-              </button>
-              <button
                 onClick={() => setActiveView('calendar')}
                 className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
                   activeView === 'calendar'
@@ -439,13 +407,25 @@ const App: React.FC = () => {
               >
                 Economic Calendar
               </button>
+              <button
+                onClick={() => setActiveView('clocks')}
+                className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
+                  activeView === 'clocks'
+                    ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300'
+                    : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
+                }`}
+              >
+                World Clock
+              </button>
             </div>
             {/* Conditional Render: Clocks or Calendar */}
             <div className="flex-1 overflow-y-auto">
               {activeView === 'clocks' ? (
                 <SessionClocks compact sessionStatus={sessionStatus} />
               ) : (
-                <EconomicCalendar selectedTimezone={selectedTimezone} />
+                <CalendarErrorBoundary>
+                  <EconomicCalendar selectedTimezone={selectedTimezone} />
+                </CalendarErrorBoundary>
               )}
             </div>
           </div>
@@ -473,6 +453,9 @@ const App: React.FC = () => {
         <footer className="w-full mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 text-slate-500 text-xs font-light">
           <p>Data is illustrative. Always verify times with your broker. Not financial advice.</p>
           <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-400/40 shadow-inner shadow-cyan-500/20">
+              <IconTradingFlow className="w-5 h-5 text-cyan-300" />
+            </div>
             <AlertsToggleHeader
               alertConfig={alertConfig}
               onToggle={toggleAlerts}
