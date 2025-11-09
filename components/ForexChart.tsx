@@ -334,7 +334,6 @@ const ForexChart: React.FC<ForexChartProps> = ({
     () => `All times in ${currentTimezoneLabel} (${formatOffsetFromHours(timezoneOffset)})`,
     [currentTimezoneLabel, timezoneOffset]
   );
-  const majorTicks = Array.from({ length: 24 }, (_, i) => i); // All 24 hours for labels
 
   // Pre-calculate volume histogram data (hooks must be called at top level)
   const volumeHistogramSVG = useMemo(() => {
@@ -993,22 +992,6 @@ const ForexChart: React.FC<ForexChartProps> = ({
 
       {chartsVisible && viewMode !== 'guide' && (
         <>
-          <div className="relative w-full mt-6 px-2" style={{ height: '40px' }}>
-            {majorTicks.map(tick => (
-              <div
-                key={tick}
-                className="absolute text-xs text-slate-400 font-medium"
-                style={{
-                  left: `${(tick / 24) * 100}%`,
-                  transform: 'translateX(-50%) rotate(270deg)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {String(tick).padStart(2, '0')}:00
-              </div>
-            ))}
-          </div>
-
           {/* Legend Footer */}
           <div className="w-full mt-4 pt-3 border-t border-slate-700/30 flex flex-wrap gap-4 text-xs text-slate-300">
             <div className="flex items-center gap-2">
