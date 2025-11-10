@@ -11,8 +11,8 @@ export default defineConfig(({ mode }) => {
       : 'http://localhost:5000';
 
     return {
-      // Use repo subpath when deploying to GitHub Pages
-      base: mode === 'production' ? '/Forex-Session-Dashboard/' : '/',
+      // Use root path for production (change to '/Forex-Session-Dashboard/' for GitHub Pages)
+      base: mode === 'production' ? '/' : '/',
       server: {
         port: 3000,
         host: '0.0.0.0',

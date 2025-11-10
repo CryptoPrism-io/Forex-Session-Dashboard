@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import calendarRoutes from './routes/calendar.js';
 import pool from './db.js';
 
@@ -9,12 +11,18 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Get directory name for ES modules
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://localhost:3000'],
+  origin: process.env.NODE_ENV === 'production' ? '*' : ['http://localhost:3000', 'https://localhost:3000'],
   credentials: true
 }));
 app.use(express.json());
+
+// Serve static files from public folder (React frontend)
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -45,13 +53,9 @@ app.get('/health', async (req, res) => {
 // API routes
 app.use('/api/calendar', calendarRoutes);
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'Route not found',
-    path: req.path
-  });
+// Serve React app for all other routes (SPA routing)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Error handler
