@@ -1,54 +1,68 @@
-name: Build and Deploy to Cloud Run
+name: Deploy to Cloud Run
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch
-
-env:
-  PROJECT_ID: social-data-pipeline-and-push
-  SERVICE_NAME: forex-dashboard
-  REGION: us-central1
+  workflow_dispatch:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
+    runs-on: ubuntu-latest
+
+    env:
+      PROJECT_ID: social-data-pipeline-and-push
+      SERVICE: forex-dashboard
+      REGION: us-central1
 
     steps:
+      # Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install frontend dependencies
-        run: npm ci
-
-      - name: Build React app
-        run: npm run build
-
-      - name: Install backend dependencies
-        run: cd server && npm ci
-
+      # Authenticate to Google Cloud via Workload Identity Federation
       - name: Authenticate to Google Cloud
+        id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
 
+      # Set up Google Cloud SDK
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
 
+      # Install Node & dependencies
+      - name: Install dependencies
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - run: npm ci
+
+      # Build frontend (includes VITE_API_BASE_URL baked into dist/)
+      - name: Build project
+        run: npm run build
+
+      # Deploy to Cloud Run using gcloud with env.yaml
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy ${{ env.SERVICE_NAME }}             --source .             --platform managed             --region ${{ env.REGION }}             --env-vars-from-file env.yaml             --memory 512Mi             --cpu 1             --allow-unauthenticated             --project ${{ env.PROJECT_ID }}
+          gcloud run deploy ${{ env.SERVICE }} \
+            --source . \
+            --platform managed \
+            --region ${{ env.REGION }} \
+            --env-vars-from-file env.yaml \
+            --memory 512Mi \
+            --cpu 1 \
+            --allow-unauthenticated \
+            --project ${{ env.PROJECT_ID }}
 
-      - name: Deployment Success
-        run: echo "Deployed to Cloud Run successfully!"
+      # Output the deployed service URL
+      - name: Display Cloud Run URL
+        run: echo "Service deployed to ${{ steps.deploy.outputs.url }}"
