@@ -12,8 +12,9 @@ export default defineConfig(({ mode }) => {
       : 'http://localhost:5000';
 
     return {
-      // Use root path for production (change to '/Forex-Session-Dashboard/' for GitHub Pages)
-      base: mode === 'production' ? '/' : '/',
+      // Base path: GitHub Pages needs '/Forex-Session-Dashboard/', Cloud Run needs '/'
+      // Set via environment variable in CI/CD workflows
+      base: env.VITE_BASE_PATH || (mode === 'production' ? '/' : '/'),
       server: {
         port: 3000,
         host: '0.0.0.0',
