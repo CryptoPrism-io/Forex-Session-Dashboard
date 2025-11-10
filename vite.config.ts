@@ -5,6 +5,11 @@ import mkcert from 'vite-plugin-mkcert';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    // For production, use Vercel backend URL; for dev, use localhost
+    const apiBaseUrl = mode === 'production'
+      ? env.VITE_API_BASE_URL || 'https://forex-dashboard-api.vercel.app'
+      : 'http://localhost:5000';
+
     return {
       // Use repo subpath when deploying to GitHub Pages
       base: mode === 'production' ? '/Forex-Session-Dashboard/' : '/',
@@ -23,7 +28,8 @@ export default defineConfig(({ mode }) => {
       plugins: [react(), mkcert()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl)
       },
       resolve: {
         alias: {
