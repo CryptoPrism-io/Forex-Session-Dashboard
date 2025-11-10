@@ -60,7 +60,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
   const [selectedImpact, setSelectedImpact] = useState<string | undefined>(undefined);
   const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('today');
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('daily');
-  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
+  const [filtersCollapsed, setFiltersCollapsed] = useState(true);
 
   // Calculate date ranges based on filter
   const dateRange = useMemo(() => {
@@ -345,19 +345,6 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
           <div className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-500/20 border border-yellow-400/40 text-yellow-200">
             Times: {timezoneLabel}
           </div>
-
-          <button
-            onClick={() => setFiltersCollapsed(prev => !prev)}
-            className={`w-8 h-8 flex items-center justify-center rounded-full border text-slate-200 transition-all ${
-              filtersCollapsed
-                ? 'border-cyan-400/40 bg-cyan-500/10'
-                : 'border-slate-700/50 bg-slate-800/40 hover:border-cyan-400/40 hover:bg-cyan-500/10'
-            }`}
-            title={filtersCollapsed ? 'Show filters' : 'Hide filters'}
-            aria-label={filtersCollapsed ? 'Show filters' : 'Hide filters'}
-          >
-            <IconEyeOff className="w-4 h-4" />
-          </button>
 
           <button
             onClick={refetch}
