@@ -5,9 +5,10 @@ import mkcert from 'vite-plugin-mkcert';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
-    // For production, use Vercel backend URL; for dev, use localhost
+    // For production, use Cloud Run backend or fallback to relative path
+    // For dev, use localhost
     const apiBaseUrl = mode === 'production'
-      ? env.VITE_API_BASE_URL || 'https://forex-dashboard-api.vercel.app'
+      ? env.VITE_API_BASE_URL || 'https://forex-dashboard-963362833537.us-central1.run.app'
       : 'http://localhost:5000';
 
     return {
