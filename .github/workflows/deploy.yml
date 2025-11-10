@@ -57,7 +57,7 @@ jobs:
             --source . \
             --platform managed \
             --region ${{ env.REGION }} \
-            --env-vars-from-file env.yaml \
+            --env-vars-file env.yaml \
             --memory 512Mi \
             --cpu 1 \
             --allow-unauthenticated \
