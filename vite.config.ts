@@ -13,8 +13,8 @@ export default defineConfig(({ mode }) => {
 
     return {
       // Base path: GitHub Pages needs '/Forex-Session-Dashboard/', Cloud Run needs '/'
-      // Set via environment variable in CI/CD workflows
-      base: env.VITE_BASE_PATH || (mode === 'production' ? '/' : '/'),
+      // Check both process.env (from CI/CD) and loaded env (from .env files)
+      base: process.env.VITE_BASE_PATH || env.VITE_BASE_PATH || (mode === 'production' ? '/' : '/'),
       server: {
         port: 3000,
         host: '0.0.0.0',
