@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ForexChart from './components/ForexChart';
+import SessionGuide from './components/SessionGuide';
 import CalendarErrorBoundary from './components/CalendarErrorBoundary';
 import SocialLinks from './components/SocialLinks';
 import SessionClocks from './components/SessionClocks';
@@ -11,7 +12,7 @@ import { usePWAInstall } from './hooks/usePWAInstall';
 import { useSessionAlerts } from './hooks/useSessionAlerts';
 import { TIMEZONES, SESSIONS_STANDARD, SESSIONS_DAYLIGHT } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
-import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow } from './components/icons';
+import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow, IconMenu, IconX, IconCalendarTab, IconChartsTab, IconGuideTab, IconWorldClockTab } from './components/icons';
 import { isDSTActive } from './utils/dstUtils';
 
 export type SessionStatus = 'OPEN' | 'CLOSED' | 'WARNING';
@@ -27,8 +28,31 @@ const App: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAutoDetectDST, setIsAutoDetectDST] = useState(true);
   const [manualDSTOverride, setManualDSTOverride] = useState<boolean | null>(null);
-  const [activeView, setActiveView] = useState<'clocks' | 'calendar'>('calendar');
+  const [activeView, setActiveView] = useState<'clocks' | 'calendar' | 'charts' | 'guide'>('calendar');
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
+
+  // Initialize left pane state from localStorage, default to closed on mobile
+  const [leftPaneOpen, setLeftPaneOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem('leftPaneOpen');
+      if (saved !== null) return JSON.parse(saved);
+    } catch (e) {
+      console.warn('Failed to read localStorage:', e);
+      // Clear corrupted data
+      localStorage.removeItem('leftPaneOpen');
+    }
+    // Default: closed on mobile, open on desktop
+    return typeof window !== 'undefined' && window.innerWidth >= 768;
+  });
+
+  // Persist left pane state to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('leftPaneOpen', JSON.stringify(leftPaneOpen));
+    } catch (e) {
+      console.warn('Failed to save to localStorage:', e);
+    }
+  }, [leftPaneOpen]);
 
   // PWA Installation management
   const {
@@ -244,11 +268,11 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 flex flex-col items-center">
-        {/* HEADER ROW: Left Section (Title/Time/Timezone) + Right Section (Clocks) */}
-        <div className="w-full mb-6 flex gap-6">
-          {/* LEFT SECTION: Title, Subtitle, Time, and Timezone Selector */}
-          <div className="flex-1 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 sm:p-5 shadow-lg shadow-black/20">
+      <main className="w-full max-w-7xl mx-auto p-3 sm:p-4 flex flex-col items-center">
+        {/* LAYOUT: Collapsible Left Pane (1/4) + Right Pane (3/4) */}
+        <div className="w-full mb-3 flex gap-3 h-[85vh]">
+          {/* LEFT PANE: Title, Subtitle, Time, and Timezone Selector - Collapsible */}
+          <div className={`transition-all duration-300 overflow-hidden ${leftPaneOpen ? 'md:w-1/4 w-full sm:w-1/2' : 'w-0 md:w-0'} bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-3 sm:p-4 shadow-lg shadow-black/20 flex flex-col overflow-y-auto ${!leftPaneOpen && 'md:hidden'}`}>
             {/* TOP ROW: Title and Timezone Selector */}
             <div className="flex items-center justify-between gap-4 mb-4">
               {/* Left: Icon and Title */}
@@ -317,32 +341,25 @@ const App: React.FC = () => {
                 )}
               </div>
             </div>
-            <p className="text-xs sm:text-sm text-slate-300 font-light tracking-wide mb-4">
+            <p className="text-xs text-slate-300 font-light tracking-wide mb-3">
               Real-time session tracking with killzones and overlaps
             </p>
 
             {/* Big Time Display */}
-            <div className="mb-6 space-y-1">
+            <div className="mb-4 space-y-0.5">
               <div className="text-[10px] uppercase tracking-[0.45em] text-slate-500">
                 Current Time
               </div>
-              <div className="text-5xl sm:text-6xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-green-400 bg-clip-text text-transparent tracking-wider font-mono">
+              <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-green-400 bg-clip-text text-transparent tracking-wider font-mono">
                 {timeFormatted}
               </div>
-              <div className="text-xs text-slate-400 font-light mt-1">{selectedTimezone.label}</div>
+              <div className="text-[11px] text-slate-400 font-light mt-0.5">{selectedTimezone.label}</div>
             </div>
 
             {/* Live Sessions List */}
             {activeSessions.length > 0 && (
-              <div className="space-y-1.5 border-t border-slate-700/30 pt-4">
-                {/* Column Headers */}
-                <div className="flex items-center justify-between gap-3 px-2 py-1 mb-1.5">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider min-w-20">Time</span>
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex-1">Session</span>
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider min-w-16 text-right">Elapsed</span>
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider min-w-16 text-right">Remaining</span>
-                </div>
-
+              <div className="space-y-1 border-t border-slate-700/30 pt-2.5 flex-1 overflow-y-auto">
+                {/* Active Sessions */}
                 {activeSessions.map(session => {
                   let textStyle: React.CSSProperties = {};
                   let indicatorStyle: React.CSSProperties = {};
@@ -365,27 +382,30 @@ const App: React.FC = () => {
                   }
 
                   return (
-                      <div key={session.name} className="flex items-center justify-between gap-3 px-2 py-1.5 bg-slate-800/20 rounded-lg">
-                          {/* Start - End Time (Left) */}
-                          <span className="text-xs font-light text-slate-400 min-w-20">
-                              {formatTimeInTimezone(session.startUTC)} – {formatTimeInTimezone(session.endUTC)}
-                          </span>
+                      <div key={session.name} className="bg-slate-800/20 rounded-lg overflow-hidden">
+                          {/* Row 1: Session Name + Start/End Time */}
+                          <div className="flex items-center justify-between gap-2 px-1.5 py-1">
+                              {/* Session Name with Indicator */}
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={indicatorStyle}></span>
+                                  <span className="text-xs font-medium truncate" style={textStyle}>{session.name}</span>
+                              </div>
 
-                          {/* Session Name with Indicator (Center) */}
-                          <div className="flex items-center gap-1.5 flex-1">
-                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={indicatorStyle}></span>
-                              <span className="text-xs font-medium" style={textStyle}>{session.name}</span>
+                              {/* Start - End Time */}
+                              <span className="text-xs font-light text-slate-400 flex-shrink-0">
+                                  {formatTimeInTimezone(session.startUTC)} – {formatTimeInTimezone(session.endUTC)}
+                              </span>
                           </div>
 
-                          {/* Elapsed Time (Right) */}
-                          <span className="text-xs font-light text-slate-400 min-w-16 text-right">
-                              {formatSessionTime(session.elapsedSeconds)}
-                          </span>
-
-                          {/* Remaining Time (Far Right) */}
-                          <span className="text-xs font-light text-slate-400 min-w-16 text-right">
-                              {formatSessionTime(session.remainingSeconds)}
-                          </span>
+                          {/* Row 2: Elapsed & Remaining Time */}
+                          <div className="flex items-center justify-between gap-2 px-1.5 py-0.5 bg-slate-800/40 border-t border-slate-700/20">
+                              <span className="text-[10px] font-light text-slate-500">
+                                  ⏱ {formatSessionTime(session.elapsedSeconds)}
+                              </span>
+                              <span className="text-[10px] font-light text-slate-500">
+                                  ⏱ {formatSessionTime(session.remainingSeconds)}
+                              </span>
+                          </div>
                       </div>
                   );
                 })}
@@ -393,66 +413,121 @@ const App: React.FC = () => {
             )}
           </div>
 
-          {/* RIGHT SECTION: Clocks/Calendar Container with Buttons */}
-          <div className="min-w-[50%] max-h-[75vh] bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-4 shadow-lg shadow-black/20 flex flex-col">
-            {/* Buttons Row */}
-            <div className="flex gap-2 mb-4 flex-shrink-0">
+          {/* RIGHT PANE: Main Content Area with 4 Tabs */}
+          <div className="flex-1 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-3 shadow-lg shadow-black/20 flex flex-col overflow-hidden">
+            {/* Header with Toggle Button and Tab Buttons */}
+            <div className="flex items-center gap-2 mb-2.5 flex-shrink-0">
+              {/* Collapse/Expand Toggle Button */}
               <button
-                onClick={() => setActiveView('calendar')}
-                className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
-                  activeView === 'calendar'
-                    ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300'
-                    : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
-                }`}
+                onClick={() => setLeftPaneOpen(!leftPaneOpen)}
+                className="p-1.5 rounded-lg transition-all duration-200 bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300 md:hidden"
+                title={leftPaneOpen ? "Close info panel" : "Open info panel"}
               >
-                Economic Calendar
+                {leftPaneOpen ? <IconX className="w-4 h-4" /> : <IconMenu className="w-4 h-4" />}
               </button>
-              <button
-                onClick={() => setActiveView('clocks')}
-                className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
-                  activeView === 'clocks'
-                    ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300'
-                    : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
-                }`}
-              >
-                World Clock
-              </button>
+
+              {/* 4-Tab Navigation with Individual Colors & SVG Icons */}
+              <div className="flex gap-1.5 flex-1 overflow-x-auto">
+                {/* Calendar Tab - Green */}
+                <button
+                  onClick={() => setActiveView('calendar')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                    activeView === 'calendar'
+                      ? 'bg-emerald-500/20 border border-emerald-400/40 text-emerald-300'
+                      : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
+                  }`}
+                  title="Economic Calendar"
+                >
+                  <IconCalendarTab className="w-4 h-4" />
+                  <span className="hidden sm:inline">Calendar</span>
+                </button>
+
+                {/* Charts Tab - Cyan */}
+                <button
+                  onClick={() => setActiveView('charts')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                    activeView === 'charts'
+                      ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300'
+                      : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
+                  }`}
+                  title="Trading Charts"
+                >
+                  <IconChartsTab className="w-4 h-4" />
+                  <span className="hidden sm:inline">Charts</span>
+                </button>
+
+                {/* Guide Tab - Indigo */}
+                <button
+                  onClick={() => setActiveView('guide')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                    activeView === 'guide'
+                      ? 'bg-indigo-500/20 border border-indigo-400/40 text-indigo-300'
+                      : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
+                  }`}
+                  title="Trading Guide"
+                >
+                  <IconGuideTab className="w-4 h-4" />
+                  <span className="hidden sm:inline">Guide</span>
+                </button>
+
+                {/* World Clock Tab - Violet */}
+                <button
+                  onClick={() => setActiveView('clocks')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                    activeView === 'clocks'
+                      ? 'bg-violet-500/20 border border-violet-400/40 text-violet-300'
+                      : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
+                  }`}
+                  title="World Clock"
+                >
+                  <IconWorldClockTab className="w-4 h-4" />
+                  <span className="hidden sm:inline">World Clock</span>
+                </button>
+              </div>
             </div>
-            {/* Conditional Render: Clocks or Calendar */}
-            <div className="flex-1 overflow-y-auto">
-              {activeView === 'clocks' ? (
-                <SessionClocks compact sessionStatus={sessionStatus} />
-              ) : (
+
+            {/* Conditional Render: Calendar, Clocks, Charts, or Guide */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden">
+              {activeView === 'calendar' && (
                 <CalendarErrorBoundary>
                   <EconomicCalendar selectedTimezone={selectedTimezone} />
                 </CalendarErrorBoundary>
+              )}
+              {activeView === 'clocks' && (
+                <SessionClocks compact sessionStatus={sessionStatus} />
+              )}
+              {activeView === 'charts' && (
+                <ForexChart
+                  nowLine={nowLine}
+                  currentTimezoneLabel={selectedTimezone.label}
+                  timezoneOffset={selectedTimezone.offset}
+                  sessionStatus={sessionStatus}
+                  currentTime={currentTime}
+                  isDSTActive={currentDSTStatus}
+                  activeSessions={activeSessions_config}
+                  isAutoDetectDST={isAutoDetectDST}
+                  manualDSTOverride={manualDSTOverride}
+                  onToggleDSTOverride={(override) => setManualDSTOverride(override)}
+                  onAutoDetectToggle={(enabled) => {
+                    setIsAutoDetectDST(enabled);
+                    if (enabled) setManualDSTOverride(null);
+                  }}
+                />
+              )}
+              {activeView === 'guide' && (
+                <SessionGuide
+                  currentTimezoneLabel={selectedTimezone.label}
+                  timezoneOffset={selectedTimezone.offset}
+                />
               )}
             </div>
           </div>
         </div>
 
-        {/* SESSION TIMELINE */}
-        <ForexChart
-          nowLine={nowLine}
-          currentTimezoneLabel={selectedTimezone.label}
-          timezoneOffset={selectedTimezone.offset}
-          sessionStatus={sessionStatus}
-          currentTime={currentTime}
-          isDSTActive={currentDSTStatus}
-          activeSessions={activeSessions_config}
-          isAutoDetectDST={isAutoDetectDST}
-          manualDSTOverride={manualDSTOverride}
-          onToggleDSTOverride={(override) => setManualDSTOverride(override)}
-          onAutoDetectToggle={(enabled) => {
-            setIsAutoDetectDST(enabled);
-            if (enabled) setManualDSTOverride(null);
-          }}
-        />
-
         {/* FOOTER: Action Row with PWA + Social */}
-        <footer className="w-full mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 text-slate-500 text-xs font-light">
-          <p>Data is illustrative. Always verify times with your broker. Not financial advice.</p>
-          <div className="flex items-center gap-3">
+        <footer className="w-full mt-2 flex flex-col sm:flex-row items-center justify-between gap-2 px-3 py-2 text-slate-500 text-[10px] sm:text-xs font-light">
+          <p className="text-center sm:text-left">Data is illustrative. Always verify times with your broker. Not financial advice.</p>
+          <div className="flex items-center gap-2">
             <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-400/40 shadow-inner shadow-cyan-500/20">
               <IconTradingFlow className="w-5 h-5 text-cyan-300" />
             </div>
