@@ -45,16 +45,48 @@ const formatTimeInTimezone = (utcHour: number, timezoneOffset: number): string =
 };
 
 const getImpactColor = (impact: string): string => {
-  switch (impact.toLowerCase()) {
+  switch (impact?.toLowerCase()) {
     case 'high':
-      return 'text-red-400';
+      return '#ef4444'; // red-500
     case 'medium':
-      return 'text-yellow-400';
+      return '#f59e0b'; // amber-500
     case 'low':
-      return 'text-green-400';
+      return '#10b981'; // green-500
     default:
-      return 'text-slate-400';
+      return '#64748b'; // slate-500
   }
+};
+
+const getCurrencyFlag = (currency: string): string => {
+  const flagMap: Record<string, string> = {
+    USD: '🇺🇸',
+    EUR: '🇪🇺',
+    GBP: '🇬🇧',
+    JPY: '🇯🇵',
+    AUD: '🇦🇺',
+    NZD: '🇳🇿',
+    CAD: '🇨🇦',
+    CHF: '🇨🇭',
+    CNY: '🇨🇳',
+    INR: '🇮🇳',
+    SGD: '🇸🇬',
+    HKD: '🇭🇰',
+  };
+  return flagMap[currency] || '🌐';
+};
+
+const convertUTCToTimezone = (utcTimeString: string | undefined, offsetHours: number): string => {
+  if (!utcTimeString) return '';
+
+  const [hStr = '0', mStr = '0'] = utcTimeString.split(':');
+  const baseMinutes = (parseInt(hStr, 10) || 0) * 60 + (parseInt(mStr, 10) || 0);
+  const offsetMinutes = Math.round(offsetHours * 60);
+  let localMinutes = (baseMinutes + offsetMinutes) % (24 * 60);
+  if (localMinutes < 0) localMinutes += 24 * 60;
+
+  const hh = String(Math.floor(localMinutes / 60)).padStart(2, '0');
+  const mm = String(localMinutes % 60).padStart(2, '0');
+  return `${hh}:${mm}`;
 };
 
 const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
@@ -71,42 +103,28 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
     (s) => s.type === 'main' && (s.state === 'OPEN' || s.state === 'WARNING')
   ) || null;
 
-  // Fetch calendar events for today
+  // Fetch today's calendar events
   useEffect(() => {
-    const fetchCalendarEvents = async () => {
+    const fetchTodaysEvents = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:5000/api/calendar/events');
-        if (!response.ok) throw new Error('Failed to fetch calendar events');
+        const response = await fetch('http://localhost:5000/api/calendar/today');
+        if (!response.ok) throw new Error('Failed to fetch today\'s events');
 
         const json = await response.json();
         const data = json.data || [];
 
-        // Filter events for today
-        const today = new Date();
-        const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const tomorrowDate = new Date(todayDate);
-        tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-
-        const todayEvents = data
-          .filter((event: any) => {
-            const eventDate = new Date(event.date);
-            const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
-            return eventDay.getTime() === todayDate.getTime();
-          })
-          .slice(0, 12); // Show up to 12 events
-
-        setCalendarEvents(todayEvents);
+        setCalendarEvents(data);
       } catch (error) {
-        console.error('Error fetching calendar events:', error);
+        console.error('Error fetching today\'s events:', error);
         setCalendarEvents([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCalendarEvents();
-    const interval = setInterval(fetchCalendarEvents, 60000); // Refresh every minute
+    fetchTodaysEvents();
+    const interval = setInterval(fetchTodaysEvents, 60000); // Refresh every minute
     return () => clearInterval(interval);
   }, []);
 
@@ -182,37 +200,69 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
           )}
         </div>
 
-        {/* RIGHT SIDE (40%): Economic Calendar Events */}
-        <div className="w-2/5 flex flex-col rounded-2xl bg-slate-800/30 backdrop-blur-xl border border-slate-700/30 p-4 overflow-hidden">
-          <h3 className="text-sm font-semibold text-slate-200 mb-3">Today's Events</h3>
+        {/* RIGHT SIDE (40%): Today's Economic Calendar Events */}
+        <div className="w-2/5 flex flex-col rounded-2xl bg-slate-800/30 backdrop-blur-xl border border-slate-700/30 p-3 overflow-hidden">
+          <h3 className="text-sm font-semibold text-slate-200 mb-2">Today's Events</h3>
 
-          <div className="flex-1 overflow-y-auto space-y-2">
+          <div className="flex-1 overflow-y-auto space-y-1.5">
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <span className="text-xs text-slate-400">Loading...</span>
               </div>
             ) : calendarEvents.length > 0 ? (
-              calendarEvents.map((event, idx) => (
-                <div
-                  key={idx}
-                  className="bg-slate-800/40 rounded-lg p-2 border border-slate-700/20 hover:border-slate-600/40 transition-all"
-                >
-                  <div className="flex items-start justify-between gap-1 mb-1">
-                    <span className="text-xs font-mono text-slate-300">
-                      {event.time}
-                    </span>
-                    <span className={`text-[10px] font-semibold ${getImpactColor(event.impact)}`}>
-                      {event.impact.toUpperCase()}
-                    </span>
+              calendarEvents.map((event: any) => {
+                const impactColor = getImpactColor(event.impact || 'low');
+                const rawTime = event.time || event.time_utc || '';
+                const isTentative = rawTime.toLowerCase() === 'tentative';
+                const convertedTime = isTentative ? '' : convertUTCToTimezone(event.time_utc, selectedTimezone.offset);
+                const displayTime = convertedTime || rawTime;
+
+                return (
+                  <div
+                    key={event.id}
+                    className="rounded-lg p-2 transition-colors border border-slate-800/40 bg-slate-800/30 hover:bg-slate-800/50"
+                  >
+                    <div className="flex items-start gap-2">
+                      {/* Time */}
+                      <div className="min-w-12 text-xs font-mono text-slate-400 flex flex-col gap-0.5">
+                        <span>{displayTime}</span>
+                        {isTentative && (
+                          <span className="text-[9px] font-mono text-amber-300">
+                            Tentative
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Currency Flag */}
+                      <div className="text-sm flex-shrink-0">
+                        {getCurrencyFlag(event.currency)}
+                      </div>
+
+                      {/* Event Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          {/* Impact Indicator */}
+                          <div
+                            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                            style={{
+                              backgroundColor: impactColor,
+                              boxShadow: `0 0 4px ${impactColor}`,
+                            }}
+                          />
+                          <div className="text-xs font-medium text-slate-200 truncate">
+                            {event.event}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Currency Badge */}
+                      <div className="text-xs font-semibold text-slate-400">
+                        {event.currency}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-200 font-medium mb-1">
-                    {event.title}
-                  </div>
-                  <div className="text-[10px] text-slate-400">
-                    {event.currency}
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="flex items-center justify-center h-full">
                 <span className="text-xs text-slate-400">No events today</span>
