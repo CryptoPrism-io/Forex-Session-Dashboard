@@ -142,60 +142,53 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
           <h3 className="text-sm font-semibold text-slate-200 mb-3">Current Session</h3>
 
           {openSession ? (
-            <div className="space-y-3">
-              {/* Session Name */}
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-3 h-3 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: openSession.color }}
-                />
-                <span className="text-base font-semibold text-slate-100">
-                  {openSession.name}
-                </span>
-                <span className={`text-xs px-2 py-1 rounded ${
-                  openSession.state === 'OPEN'
-                    ? 'bg-green-500/30 text-green-300'
-                    : 'bg-yellow-500/30 text-yellow-300'
-                }`}>
-                  {openSession.state}
-                </span>
-              </div>
-
-              {/* Session Timing */}
-              <div className="bg-slate-800/40 rounded-lg p-3 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Start (Local)</span>
-                  <span className="text-slate-200 font-mono">
-                    {formatTimeInTimezone(openSession.startUTC, selectedTimezone.offset)}
+            <div className="space-y-1.5">
+              {/* Row 1: Session Name + Status + Start/End Times */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: openSession.color }}
+                  />
+                  <span className="text-sm font-semibold text-slate-100">
+                    {openSession.name}
+                  </span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                    openSession.state === 'OPEN'
+                      ? 'bg-green-500/30 text-green-300'
+                      : 'bg-yellow-500/30 text-yellow-300'
+                  }`}>
+                    {openSession.state}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">End (Local)</span>
-                  <span className="text-slate-200 font-mono">
-                    {formatTimeInTimezone(openSession.endUTC, selectedTimezone.offset)}
-                  </span>
+
+                <div className="text-xs text-slate-300 font-mono flex gap-2">
+                  <span className="text-slate-400">{formatTimeInTimezone(openSession.startUTC, selectedTimezone.offset)}</span>
+                  <span className="text-slate-400">–</span>
+                  <span className="text-slate-400">{formatTimeInTimezone(openSession.endUTC, selectedTimezone.offset)}</span>
                 </div>
               </div>
 
-              {/* Elapsed & Remaining Time */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-slate-800/40 rounded-lg p-2 text-center">
-                  <div className="text-[10px] text-slate-400 mb-1">Elapsed</div>
-                  <div className="text-sm font-mono text-emerald-300">
+              {/* Row 2: Elapsed & Remaining Time (Secondary, Compact) */}
+              <div className="flex items-center gap-2 text-xs">
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500">⏱ Elapsed:</span>
+                  <span className="text-emerald-300 font-mono">
                     {formatSessionTime(openSession.elapsedSeconds)}
-                  </div>
+                  </span>
                 </div>
-                <div className="bg-slate-800/40 rounded-lg p-2 text-center">
-                  <div className="text-[10px] text-slate-400 mb-1">Remaining</div>
-                  <div className="text-sm font-mono text-cyan-300">
+                <span className="text-slate-600">|</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500">⏱ Remaining:</span>
+                  <span className="text-cyan-300 font-mono">
                     {formatSessionTime(openSession.remainingSeconds)}
-                  </div>
+                  </span>
                 </div>
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-center h-full">
-              <span className="text-sm text-slate-400">No active session</span>
+              <span className="text-xs text-slate-400">No active session</span>
             </div>
           )}
         </div>
