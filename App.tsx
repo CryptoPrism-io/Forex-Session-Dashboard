@@ -431,10 +431,10 @@ const App: React.FC = () => {
                 {/* Calendar Tab - Green */}
                 <button
                   onClick={() => setActiveView('calendar')}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                     activeView === 'calendar'
-                      ? 'bg-emerald-500/20 border border-emerald-400/40 text-emerald-300'
-                      : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
+                      ? 'bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold'
+                      : 'bg-slate-700/20 border border-slate-700/40 text-emerald-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
                   }`}
                   title="Economic Calendar"
                 >
@@ -445,10 +445,10 @@ const App: React.FC = () => {
                 {/* Charts Tab - Cyan */}
                 <button
                   onClick={() => setActiveView('charts')}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                     activeView === 'charts'
-                      ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300'
-                      : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
+                      ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-bold'
+                      : 'bg-slate-700/20 border border-slate-700/40 text-cyan-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
                   }`}
                   title="Trading Charts"
                 >
@@ -459,10 +459,10 @@ const App: React.FC = () => {
                 {/* Guide Tab - Indigo */}
                 <button
                   onClick={() => setActiveView('guide')}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                     activeView === 'guide'
-                      ? 'bg-indigo-500/20 border border-indigo-400/40 text-indigo-300'
-                      : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
+                      ? 'bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 font-bold'
+                      : 'bg-slate-700/20 border border-slate-700/40 text-indigo-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
                   }`}
                   title="Trading Guide"
                 >
@@ -473,10 +473,10 @@ const App: React.FC = () => {
                 {/* World Clock Tab - Violet */}
                 <button
                   onClick={() => setActiveView('clocks')}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                     activeView === 'clocks'
-                      ? 'bg-violet-500/20 border border-violet-400/40 text-violet-300'
-                      : 'bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60'
+                      ? 'bg-violet-500/20 border border-violet-400/40 text-violet-300 font-bold'
+                      : 'bg-slate-700/20 border border-slate-700/40 text-violet-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
                   }`}
                   title="World Clock"
                 >
