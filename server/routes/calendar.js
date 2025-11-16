@@ -158,4 +158,49 @@ router.get('/currencies', async (req, res) => {
   }
 });
 
+// GET /api/calendar/today - Get all events for today with all impact levels
+router.get('/today', async (req, res) => {
+  try {
+    const today = new Date();
+    const todayISO = today.toISOString().split('T')[0];
+    const tomorrowISO = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const query = `
+      SELECT
+        id,
+        date,
+        time,
+        time_utc,
+        currency,
+        impact,
+        event,
+        actual,
+        forecast,
+        previous,
+        source,
+        event_uid
+      FROM economic_calendar_ff
+      WHERE (date AT TIME ZONE 'Asia/Kolkata') >= $1::date
+        AND (date AT TIME ZONE 'Asia/Kolkata') < $2::date
+      ORDER BY time_utc ASC, event ASC
+    `;
+
+    const result = await pool.query(query, [todayISO, tomorrowISO]);
+
+    res.json({
+      success: true,
+      count: result.rows.length,
+      date: todayISO,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching today\'s events:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch today\'s events',
+      message: error.message
+    });
+  }
+});
+
 export default router;
