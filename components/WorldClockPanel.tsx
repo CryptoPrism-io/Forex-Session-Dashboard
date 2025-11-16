@@ -79,16 +79,22 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
         const response = await fetch('http://localhost:5000/api/calendar/events');
         if (!response.ok) throw new Error('Failed to fetch calendar events');
 
-        const data = await response.json();
+        const json = await response.json();
+        const data = json.data || [];
 
-        // Filter events for today only and limit to top events
+        // Filter events for today
         const today = new Date();
-        const todayDateStr = today.toISOString().split('T')[0];
+        const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const tomorrowDate = new Date(todayDate);
+        tomorrowDate.setDate(tomorrowDate.getDate() + 1);
 
-        const todayEvents = data.filter((event: any) => {
-          const eventDate = new Date(event.date).toISOString().split('T')[0];
-          return eventDate === todayDateStr;
-        }).slice(0, 8); // Limit to 8 events
+        const todayEvents = data
+          .filter((event: any) => {
+            const eventDate = new Date(event.date);
+            const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+            return eventDay.getTime() === todayDate.getTime();
+          })
+          .slice(0, 12); // Show up to 12 events
 
         setCalendarEvents(todayEvents);
       } catch (error) {
