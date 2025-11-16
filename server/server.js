@@ -79,6 +79,7 @@ app.listen(PORT, () => {
   console.log('\nAvailable endpoints:');
   console.log(`  GET  /health                    - Health check`);
   console.log(`  GET  /api/calendar/events       - Get calendar events`);
+  console.log(`  GET  /api/calendar/today        - Get today's events`);
   console.log(`  GET  /api/calendar/stats        - Get statistics`);
   console.log(`  GET  /api/calendar/currencies   - Get currency list`);
   console.log('='.repeat(60) + '\n');
