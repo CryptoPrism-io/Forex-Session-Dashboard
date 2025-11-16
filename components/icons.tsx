@@ -358,6 +358,7 @@ export const IconChartsTab: React.FC<{className?: string}> = ({ className }) => 
     strokeLinecap="round"
     strokeLinejoin="round"
     className={className}
+    style={{ transform: 'rotate(180deg)' }}
   >
     {/* Axes */}
     <polyline points="3 21 3 3 21 3" />
