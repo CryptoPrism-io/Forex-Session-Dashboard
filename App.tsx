@@ -456,13 +456,13 @@ const App: React.FC = () => {
                   <span className="hidden sm:inline">Charts</span>
                 </button>
 
-                {/* Guide Tab - Indigo */}
+                {/* Guide Tab - Amber/Yellow */}
                 <button
                   onClick={() => setActiveView('guide')}
                   className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                     activeView === 'guide'
-                      ? 'bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 font-bold'
-                      : 'bg-slate-700/20 border border-slate-700/40 text-indigo-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
+                      ? 'bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold'
+                      : 'bg-slate-700/20 border border-slate-700/40 text-amber-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
                   }`}
                   title="Trading Guide"
                 >
