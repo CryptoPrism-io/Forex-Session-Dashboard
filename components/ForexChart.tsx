@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { SESSIONS } from '../constants';
 import { ChartBarDetails, TooltipInfo } from '../types';
 import { SessionStatus } from '../App';
-import { IconChevronDown } from './icons';
+import { IconChevronDown, IconCalendarTab } from './icons';
 import VolumeChart from './VolumeChart';
 
 // Global Forex Trading Volume Profile (UTC, 30-min intervals, 48 points = 24 hours)
@@ -177,14 +177,21 @@ const ForexChart: React.FC<ForexChartProps> = ({
   const tooltipTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const [nowBlinkVisible, setNowBlinkVisible] = useState(true);
   const [showLayersMenu, setShowLayersMenu] = useState(false);
+  const [showEventFilterMenu, setShowEventFilterMenu] = useState(false);
   const [visibleLayers, setVisibleLayers] = useState({
     sessions: true,
     zones: true,
     overlaps: true,
     killzones: true,
     volume: true,
-    news: false
+    news: true // Default visible
   });
+
+  // Economic event indicators state
+  const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
+  const [eventFilter, setEventFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventTooltip, setEventTooltip] = useState<{ event: any; position: { x: number; y: number } } | null>(null);
 
   // Use activeSessions from props if provided, otherwise fall back to SESSIONS constant
   const sessions = activeSessions || SESSIONS;
@@ -195,6 +202,29 @@ const ForexChart: React.FC<ForexChartProps> = ({
     }, 1000);
 
     return () => window.clearInterval(intervalId);
+  }, []);
+
+  // Fetch economic calendar events for today
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setEventsLoading(true);
+        const response = await fetch('http://localhost:5000/api/calendar/today');
+        if (!response.ok) throw new Error('Failed to fetch events');
+
+        const json = await response.json();
+        setCalendarEvents(json.data || []);
+      } catch (error) {
+        console.error('Error fetching calendar events:', error);
+        setCalendarEvents([]);
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+
+    fetchEvents();
+    const interval = setInterval(fetchEvents, 300000); // Refresh every 5 minutes
+    return () => clearInterval(interval);
   }, []);
 
   const nowLineStyle = useMemo(() => ({
@@ -356,6 +386,67 @@ const ForexChart: React.FC<ForexChartProps> = ({
     return { interpolatedVolume, chartWidth, chartHeight, barWidth, volumeScale, baselineY };
   }, [timezoneOffset, visibleLayers.volume]);
 
+  // Process economic events for display
+  const processedEvents = useMemo(() => {
+    if (!calendarEvents.length || !visibleLayers.news) return [];
+
+    // Helper: Convert UTC time string to hours (0-24)
+    const convertUTCTimeToHours = (utcTimeString: string | undefined): number => {
+      if (!utcTimeString) return -1;
+      const [hStr = '0', mStr = '0'] = utcTimeString.split(':');
+      const hours = parseInt(hStr, 10) || 0;
+      const minutes = parseInt(mStr, 10) || 0;
+      return hours + minutes / 60;
+    };
+
+    // Helper: Get impact color
+    const getImpactColor = (impact: string): string => {
+      switch (impact?.toLowerCase()) {
+        case 'high': return '#ef4444'; // red-500
+        case 'medium': return '#f59e0b'; // amber-500
+        case 'low': return '#10b981'; // green-500
+        default: return '#64748b'; // slate-500
+      }
+    };
+
+    // Filter by impact level
+    const filtered = calendarEvents.filter((event) => {
+      if (eventFilter === 'all') return true;
+      return event.impact?.toLowerCase() === eventFilter;
+    });
+
+    // Transform events with position calculation
+    return filtered.map((event) => {
+      const utcHours = convertUTCTimeToHours(event.time_utc);
+      if (utcHours < 0) return null; // Skip events without valid time
+
+      // Convert to local timezone
+      const localHours = (utcHours + timezoneOffset + 24) % 24;
+      const position = (localHours / 24) * 100; // percentage
+
+      return {
+        ...event,
+        utcHours,
+        localHours,
+        position,
+        color: getImpactColor(event.impact),
+      };
+    }).filter(Boolean); // Remove null entries
+  }, [calendarEvents, eventFilter, timezoneOffset, visibleLayers.news]);
+
+  // Group events by position for stacking
+  const stackedEvents = useMemo(() => {
+    const groups: { [key: string]: any[] } = {};
+
+    processedEvents.forEach((event: any) => {
+      const posKey = Math.floor(event.position * 10).toString(); // Group by ~2.4hr intervals
+      if (!groups[posKey]) groups[posKey] = [];
+      groups[posKey].push(event);
+    });
+
+    return groups;
+  }, [processedEvents]);
+
   return (
     <div ref={chartContainerRef} className="relative w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 p-6 rounded-2xl shadow-2xl shadow-black/30 hover:border-slate-600/50 transition-all duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -459,6 +550,48 @@ const ForexChart: React.FC<ForexChartProps> = ({
                     />
                     <span className="text-xs text-slate-300">📰 News</span>
                   </label>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Event Filter Dropdown */}
+          {(viewMode === 'separate' || viewMode === 'unified') && visibleLayers.news && (
+            <div className="relative">
+              <button
+                onClick={() => setShowEventFilterMenu(!showEventFilterMenu)}
+                className="px-2.5 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 transition-all duration-300 flex items-center gap-1"
+                title="Filter economic events"
+              >
+                <IconCalendarTab className="w-3.5 h-3.5" />
+                <span className="capitalize">{eventFilter}</span>
+              </button>
+
+              {/* Event Filter Menu */}
+              {showEventFilterMenu && (
+                <div className="absolute right-0 mt-2 w-40 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-2 z-50 space-y-1">
+                  {['all', 'high', 'medium', 'low'].map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => {
+                        setEventFilter(filter as typeof eventFilter);
+                        setShowEventFilterMenu(false);
+                      }}
+                      className={`w-full px-3 py-1.5 text-xs rounded-lg border transition-all text-left capitalize ${
+                        eventFilter === filter
+                          ? filter === 'high'
+                            ? 'bg-red-500/30 border-red-400/50 text-red-100'
+                            : filter === 'medium'
+                            ? 'bg-amber-500/30 border-amber-400/50 text-amber-100'
+                            : filter === 'low'
+                            ? 'bg-green-500/30 border-green-400/50 text-green-100'
+                            : 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100'
+                          : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 text-slate-300'
+                      }`}
+                    >
+                      {filter}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -596,6 +729,50 @@ const ForexChart: React.FC<ForexChartProps> = ({
                     );
                   })}
 
+                {/* Economic Event Indicators for this session */}
+                {visibleLayers.news && processedEvents.map((event: any, idx: number) => {
+                  // Calculate vertical stack position for overlapping events
+                  const posKey = Math.floor(event.position * 10).toString();
+                  const stackGroup = stackedEvents[posKey] || [];
+                  const stackIndex = stackGroup.findIndex((e: any) => e.id === event.id);
+                  const stackOffset = stackIndex * 14; // 14px vertical spacing for separate view
+
+                  return (
+                    <div
+                      key={`event-${session.name}-${event.id || idx}`}
+                      className="absolute cursor-pointer transition-all duration-200 hover:scale-110"
+                      style={{
+                        left: `${event.position}%`,
+                        bottom: `${6 + stackOffset}px`,
+                        transform: 'translateX(-50%)',
+                        zIndex: 10 + stackIndex,
+                      }}
+                      onMouseEnter={(e) => {
+                        const rect = chartContainerRef.current?.getBoundingClientRect();
+                        if (!rect) return;
+                        setEventTooltip({
+                          event,
+                          position: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+                        });
+                      }}
+                      onMouseLeave={() => setEventTooltip(null)}
+                    >
+                      <div
+                        className="w-3.5 h-3.5 rounded-full flex items-center justify-center shadow-lg"
+                        style={{
+                          backgroundColor: event.color,
+                          boxShadow: `0 0 6px ${event.color}80`,
+                        }}
+                      >
+                        <IconCalendarTab
+                          className="w-2 h-2"
+                          style={{ color: 'white' }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+
                 <div
                   className="absolute top-0 bottom-0 w-0.5 bg-yellow-400"
                   style={nowLineStyle}
@@ -693,6 +870,50 @@ const ForexChart: React.FC<ForexChartProps> = ({
                 );
               })}
 
+            {/* Economic Event Indicators */}
+            {visibleLayers.news && processedEvents.map((event: any, idx: number) => {
+              // Calculate vertical stack position for overlapping events
+              const posKey = Math.floor(event.position * 10).toString();
+              const stackGroup = stackedEvents[posKey] || [];
+              const stackIndex = stackGroup.findIndex((e: any) => e.id === event.id);
+              const stackOffset = stackIndex * 18; // 18px vertical spacing between stacked icons
+
+              return (
+                <div
+                  key={`event-${event.id || idx}`}
+                  className="absolute cursor-pointer transition-all duration-200 hover:scale-110"
+                  style={{
+                    left: `${event.position}%`,
+                    bottom: `${8 + stackOffset}px`,
+                    transform: 'translateX(-50%)',
+                    zIndex: 10 + stackIndex,
+                  }}
+                  onMouseEnter={(e) => {
+                    const rect = chartContainerRef.current?.getBoundingClientRect();
+                    if (!rect) return;
+                    setEventTooltip({
+                      event,
+                      position: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+                    });
+                  }}
+                  onMouseLeave={() => setEventTooltip(null)}
+                >
+                  <div
+                    className="w-4 h-4 rounded-full flex items-center justify-center shadow-lg"
+                    style={{
+                      backgroundColor: event.color,
+                      boxShadow: `0 0 8px ${event.color}80`,
+                    }}
+                  >
+                    <IconCalendarTab
+                      className="w-2.5 h-2.5"
+                      style={{ color: 'white' }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+
             <div
               className="absolute top-0 bottom-0 w-0.5 bg-yellow-400"
               style={nowLineStyle}
@@ -744,6 +965,64 @@ const ForexChart: React.FC<ForexChartProps> = ({
           timezoneLabel={currentTimezoneLabel}
           isVisible={true}
         />
+      )}
+
+      {/* Economic Event Tooltip */}
+      {eventTooltip && eventTooltip.event && (
+        <div
+          style={{
+            position: 'absolute',
+            left: eventTooltip.position.x,
+            top: eventTooltip.position.y - 120,
+            zIndex: 100,
+            pointerEvents: 'none',
+          }}
+          className="bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-3 text-xs text-slate-200 w-64"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div
+              className="w-2 h-2 rounded-full"
+              style={{
+                backgroundColor: eventTooltip.event.color,
+                boxShadow: `0 0 6px ${eventTooltip.event.color}80`,
+              }}
+            />
+            <span className="font-bold text-sm text-white capitalize">
+              {eventTooltip.event.impact || 'Medium'} Impact
+            </span>
+          </div>
+
+          <p className="font-semibold text-slate-100 mb-2">{eventTooltip.event.event}</p>
+
+          <div className="space-y-1 text-[11px]">
+            <p className="text-slate-400">
+              <span className="font-semibold">Time:</span>{' '}
+              {eventTooltip.event.time || eventTooltip.event.time_utc || 'TBD'}
+            </p>
+            <p className="text-slate-400">
+              <span className="font-semibold">Currency:</span>{' '}
+              {eventTooltip.event.currency || 'N/A'}
+            </p>
+            {eventTooltip.event.forecast && (
+              <p className="text-slate-400">
+                <span className="font-semibold">Forecast:</span>{' '}
+                {eventTooltip.event.forecast}
+              </p>
+            )}
+            {eventTooltip.event.previous && (
+              <p className="text-slate-400">
+                <span className="font-semibold">Previous:</span>{' '}
+                {eventTooltip.event.previous}
+              </p>
+            )}
+            {eventTooltip.event.actual && (
+              <p className="text-slate-400">
+                <span className="font-semibold">Actual:</span>{' '}
+                {eventTooltip.event.actual}
+              </p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
