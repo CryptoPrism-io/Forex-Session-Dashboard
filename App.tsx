@@ -4,6 +4,7 @@ import SessionGuide from './components/SessionGuide';
 import CalendarErrorBoundary from './components/CalendarErrorBoundary';
 import SocialLinks from './components/SocialLinks';
 import SessionClocks from './components/SessionClocks';
+import WorldClockPanel from './components/WorldClockPanel';
 import EconomicCalendar from './components/EconomicCalendar';
 import InstallButton from './components/InstallButton';
 import InstallModal from './components/InstallModal';
@@ -494,7 +495,12 @@ const App: React.FC = () => {
                 </CalendarErrorBoundary>
               )}
               {activeView === 'clocks' && (
-                <SessionClocks compact sessionStatus={sessionStatus} />
+                <WorldClockPanel
+                  compact
+                  sessionStatus={sessionStatus}
+                  activeSessions={activeSessions}
+                  selectedTimezone={selectedTimezone}
+                />
               )}
               {activeView === 'charts' && (
                 <ForexChart
