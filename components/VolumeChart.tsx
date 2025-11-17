@@ -518,7 +518,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
                 bottom: `${8 + stackOffset}px`,
                 transform: 'translateX(-50%)',
                 zIndex: 10 + stackIndex,
-                opacity: 0.33,
+                opacity: 0.67,
               }}
               onMouseEnter={(e) => {
                 if (!chartContainerRef?.current || !setEventTooltip) return;
@@ -531,7 +531,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
               }}
               onMouseLeave={(e) => {
                 setEventTooltip?.(null);
-                e.currentTarget.style.opacity = '0.33';
+                e.currentTarget.style.opacity = '0.67';
               }}
             >
               <div

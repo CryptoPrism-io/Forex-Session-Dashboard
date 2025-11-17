@@ -749,7 +749,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
                         bottom: `${6 + stackOffset}px`,
                         transform: 'translateX(-50%)',
                         zIndex: 10 + stackIndex,
-                        opacity: 0.33,
+                        opacity: 0.67,
                       }}
                       onMouseEnter={(e) => {
                         const rect = chartContainerRef.current?.getBoundingClientRect();
@@ -762,7 +762,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
                       }}
                       onMouseLeave={(e) => {
                         setEventTooltip(null);
-                        e.currentTarget.style.opacity = '0.33';
+                        e.currentTarget.style.opacity = '0.67';
                       }}
                     >
                       <div
@@ -895,7 +895,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
                     bottom: `${8 + stackOffset}px`,
                     transform: 'translateX(-50%)',
                     zIndex: 10 + stackIndex,
-                    opacity: 0.33,
+                    opacity: 0.67,
                   }}
                   onMouseEnter={(e) => {
                     const rect = chartContainerRef.current?.getBoundingClientRect();
@@ -908,7 +908,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
                   }}
                   onMouseLeave={(e) => {
                     setEventTooltip(null);
-                    e.currentTarget.style.opacity = '0.33';
+                    e.currentTarget.style.opacity = '0.67';
                   }}
                 >
                   <div
