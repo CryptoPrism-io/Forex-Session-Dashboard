@@ -175,8 +175,8 @@ const ForexChart: React.FC<ForexChartProps> = ({
   const [showDSTMenu, setShowDSTMenu] = useState(false);
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
   const tooltipTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const eventFilterRef = React.useRef<HTMLDivElement>(null);
   const [nowBlinkVisible, setNowBlinkVisible] = useState(true);
-  const [showLayersMenu, setShowLayersMenu] = useState(false);
   const [showEventFilterMenu, setShowEventFilterMenu] = useState(false);
   const [visibleLayers, setVisibleLayers] = useState({
     sessions: true,
@@ -189,7 +189,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
 
   // Economic event indicators state
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
-  const [eventFilter, setEventFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [selectedImpactLevels, setSelectedImpactLevels] = useState<string[]>(['high', 'medium']);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventTooltip, setEventTooltip] = useState<{ event: any; position: { x: number; y: number } } | null>(null);
 
@@ -229,6 +229,23 @@ const ForexChart: React.FC<ForexChartProps> = ({
     const interval = setInterval(fetchEvents, 300000); // Refresh every 5 minutes
     return () => clearInterval(interval);
   }, [API_BASE_URL]);
+
+  // Click-outside handler for event filter menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (eventFilterRef.current && !eventFilterRef.current.contains(event.target as Node)) {
+        setShowEventFilterMenu(false);
+      }
+    };
+
+    if (showEventFilterMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showEventFilterMenu]);
 
   const nowLineStyle = useMemo(() => ({
     left: `${(nowLine / 24) * 100}%`,
@@ -412,10 +429,10 @@ const ForexChart: React.FC<ForexChartProps> = ({
       }
     };
 
-    // Filter by impact level
+    // Filter by selected impact levels
     const filtered = calendarEvents.filter((event) => {
-      if (eventFilter === 'all') return true;
-      return event.impact?.toLowerCase() === eventFilter;
+      const impact = event.impact?.toLowerCase();
+      return selectedImpactLevels.includes(impact);
     });
 
     // Transform events with position calculation
@@ -435,7 +452,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
         color: getImpactColor(event.impact),
       };
     }).filter(Boolean); // Remove null entries
-  }, [calendarEvents, eventFilter, timezoneOffset, visibleLayers.news]);
+  }, [calendarEvents, selectedImpactLevels, timezoneOffset, visibleLayers.news]);
 
   // Group events by position for stacking
   const stackedEvents = useMemo(() => {
@@ -490,111 +507,129 @@ const ForexChart: React.FC<ForexChartProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Show/Hide Button */}
+          {/* Unified Filter Menu */}
           {(viewMode === 'separate' || viewMode === 'unified') && (
-            <div className="relative">
-              <button
-                onClick={() => setShowLayersMenu(!showLayersMenu)}
-                className="px-2 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 opacity-50 hover:opacity-70 transition-all duration-300"
-                title={visibleLayers.sessions ? "Hide layers" : "Show layers"}
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                </svg>
-              </button>
-
-              {/* Layers Menu */}
-              {showLayersMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-3 z-50 space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={visibleLayers.sessions}
-                      onChange={(e) => setVisibleLayers({ ...visibleLayers, sessions: e.target.checked })}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-xs text-slate-300">Sessions</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={visibleLayers.overlaps}
-                      onChange={(e) => setVisibleLayers({ ...visibleLayers, overlaps: e.target.checked })}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-xs text-slate-300">Overlaps</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={visibleLayers.killzones}
-                      onChange={(e) => setVisibleLayers({ ...visibleLayers, killzones: e.target.checked })}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-xs text-slate-300">Killzones</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={visibleLayers.volume}
-                      onChange={(e) => setVisibleLayers({ ...visibleLayers, volume: e.target.checked })}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-xs text-slate-300">Volume</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors border-t border-slate-700 pt-2 mt-2">
-                    <input
-                      type="checkbox"
-                      checked={visibleLayers.news}
-                      onChange={(e) => setVisibleLayers({ ...visibleLayers, news: e.target.checked })}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-xs text-slate-300">📰 News</span>
-                  </label>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Event Filter Dropdown */}
-          {(viewMode === 'separate' || viewMode === 'unified') && visibleLayers.news && (
-            <div className="relative">
+            <div className="relative" ref={eventFilterRef}>
               <button
                 onClick={() => setShowEventFilterMenu(!showEventFilterMenu)}
-                className="px-2.5 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 transition-all duration-300 flex items-center gap-1"
-                title="Filter economic events"
+                className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md border flex items-center gap-1 transition-all duration-200 ${
+                  showEventFilterMenu
+                    ? 'bg-cyan-500/30 border-cyan-400/60 text-cyan-100 shadow-lg shadow-cyan-500/25 scale-95'
+                    : 'bg-slate-700/20 border-slate-600/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-500/60 hover:text-slate-200 hover:shadow-md active:scale-95 active:bg-slate-700/60'
+                }`}
+                title="Filter chart layers and events"
               >
-                <IconCalendarTab className="w-3.5 h-3.5" />
-                <span className="capitalize">{eventFilter}</span>
+                {/* Filter Icon SVG */}
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                </svg>
+                <span>Filters</span>
               </button>
 
-              {/* Event Filter Menu */}
+              {/* Unified Filter Menu */}
               {showEventFilterMenu && (
-                <div className="absolute right-0 mt-2 w-40 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-2 z-50 space-y-1">
-                  {['all', 'high', 'medium', 'low'].map((filter) => (
-                    <button
-                      key={filter}
-                      onClick={() => {
-                        setEventFilter(filter as typeof eventFilter);
-                        setShowEventFilterMenu(false);
-                      }}
-                      className={`w-full px-3 py-1.5 text-xs rounded-lg border transition-all text-left capitalize ${
-                        eventFilter === filter
-                          ? filter === 'high'
-                            ? 'bg-red-500/30 border-red-400/50 text-red-100'
-                            : filter === 'medium'
-                            ? 'bg-amber-500/30 border-amber-400/50 text-amber-100'
-                            : filter === 'low'
-                            ? 'bg-green-500/30 border-green-400/50 text-green-100'
-                            : 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100'
-                          : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 text-slate-300'
-                      }`}
-                    >
-                      {filter}
-                    </button>
-                  ))}
+                <div className="absolute right-0 mt-2 w-48 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {/* Layers Section */}
+                  <div className="space-y-2">
+                    <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-2">Layers</div>
+                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={visibleLayers.sessions}
+                        onChange={(e) => setVisibleLayers({ ...visibleLayers, sessions: e.target.checked })}
+                        className="cursor-pointer"
+                      />
+                      <span className="text-xs text-slate-300">Sessions</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={visibleLayers.overlaps}
+                        onChange={(e) => setVisibleLayers({ ...visibleLayers, overlaps: e.target.checked })}
+                        className="cursor-pointer"
+                      />
+                      <span className="text-xs text-slate-300">Overlaps</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={visibleLayers.killzones}
+                        onChange={(e) => setVisibleLayers({ ...visibleLayers, killzones: e.target.checked })}
+                        className="cursor-pointer"
+                      />
+                      <span className="text-xs text-slate-300">Killzones</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={visibleLayers.volume}
+                        onChange={(e) => setVisibleLayers({ ...visibleLayers, volume: e.target.checked })}
+                        className="cursor-pointer"
+                      />
+                      <span className="text-xs text-slate-300">Volume</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={visibleLayers.news}
+                        onChange={(e) => setVisibleLayers({ ...visibleLayers, news: e.target.checked })}
+                        className="cursor-pointer"
+                      />
+                      <span className="text-xs text-slate-300">📰 News</span>
+                    </label>
+                  </div>
+
+                  {/* Impact Levels Section */}
+                  {visibleLayers.news && (
+                    <div className="mt-3 pt-3 border-t border-slate-700/50 space-y-2">
+                      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-2">Impact Levels</div>
+                      <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={selectedImpactLevels.includes('high')}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedImpactLevels([...selectedImpactLevels, 'high']);
+                            } else {
+                              setSelectedImpactLevels(selectedImpactLevels.filter(l => l !== 'high'));
+                            }
+                          }}
+                          className="cursor-pointer"
+                        />
+                        <span className="text-xs text-red-300 font-medium">High</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={selectedImpactLevels.includes('medium')}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedImpactLevels([...selectedImpactLevels, 'medium']);
+                            } else {
+                              setSelectedImpactLevels(selectedImpactLevels.filter(l => l !== 'medium'));
+                            }
+                          }}
+                          className="cursor-pointer"
+                        />
+                        <span className="text-xs text-amber-300 font-medium">Medium</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={selectedImpactLevels.includes('low')}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedImpactLevels([...selectedImpactLevels, 'low']);
+                            } else {
+                              setSelectedImpactLevels(selectedImpactLevels.filter(l => l !== 'low'));
+                            }
+                          }}
+                          className="cursor-pointer"
+                        />
+                        <span className="text-xs text-green-300 font-medium">Low</span>
+                      </label>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
