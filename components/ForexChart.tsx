@@ -956,6 +956,12 @@ const ForexChart: React.FC<ForexChartProps> = ({
             currentTimezoneLabel={currentTimezoneLabel}
             timezoneOffset={timezoneOffset}
             currentTime={currentTime}
+            calendarEvents={processedEvents}
+            stackedEvents={stackedEvents}
+            visibleLayers={visibleLayers}
+            eventTooltip={eventTooltip}
+            setEventTooltip={setEventTooltip}
+            chartContainerRef={chartContainerRef}
           />
           <p className="mt-3 text-[11px] text-slate-500 text-right italic">{timezoneAxisNote}</p>
         </div>
