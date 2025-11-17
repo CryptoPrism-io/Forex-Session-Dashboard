@@ -196,6 +196,9 @@ const ForexChart: React.FC<ForexChartProps> = ({
   // Use activeSessions from props if provided, otherwise fall back to SESSIONS constant
   const sessions = activeSessions || SESSIONS;
 
+  // API base URL from environment variable
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       setNowBlinkVisible((prev) => !prev);
@@ -209,7 +212,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
     const fetchEvents = async () => {
       try {
         setEventsLoading(true);
-        const response = await fetch('http://localhost:5000/api/calendar/today');
+        const response = await fetch(`${API_BASE_URL}/api/calendar/today`);
         if (!response.ok) throw new Error('Failed to fetch events');
 
         const json = await response.json();
@@ -225,7 +228,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
     fetchEvents();
     const interval = setInterval(fetchEvents, 300000); // Refresh every 5 minutes
     return () => clearInterval(interval);
-  }, []);
+  }, [API_BASE_URL]);
 
   const nowLineStyle = useMemo(() => ({
     left: `${(nowLine / 24) * 100}%`,

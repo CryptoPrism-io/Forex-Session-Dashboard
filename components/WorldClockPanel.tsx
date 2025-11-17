@@ -98,6 +98,9 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // API base URL from environment variable
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
   // Get the currently OPEN session (or WARNING if no OPEN session)
   const openSession = activeSessions.find(
     (s) => s.type === 'main' && (s.state === 'OPEN' || s.state === 'WARNING')
@@ -108,7 +111,7 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
     const fetchTodaysEvents = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:5000/api/calendar/today');
+        const response = await fetch(`${API_BASE_URL}/api/calendar/today`);
         if (!response.ok) throw new Error('Failed to fetch today\'s events');
 
         const json = await response.json();
@@ -126,7 +129,7 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
     fetchTodaysEvents();
     const interval = setInterval(fetchTodaysEvents, 60000); // Refresh every minute
     return () => clearInterval(interval);
-  }, []);
+  }, [API_BASE_URL]);
 
   return (
     <div className="w-full h-full flex flex-col gap-3">
