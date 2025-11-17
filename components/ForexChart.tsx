@@ -743,12 +743,13 @@ const ForexChart: React.FC<ForexChartProps> = ({
                   return (
                     <div
                       key={`event-${session.name}-${event.id || idx}`}
-                      className="absolute cursor-pointer transition-all duration-200 hover:scale-110"
+                      className="absolute cursor-pointer transition-all duration-200 hover:scale-110 opacity-33 hover:opacity-100"
                       style={{
                         left: `${event.position}%`,
                         bottom: `${6 + stackOffset}px`,
                         transform: 'translateX(-50%)',
                         zIndex: 10 + stackIndex,
+                        opacity: 0.33,
                       }}
                       onMouseEnter={(e) => {
                         const rect = chartContainerRef.current?.getBoundingClientRect();
@@ -757,8 +758,12 @@ const ForexChart: React.FC<ForexChartProps> = ({
                           event,
                           position: { x: e.clientX - rect.left, y: e.clientY - rect.top },
                         });
+                        e.currentTarget.style.opacity = '1';
                       }}
-                      onMouseLeave={() => setEventTooltip(null)}
+                      onMouseLeave={(e) => {
+                        setEventTooltip(null);
+                        e.currentTarget.style.opacity = '0.33';
+                      }}
                     >
                       <div
                         className="w-3.5 h-3.5 rounded-full flex items-center justify-center shadow-lg"
@@ -890,6 +895,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
                     bottom: `${8 + stackOffset}px`,
                     transform: 'translateX(-50%)',
                     zIndex: 10 + stackIndex,
+                    opacity: 0.33,
                   }}
                   onMouseEnter={(e) => {
                     const rect = chartContainerRef.current?.getBoundingClientRect();
@@ -898,8 +904,12 @@ const ForexChart: React.FC<ForexChartProps> = ({
                       event,
                       position: { x: e.clientX - rect.left, y: e.clientY - rect.top },
                     });
+                    e.currentTarget.style.opacity = '1';
                   }}
-                  onMouseLeave={() => setEventTooltip(null)}
+                  onMouseLeave={(e) => {
+                    setEventTooltip(null);
+                    e.currentTarget.style.opacity = '0.33';
+                  }}
                 >
                   <div
                     className="w-4 h-4 rounded-full flex items-center justify-center shadow-lg"
