@@ -159,11 +159,32 @@ router.get('/currencies', async (req, res) => {
 });
 
 // GET /api/calendar/today - Get all events for today with all impact levels
+// Query params:
+//   - date: ISO date string (YYYY-MM-DD) from client's local timezone (optional, defaults to server's UTC date)
 router.get('/today', async (req, res) => {
   try {
-    const today = new Date();
-    const todayISO = today.toISOString().split('T')[0];
-    const tomorrowISO = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    // Accept date from client (user's local "today"), or fallback to server UTC date
+    let todayISO;
+    if (req.query.date) {
+      // Validate date format YYYY-MM-DD
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(req.query.date)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid date format. Expected YYYY-MM-DD'
+        });
+      }
+      todayISO = req.query.date;
+    } else {
+      // Fallback to server UTC date
+      const now = new Date();
+      todayISO = now.toISOString().split('T')[0];
+    }
+
+    // Calculate tomorrow's date
+    const todayDate = new Date(todayISO + 'T00:00:00Z');
+    const tomorrowDate = new Date(todayDate.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrowISO = tomorrowDate.toISOString().split('T')[0];
 
     const query = `
       SELECT
@@ -180,8 +201,8 @@ router.get('/today', async (req, res) => {
         source,
         event_uid
       FROM economic_calendar_ff
-      WHERE (date AT TIME ZONE 'Asia/Kolkata') >= $1::date
-        AND (date AT TIME ZONE 'Asia/Kolkata') < $2::date
+      WHERE (date AT TIME ZONE 'UTC') >= $1::date
+        AND (date AT TIME ZONE 'UTC') < $2::date
       ORDER BY time_utc ASC, event ASC
     `;
 
