@@ -212,7 +212,13 @@ const ForexChart: React.FC<ForexChartProps> = ({
     const fetchEvents = async () => {
       try {
         setEventsLoading(true);
-        const response = await fetch(`${API_BASE_URL}/api/calendar/today`);
+
+        // Get user's local date in YYYY-MM-DD format
+        const now = new Date();
+        const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+        // Pass local date to backend so it returns events for user's "today"
+        const response = await fetch(`${API_BASE_URL}/api/calendar/today?date=${localDate}`);
         if (!response.ok) throw new Error('Failed to fetch events');
 
         const json = await response.json();
