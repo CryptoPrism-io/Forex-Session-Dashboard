@@ -11,12 +11,19 @@ import {
   ReferenceArea,
   Customized,
 } from 'recharts';
+import { IconCalendarTab } from './icons';
 
 interface VolumeChartProps {
   nowLine: number;
   timezoneOffset: number;
   currentTimezoneLabel: string;
   currentTime?: Date;
+  calendarEvents?: any[];
+  stackedEvents?: { [key: string]: any[] };
+  visibleLayers?: { news?: boolean };
+  eventTooltip?: { event: any; position: { x: number; y: number } } | null;
+  setEventTooltip?: (tooltip: { event: any; position: { x: number; y: number } } | null) => void;
+  chartContainerRef?: React.RefObject<HTMLDivElement>;
 }
 
 // Global Forex Trading Volume Model (UTC)
@@ -162,7 +169,18 @@ const CustomVolumeTooltip: React.FC<any> = ({ active, payload, label, getSession
   return null;
 };
 
-const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, currentTimezoneLabel, currentTime = new Date() }) => {
+const VolumeChart: React.FC<VolumeChartProps> = ({
+  nowLine,
+  timezoneOffset,
+  currentTimezoneLabel,
+  currentTime = new Date(),
+  calendarEvents = [],
+  stackedEvents = {},
+  visibleLayers = {},
+  eventTooltip,
+  setEventTooltip,
+  chartContainerRef
+}) => {
   // Convert local time (nowLine) back to UTC for accurate session detection
   const getUTCHour = (localHour: number, offset: number): number => {
     let utcHour = localHour - offset;
@@ -482,6 +500,50 @@ const VolumeChart: React.FC<VolumeChartProps> = ({ nowLine, timezoneOffset, curr
             />
           </AreaChart>
         </ResponsiveContainer>
+
+        {/* Economic Event Indicators */}
+        {visibleLayers.news && calendarEvents.map((event: any, idx: number) => {
+          // Calculate vertical stack position for overlapping events
+          const posKey = Math.floor(event.position * 10).toString();
+          const stackGroup = stackedEvents[posKey] || [];
+          const stackIndex = stackGroup.findIndex((e: any) => e.id === event.id);
+          const stackOffset = stackIndex * 18; // 18px vertical spacing
+
+          return (
+            <div
+              key={`event-volume-${event.id || idx}`}
+              className="absolute cursor-pointer transition-all duration-200 hover:scale-110"
+              style={{
+                left: `${event.position}%`,
+                bottom: `${8 + stackOffset}px`,
+                transform: 'translateX(-50%)',
+                zIndex: 10 + stackIndex,
+              }}
+              onMouseEnter={(e) => {
+                if (!chartContainerRef?.current || !setEventTooltip) return;
+                const rect = chartContainerRef.current.getBoundingClientRect();
+                setEventTooltip({
+                  event,
+                  position: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+                });
+              }}
+              onMouseLeave={() => setEventTooltip?.(null)}
+            >
+              <div
+                className="w-4 h-4 rounded-full flex items-center justify-center shadow-lg"
+                style={{
+                  backgroundColor: event.color,
+                  boxShadow: `0 0 8px ${event.color}80`,
+                }}
+              >
+                <IconCalendarTab
+                  className="w-2.5 h-2.5"
+                  style={{ color: 'white' }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-4 text-[10px] uppercase tracking-[0.35em] text-slate-400">
