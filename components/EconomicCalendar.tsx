@@ -275,6 +275,56 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
     return flagMap[currency] || '🌐';
   };
 
+  // Calculate time left until event
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every second for countdown
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const getTimeLeft = (dateStr: string, timeStr: string | undefined): string => {
+    if (!timeStr || timeStr.toLowerCase() === 'tentative') return '--';
+
+    try {
+      // Parse event date and time in UTC
+      const [hours, minutes] = timeStr.split(':').map(Number);
+
+      // Create date from YYYY-MM-DD format (treats as UTC date)
+      const dateParts = dateStr.split('T')[0].split('-');
+      const year = parseInt(dateParts[0]);
+      const month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
+      const day = parseInt(dateParts[2]);
+
+      // Create UTC date object
+      const eventDate = new Date(Date.UTC(year, month, day, hours, minutes, 0, 0));
+
+      // Calculate difference: currentTime - eventTime
+      const diff = currentTime.getTime() - eventDate.getTime();
+
+      // If positive (current time > event time), event has passed
+      if (diff > 0) return 'Passed';
+
+      // Otherwise, calculate time left (use absolute value)
+      const totalMinutes = Math.floor(Math.abs(diff) / 1000 / 60);
+      const hours_left = Math.floor(totalMinutes / 60);
+      const minutes_left = totalMinutes % 60;
+
+      if (hours_left > 24) {
+        const days = Math.floor(hours_left / 24);
+        return `${days}d ${hours_left % 24}h`;
+      }
+
+      return `${hours_left}h ${minutes_left}m`;
+    } catch (err) {
+      console.error('Error calculating time left:', err, dateStr, timeStr);
+      return '--';
+    }
+  };
+
   const currencyTintMap: Record<string, string> = {
     USD: 'bg-cyan-500/20 text-cyan-100',
     EUR: 'bg-blue-500/20 text-blue-100',
@@ -592,92 +642,101 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
         </div>
       )}
 
-      {/* Events Grouped by Date */}
-      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-        {Object.entries(eventsByDate)
-          .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime()) // Newest first using Date objects
-          .map(([date, events]) => (
-          <div key={date}>
-            {/* Date Header */}
-            <div className="sticky top-0 bg-slate-800/60 backdrop-blur-sm px-2 py-1.5 mb-2 rounded-lg">
-              <h3 className="text-xs font-semibold text-slate-300">
-                {formatDate(date)}
-              </h3>
-            </div>
+      {/* Events Table */}
+      <div className="flex-1 overflow-auto">
+        <table className="w-full text-xs border-collapse">
+          <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-sm z-10">
+            <tr className="border-b border-slate-700/50">
+              <th className="px-3 py-2 text-left font-semibold text-slate-300 whitespace-nowrap">Date</th>
+              <th className="px-3 py-2 text-left font-semibold text-slate-300 whitespace-nowrap">Time Left</th>
+              <th className="px-3 py-2 text-left font-semibold text-slate-300">Event</th>
+              <th className="px-3 py-2 text-center font-semibold text-slate-300">Impact</th>
+              <th className="px-3 py-2 text-right font-semibold text-slate-300 whitespace-nowrap">Previous</th>
+              <th className="px-3 py-2 text-right font-semibold text-slate-300 whitespace-nowrap">Forecast</th>
+              <th className="px-3 py-2 text-right font-semibold text-slate-300 whitespace-nowrap">Actual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(eventsByDate)
+              .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime()) // Chronological order
+              .flatMap(([date, events]) =>
+                events.map((event, idx) => {
+                  const impactColor = getImpactColor(event.impact || 'low');
+                  const rawTime = event.time || event.time_utc || '';
+                  const isTentative = rawTime.toLowerCase() === 'tentative';
+                  const convertedTime = isTentative ? '' : convertUTCToTimezone(event.time_utc, selectedTimezone.offset);
+                  const displayTime = convertedTime || rawTime;
+                  const timeLeft = getTimeLeft(event.date, event.time_utc);
 
-            {/* Events for this date */}
-            <div className="space-y-1.5">
-              {events.map(event => {
-                const impactColor = getImpactColor(event.impact || 'low');
+                  return (
+                    <tr
+                      key={`${date}-${event.id}-${idx}`}
+                      className="border-b border-slate-800/30 hover:bg-slate-800/30 transition-colors"
+                    >
+                      {/* Date */}
+                      <td className="px-3 py-2 text-slate-400 font-mono text-[10px] whitespace-nowrap">
+                        {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        <br />
+                        <span className="text-slate-500">{displayTime}</span>
+                      </td>
 
-                const rawTime = event.time || event.time_utc || '';
-                const isTentative = rawTime.toLowerCase() === 'tentative';
-                const convertedTime = isTentative ? '' : convertUTCToTimezone(event.time_utc, selectedTimezone.offset);
-                const displayTime = convertedTime || rawTime;
-                return (
-                  <div
-                    key={event.id}
-                    className="rounded-lg p-2 transition-colors border border-slate-800/40 bg-slate-800/30 hover:bg-slate-800/50"
-                  >
-                    <div className="flex items-start gap-2">
-                      {/* Time - Converted to User's Timezone */}
-                        <div className="min-w-12 text-xs font-mono text-slate-400 flex flex-col gap-0.5">
-                          <span>{displayTime}</span>
-                          {isTentative && (
-                            <span className="text-[9px] font-mono text-amber-300">
-                              Tentative
-                            </span>
-                          )}
-                        </div>
+                      {/* Time Left */}
+                      <td className="px-3 py-2 font-mono whitespace-nowrap">
+                        <span className={`${
+                          timeLeft === 'Passed' ? 'text-slate-500' :
+                          timeLeft.includes('d') ? 'text-slate-400' :
+                          parseInt(timeLeft) < 2 ? 'text-red-400 font-semibold' :
+                          parseInt(timeLeft) < 6 ? 'text-amber-400' :
+                          'text-cyan-400'
+                        }`}>
+                          {timeLeft}
+                        </span>
+                      </td>
 
-                      {/* Currency Flag */}
-                      <div className="text-sm flex-shrink-0">
-                        {getCurrencyFlag(event.currency)}
-                      </div>
-
-                      {/* Event Details */}
-                      <div className="flex-1 min-w-0">
+                      {/* Event */}
+                      <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
-                          {/* Impact Indicator */}
+                          <span className="text-sm">{getCurrencyFlag(event.currency)}</span>
+                          <span className="text-slate-200 font-medium">{event.event}</span>
+                        </div>
+                      </td>
+
+                      {/* Impact */}
+                      <td className="px-3 py-2 text-center">
+                        <div className="inline-flex items-center justify-center">
                           <div
-                            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                            className="w-2 h-2 rounded-full"
                             style={{
                               backgroundColor: impactColor,
-                              boxShadow: `0 0 4px ${impactColor}`,
+                              boxShadow: `0 0 6px ${impactColor}`,
                             }}
+                            title={event.impact || 'low'}
                           />
-                          <div className="text-xs font-medium text-slate-200 truncate">
-                            {event.event}
-                          </div>
                         </div>
+                      </td>
 
-                        {/* Values Row */}
-                        {(event.actual || event.forecast || event.previous) && (
-                          <div className="flex gap-3 mt-1 text-xs text-slate-400">
-                            {event.previous && (
-                              <span>Prev: <span className="text-slate-300">{event.previous}</span></span>
-                            )}
-                            {event.forecast && (
-                              <span>Forecast: <span className="text-slate-300">{event.forecast}</span></span>
-                            )}
-                            {event.actual && (
-                              <span>Actual: <span className="text-cyan-300 font-semibold">{event.actual}</span></span>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                      {/* Previous */}
+                      <td className="px-3 py-2 text-right text-slate-300 font-mono whitespace-nowrap">
+                        {event.previous || '--'}
+                      </td>
 
-                      {/* Currency Badge */}
-                      <div className="text-xs font-semibold text-slate-400">
-                        {event.currency}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+                      {/* Forecast */}
+                      <td className="px-3 py-2 text-right text-slate-300 font-mono whitespace-nowrap">
+                        {event.forecast || '--'}
+                      </td>
+
+                      {/* Actual */}
+                      <td className="px-3 py-2 text-right font-mono whitespace-nowrap">
+                        <span className={event.actual ? 'text-cyan-300 font-semibold' : 'text-slate-500'}>
+                          {event.actual || '--'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

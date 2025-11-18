@@ -28,35 +28,18 @@ const AlertsToggleHeader: React.FC<AlertsToggleHeaderProps> = ({
 
   return (
     <div className="relative" ref={triggerRef}>
-      {/* Animated Gradient Glow Background */}
-      {alertConfig.enabled && (
-        <>
-          {/* Outer radial glow - pulsing */}
-          <div className="alerts-glow-outer" />
-          {/* Middle radial glow - rotating gradient */}
-          <div className="alerts-glow-middle" />
-          {/* Inner radial glow - pulsing reverse */}
-          <div className="alerts-glow-inner" />
-        </>
-      )}
-
       {/* Alert Button */}
       <button
         onClick={handleToggleClick}
-        className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-300 ${
+        className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-300 border-2 ${
           alertConfig.enabled
-            ? 'bg-gradient-to-br from-cyan-500/50 to-blue-500/40 hover:from-cyan-500/60 hover:to-blue-500/50 text-cyan-100 font-semibold'
-            : 'bg-slate-700/30 hover:bg-slate-700/50 text-slate-400 hover:text-slate-300'
+            ? 'bg-slate-800/40 hover:bg-slate-800/60 text-green-400 border-green-500'
+            : 'bg-slate-700/30 hover:bg-slate-700/50 text-slate-400 hover:text-slate-300 border-red-500/60'
         }`}
         style={{
-          ...(alertConfig.enabled && {
-            boxShadow: `
-              0 0 20px rgba(34, 211, 238, 0.5),
-              0 0 40px rgba(34, 211, 238, 0.3),
-              inset 0 0 20px rgba(34, 211, 238, 0.2)
-            `,
-            filter: 'drop-shadow(0 0 12px rgba(34, 211, 238, 0.6))',
-          }),
+          boxShadow: alertConfig.enabled
+            ? '0 0 12px rgba(34, 197, 94, 0.5), inset 0 0 8px rgba(34, 197, 94, 0.1)'
+            : '0 0 8px rgba(239, 68, 68, 0.3), inset 0 0 4px rgba(239, 68, 68, 0.05)',
         }}
         title={alertConfig.enabled ? 'Alerts enabled' : 'Alerts disabled'}
         aria-label={alertConfig.enabled ? 'Disable alerts' : 'Enable alerts'}
@@ -72,15 +55,14 @@ const AlertsToggleHeader: React.FC<AlertsToggleHeaderProps> = ({
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={alertConfig.enabled ? 'animate-pulse' : ''}
         >
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
 
-        {/* Notification Badge */}
+        {/* Notification Badge - only when enabled */}
         {alertConfig.enabled && (
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-red-400 to-pink-500 rounded-full animate-pulse" />
+          <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full" />
         )}
       </button>
 
