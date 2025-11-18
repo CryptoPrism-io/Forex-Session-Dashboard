@@ -57,7 +57,8 @@ router.get('/events', async (req, res) => {
         forecast,
         previous,
         source,
-        event_uid
+        event_uid,
+        actual_status
       FROM economic_calendar_ff
       WHERE (date AT TIME ZONE 'Asia/Kolkata') >= $1::date
         AND (date AT TIME ZONE 'Asia/Kolkata') < ($2::date + INTERVAL '1 day')
@@ -199,7 +200,8 @@ router.get('/today', async (req, res) => {
         forecast,
         previous,
         source,
-        event_uid
+        event_uid,
+        actual_status
       FROM economic_calendar_ff
       WHERE (date AT TIME ZONE 'UTC') >= $1::date
         AND (date AT TIME ZONE 'UTC') < $2::date
