@@ -13,6 +13,7 @@ export interface EconomicEvent {
   previous: string | null;
   source: string;
   event_uid: string;
+  actual_status?: string | null;
 }
 
 export interface EconomicCalendarResponse {

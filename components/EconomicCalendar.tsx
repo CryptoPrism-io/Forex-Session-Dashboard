@@ -727,7 +727,12 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
 
                       {/* Actual */}
                       <td className="px-3 py-2 text-right font-mono whitespace-nowrap">
-                        <span className={event.actual ? 'text-cyan-300 font-semibold' : 'text-slate-500'}>
+                        <span className={
+                          !event.actual ? 'text-slate-500' :
+                          event.actual_status === 'better' ? 'text-green-400 font-semibold' :
+                          event.actual_status === 'worse' ? 'text-red-400 font-semibold' :
+                          'text-cyan-300 font-semibold'
+                        }>
                           {event.actual || '--'}
                         </span>
                       </td>
