@@ -43,7 +43,7 @@ router.get('/events', async (req, res) => {
 
     // Build dynamic query
     // Note: Dates in DB are now stored as TIMESTAMPTZ
-    // Use half-open range [start, end+1) to capture all events including midnight edge cases
+    // Use inclusive range [start, end] to respect exact date boundaries from frontend
     let query = `
       SELECT
         id,
@@ -60,8 +60,8 @@ router.get('/events', async (req, res) => {
         event_uid,
         actual_status
       FROM economic_calendar_ff
-      WHERE (date AT TIME ZONE 'Asia/Kolkata') >= $1::date
-        AND (date AT TIME ZONE 'Asia/Kolkata') < ($2::date + INTERVAL '1 day')
+      WHERE (date AT TIME ZONE 'UTC') >= $1::date
+        AND (date AT TIME ZONE 'UTC') <= $2::date
     `;
 
     const params = [start, end];
