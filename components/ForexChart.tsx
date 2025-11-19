@@ -417,6 +417,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
     if (!calendarEvents.length || !visibleLayers.news) return [];
 
     // Helper: Convert UTC time string to hours (0-24)
+    // Note: Database stores time_utc (already in UTC)
     const convertUTCTimeToHours = (utcTimeString: string | undefined): number => {
       if (!utcTimeString) return -1;
       const [hStr = '0', mStr = '0'] = utcTimeString.split(':');
@@ -446,7 +447,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
       const utcHours = convertUTCTimeToHours(event.time_utc);
       if (utcHours < 0) return null; // Skip events without valid time
 
-      // Convert to local timezone
+      // Convert UTC to target timezone
       const localHours = (utcHours + timezoneOffset + 24) % 24;
       const position = (localHours / 24) * 100; // percentage
 
@@ -1056,8 +1057,8 @@ const ForexChart: React.FC<ForexChartProps> = ({
 
           <div className="space-y-1 text-[11px]">
             <p className="text-slate-400">
-              <span className="font-semibold">Time:</span>{' '}
-              {eventTooltip.event.time || eventTooltip.event.time_utc || 'TBD'}
+              <span className="font-semibold">Time (UTC):</span>{' '}
+              {eventTooltip.event.time_utc || 'TBD'}
             </p>
             <p className="text-slate-400">
               <span className="font-semibold">Currency:</span>{' '}

@@ -30,17 +30,21 @@ const DATE_RANGE_GROUPS: Record<FilterCategory, DateRangeFilter[]> = {
   monthly: ['lastMonth', 'thisMonth', 'nextMonth'],
 };
 
-const convertUTCToTimezone = (utcTimeString: string | undefined, offsetHours: number): string => {
+// Convert UTC time to selected timezone
+// Database now stores time_utc (already in UTC) so we just apply the target offset
+const convertUTCToTimezone = (utcTimeString: string | undefined, targetOffsetHours: number): string => {
   if (!utcTimeString) return '';
 
   const [hStr = '0', mStr = '0'] = utcTimeString.split(':');
-  const baseMinutes = (parseInt(hStr, 10) || 0) * 60 + (parseInt(mStr, 10) || 0);
-  const offsetMinutes = Math.round(offsetHours * 60);
-  let localMinutes = (baseMinutes + offsetMinutes) % (24 * 60);
-  if (localMinutes < 0) localMinutes += 24 * 60;
+  const utcMinutes = (parseInt(hStr, 10) || 0) * 60 + (parseInt(mStr, 10) || 0);
 
-  const hh = String(Math.floor(localMinutes / 60)).padStart(2, '0');
-  const mm = String(localMinutes % 60).padStart(2, '0');
+  // Apply target timezone offset
+  const offsetMinutes = Math.round(targetOffsetHours * 60);
+  let targetMinutes = (utcMinutes + offsetMinutes) % (24 * 60);
+  if (targetMinutes < 0) targetMinutes += 24 * 60;
+
+  const hh = String(Math.floor(targetMinutes / 60)).padStart(2, '0');
+  const mm = String(targetMinutes % 60).padStart(2, '0');
   return `${hh}:${mm}`;
 };
 
@@ -286,20 +290,77 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
     return () => clearInterval(timer);
   }, []);
 
-  const getTimeLeft = (dateStr: string, timeStr: string | undefined): string => {
-    if (!timeStr || timeStr.toLowerCase() === 'tentative') return '--';
+  // Helper to get time left in minutes for sorting
+  // Note: times are in UTC (time_utc column from database)
+  const getTimeLeftMinutes = (dateStr: string, timeStr: string | undefined): number => {
+    if (!timeStr || timeStr.toLowerCase() === 'tentative' || timeStr.includes('th')) return Infinity;
 
     try {
-      // Parse event date and time in UTC
+      // Handle time format
+      if (!timeStr.includes(':')) return Infinity;
+
       const [hours, minutes] = timeStr.split(':').map(Number);
+      if (isNaN(hours) || isNaN(minutes)) return Infinity;
 
-      // Create date from YYYY-MM-DD format (treats as UTC date)
-      const dateParts = dateStr.split('T')[0].split('-');
-      const year = parseInt(dateParts[0]);
-      const month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
-      const day = parseInt(dateParts[2]);
+      // Parse date properly - handle both ISO and simple date formats
+      let year, month, day;
+      if (dateStr.includes('T')) {
+        // ISO format: "2025-11-18T00:00:00.000Z"
+        const isoDate = new Date(dateStr);
+        year = isoDate.getUTCFullYear();
+        month = isoDate.getUTCMonth();
+        day = isoDate.getUTCDate();
+      } else {
+        // Simple format: "2025-11-18"
+        const dateParts = dateStr.split('-');
+        year = parseInt(dateParts[0]);
+        month = parseInt(dateParts[1]) - 1;
+        day = parseInt(dateParts[2]);
+      }
 
-      // Create UTC date object
+      // Create UTC date object (time is already in UTC)
+      const eventDate = new Date(Date.UTC(year, month, day, hours, minutes, 0, 0));
+      const diff = currentTime.getTime() - eventDate.getTime();
+
+      // If passed, return Infinity to push to bottom
+      if (diff > 0) return Infinity;
+
+      // Otherwise return minutes left (negative of diff in minutes)
+      return Math.floor(Math.abs(diff) / 1000 / 60);
+    } catch {
+      return Infinity;
+    }
+  };
+
+  // Calculate time left until event
+  // Note: times are in UTC (time_utc column from database)
+  const getTimeLeft = (dateStr: string, timeStr: string | undefined): string => {
+    if (!timeStr || timeStr.toLowerCase() === 'tentative' || timeStr.includes('th')) return '--';
+
+    try {
+      // Handle time format validation
+      if (!timeStr.includes(':')) return '--';
+
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      if (isNaN(hours) || isNaN(minutes)) return '--';
+
+      // Parse date properly - handle both ISO and simple date formats
+      let year, month, day;
+      if (dateStr.includes('T')) {
+        // ISO format: "2025-11-18T00:00:00.000Z"
+        const isoDate = new Date(dateStr);
+        year = isoDate.getUTCFullYear();
+        month = isoDate.getUTCMonth();
+        day = isoDate.getUTCDate();
+      } else {
+        // Simple format: "2025-11-18"
+        const dateParts = dateStr.split('-');
+        year = parseInt(dateParts[0]);
+        month = parseInt(dateParts[1]) - 1;
+        day = parseInt(dateParts[2]);
+      }
+
+      // Create UTC date object (time is already in UTC)
       const eventDate = new Date(Date.UTC(year, month, day, hours, minutes, 0, 0));
 
       // Calculate difference: currentTime - eventTime
@@ -344,29 +405,10 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
     return currencyTintMap[currency] || 'bg-slate-600/30 text-slate-100';
   };
 
-  // Convert UTC date to IST date string for grouping
-  const getISTDateKey = (utcDateString: string): string => {
-    const date = new Date(utcDateString);
-    // Add IST offset (+5:30 = 330 minutes)
-    const istDate = new Date(date.getTime() + (330 * 60 * 1000));
-    return istDate.toISOString().split('T')[0];
-  };
-
-  // Format date for display in IST
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    // Add IST offset (+5:30 = 330 minutes)
-    const istDate = new Date(date.getTime() + (330 * 60 * 1000));
-    return istDate.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  // Group events by IST date (not UTC date) - using filtered data
+  // Group events by UTC date (using date_utc from database)
   const eventsByDate = filteredData.reduce((acc, event) => {
-    const dateKey = getISTDateKey(event.date);
+    // Use date_utc which already accounts for timezone rollover
+    const dateKey = event.date_utc || event.date;
     if (!acc[dateKey]) acc[dateKey] = [];
     acc[dateKey].push(event);
     return acc;
@@ -658,88 +700,94 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
           </thead>
           <tbody>
             {Object.entries(eventsByDate)
-              .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime()) // Chronological order
               .flatMap(([date, events]) =>
-                events.map((event, idx) => {
-                  const impactColor = getImpactColor(event.impact || 'low');
-                  const rawTime = event.time || event.time_utc || '';
-                  const isTentative = rawTime.toLowerCase() === 'tentative';
-                  const convertedTime = isTentative ? '' : convertUTCToTimezone(event.time_utc, selectedTimezone.offset);
-                  const displayTime = convertedTime || rawTime;
-                  const timeLeft = getTimeLeft(event.date, event.time_utc);
+                events.map((event, idx) => ({ date, event, idx }))
+              )
+              .sort((a, b) => {
+                // Sort by time left ascending (soonest first), with passed/blank events at bottom
+                const aMinutes = getTimeLeftMinutes(a.event.date_utc, a.event.time_utc);
+                const bMinutes = getTimeLeftMinutes(b.event.date_utc, b.event.time_utc);
+                return aMinutes - bMinutes;
+              })
+              .map(({ date, event, idx }) => {
+                const impactColor = getImpactColor(event.impact || 'low');
+                const rawTime = event.time_utc || '';
+                const isTentative = rawTime.toLowerCase() === 'tentative';
+                const convertedTime = isTentative ? '' : convertUTCToTimezone(event.time_utc, selectedTimezone.offset);
+                const displayTime = convertedTime || rawTime;
+                const timeLeft = getTimeLeft(event.date_utc, event.time_utc);
 
-                  return (
-                    <tr
-                      key={`${date}-${event.id}-${idx}`}
-                      className="border-b border-slate-800/30 hover:bg-slate-800/30 transition-colors"
-                    >
-                      {/* Date */}
-                      <td className="px-3 py-2 text-slate-400 font-mono text-[10px] whitespace-nowrap">
-                        {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        <br />
-                        <span className="text-slate-500">{displayTime}</span>
-                      </td>
+                return (
+                  <tr
+                    key={`${date}-${event.id}-${idx}`}
+                    className="border-b border-slate-800/30 hover:bg-slate-800/30 transition-colors"
+                  >
+                    {/* Date */}
+                    <td className="px-3 py-2 text-slate-400 font-mono text-[10px] whitespace-nowrap">
+                      {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      <br />
+                      <span className="text-slate-500">{displayTime}</span>
+                    </td>
 
-                      {/* Time Left */}
-                      <td className="px-3 py-2 font-mono whitespace-nowrap">
-                        <span className={`${
-                          timeLeft === 'Passed' ? 'text-slate-500' :
-                          timeLeft.includes('d') ? 'text-slate-400' :
-                          parseInt(timeLeft) < 2 ? 'text-red-400 font-semibold' :
-                          parseInt(timeLeft) < 6 ? 'text-amber-400' :
-                          'text-cyan-400'
-                        }`}>
-                          {timeLeft}
-                        </span>
-                      </td>
+                    {/* Time Left */}
+                    <td className="px-3 py-2 font-mono whitespace-nowrap">
+                      <span className={`${
+                        timeLeft === 'Passed' ? 'text-slate-500' :
+                        timeLeft.includes('d') ? 'text-slate-400' :
+                        parseInt(timeLeft) < 2 ? 'text-red-400 font-semibold' :
+                        parseInt(timeLeft) < 6 ? 'text-amber-400' :
+                        'text-cyan-400'
+                      }`}>
+                        {timeLeft}
+                      </span>
+                    </td>
 
-                      {/* Event */}
-                      <td className="px-3 py-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">{getCurrencyFlag(event.currency)}</span>
-                          <span className="text-slate-200 font-medium">{event.event}</span>
-                        </div>
-                      </td>
+                    {/* Event */}
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{getCurrencyFlag(event.currency)}</span>
+                        <span className="text-slate-200 font-medium">{event.event}</span>
+                      </div>
+                    </td>
 
-                      {/* Impact */}
-                      <td className="px-3 py-2 text-center">
-                        <div className="inline-flex items-center justify-center">
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{
-                              backgroundColor: impactColor,
-                              boxShadow: `0 0 6px ${impactColor}`,
-                            }}
-                            title={event.impact || 'low'}
-                          />
-                        </div>
-                      </td>
+                    {/* Impact */}
+                    <td className="px-3 py-2 text-center">
+                      <div className="inline-flex items-center justify-center">
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{
+                            backgroundColor: impactColor,
+                            boxShadow: `0 0 6px ${impactColor}`,
+                          }}
+                          title={event.impact || 'low'}
+                        />
+                      </div>
+                    </td>
 
-                      {/* Previous */}
-                      <td className="px-3 py-2 text-right text-slate-300 font-mono whitespace-nowrap">
-                        {event.previous || '--'}
-                      </td>
+                    {/* Previous */}
+                    <td className="px-3 py-2 text-right text-slate-300 font-mono whitespace-nowrap">
+                      {event.previous || '--'}
+                    </td>
 
-                      {/* Forecast */}
-                      <td className="px-3 py-2 text-right text-slate-300 font-mono whitespace-nowrap">
-                        {event.forecast || '--'}
-                      </td>
+                    {/* Forecast */}
+                    <td className="px-3 py-2 text-right text-slate-300 font-mono whitespace-nowrap">
+                      {event.forecast || '--'}
+                    </td>
 
-                      {/* Actual */}
-                      <td className="px-3 py-2 text-right font-mono whitespace-nowrap">
-                        <span className={
-                          !event.actual ? 'text-slate-500' :
-                          event.actual_status === 'better' ? 'text-green-400 font-semibold' :
-                          event.actual_status === 'worse' ? 'text-red-400 font-semibold' :
-                          'text-cyan-300 font-semibold'
-                        }>
-                          {event.actual || '--'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
+                    {/* Actual */}
+                    <td className="px-3 py-2 text-right font-mono whitespace-nowrap">
+                      <span className={
+                        !event.actual ? 'text-slate-500' :
+                        event.actual_status === 'better' ? 'text-green-400 font-semibold' :
+                        event.actual_status === 'worse' ? 'text-red-400 font-semibold' :
+                        'text-cyan-300 font-semibold'
+                      }>
+                        {event.actual || '--'}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>

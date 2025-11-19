@@ -75,17 +75,21 @@ const getCurrencyFlag = (currency: string): string => {
   return flagMap[currency] || '🌐';
 };
 
-const convertUTCToTimezone = (utcTimeString: string | undefined, offsetHours: number): string => {
+// Convert UTC time to selected timezone
+// Database now stores time_utc (already in UTC)
+const convertUTCToTimezone = (utcTimeString: string | undefined, targetOffsetHours: number): string => {
   if (!utcTimeString) return '';
 
   const [hStr = '0', mStr = '0'] = utcTimeString.split(':');
-  const baseMinutes = (parseInt(hStr, 10) || 0) * 60 + (parseInt(mStr, 10) || 0);
-  const offsetMinutes = Math.round(offsetHours * 60);
-  let localMinutes = (baseMinutes + offsetMinutes) % (24 * 60);
-  if (localMinutes < 0) localMinutes += 24 * 60;
+  const utcMinutes = (parseInt(hStr, 10) || 0) * 60 + (parseInt(mStr, 10) || 0);
 
-  const hh = String(Math.floor(localMinutes / 60)).padStart(2, '0');
-  const mm = String(localMinutes % 60).padStart(2, '0');
+  // Apply target timezone offset
+  const offsetMinutes = Math.round(targetOffsetHours * 60);
+  let targetMinutes = (utcMinutes + offsetMinutes) % (24 * 60);
+  if (targetMinutes < 0) targetMinutes += 24 * 60;
+
+  const hh = String(Math.floor(targetMinutes / 60)).padStart(2, '0');
+  const mm = String(targetMinutes % 60).padStart(2, '0');
   return `${hh}:${mm}`;
 };
 
@@ -208,7 +212,7 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
             ) : calendarEvents.length > 0 ? (
               calendarEvents.map((event: any) => {
                 const impactColor = getImpactColor(event.impact || 'low');
-                const rawTime = event.time || event.time_utc || '';
+                const rawTime = event.time_utc || '';
                 const isTentative = rawTime.toLowerCase() === 'tentative';
                 const convertedTime = isTentative ? '' : convertUTCToTimezone(event.time_utc, selectedTimezone.offset);
                 const displayTime = convertedTime || rawTime;
