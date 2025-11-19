@@ -19,12 +19,16 @@ export default async function handler(req, res) {
     } = req.query;
 
     // Build dynamic query
+    // Note: Database stores date_utc (UTC date with rollover) and time_utc (UTC time)
+    // Scraper converts all times from PST/PDT to UTC and handles date rollover
     let query = `
       SELECT
         id,
         date,
+        date_utc,
         time,
         time_utc,
+        time_zone,
         currency,
         impact,
         event,
@@ -34,8 +38,8 @@ export default async function handler(req, res) {
         source,
         event_uid
       FROM economic_calendar_ff
-      WHERE (date AT TIME ZONE 'Asia/Kolkata') >= $1::date
-        AND (date AT TIME ZONE 'Asia/Kolkata') < ($2::date + INTERVAL '1 day')
+      WHERE date_utc >= $1::date
+        AND date_utc < ($2::date + INTERVAL '1 day')
     `;
 
     const params = [startDate || '2025-11-10', endDate || '2025-11-10'];
@@ -55,8 +59,8 @@ export default async function handler(req, res) {
       paramIndex++;
     }
 
-    // Order by date and time_utc - most recent first
-    query += ` ORDER BY date DESC, time_utc DESC`;
+    // Order by UTC date and time - most recent first
+    query += ` ORDER BY date_utc DESC, time_utc DESC`;
 
     const result = await pool.query(query, params);
 

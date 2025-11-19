@@ -42,14 +42,16 @@ router.get('/events', async (req, res) => {
     const end = endDate || week.end;
 
     // Build dynamic query
-    // Note: Dates in DB are now stored as TIMESTAMPTZ
+    // Note: Database stores date_utc (UTC date with rollover) and time_utc (UTC time)
     // Use inclusive range [start, end] to respect exact date boundaries from frontend
     let query = `
       SELECT
         id,
         date,
+        date_utc,
         time,
         time_utc,
+        time_zone,
         currency,
         impact,
         event,
@@ -60,8 +62,8 @@ router.get('/events', async (req, res) => {
         event_uid,
         actual_status
       FROM economic_calendar_ff
-      WHERE (date AT TIME ZONE 'UTC') >= $1::date
-        AND (date AT TIME ZONE 'UTC') <= $2::date
+      WHERE date_utc >= $1::date
+        AND date_utc <= $2::date
     `;
 
     const params = [start, end];
@@ -81,8 +83,8 @@ router.get('/events', async (req, res) => {
       paramIndex++;
     }
 
-    // Order by date and time_utc - most recent first
-    query += ` ORDER BY date DESC, time_utc DESC`;
+    // Order by UTC date and time - most recent first
+    query += ` ORDER BY date_utc DESC, time_utc DESC`;
 
     const result = await pool.query(query, params);
 
@@ -187,12 +189,15 @@ router.get('/today', async (req, res) => {
     const tomorrowDate = new Date(todayDate.getTime() + 24 * 60 * 60 * 1000);
     const tomorrowISO = tomorrowDate.toISOString().split('T')[0];
 
+    // Note: Database stores date_utc (UTC date with rollover) and time_utc (UTC time)
     const query = `
       SELECT
         id,
         date,
+        date_utc,
         time,
         time_utc,
+        time_zone,
         currency,
         impact,
         event,
@@ -203,8 +208,8 @@ router.get('/today', async (req, res) => {
         event_uid,
         actual_status
       FROM economic_calendar_ff
-      WHERE (date AT TIME ZONE 'UTC') >= $1::date
-        AND (date AT TIME ZONE 'UTC') < $2::date
+      WHERE date_utc >= $1::date
+        AND date_utc < $2::date
       ORDER BY time_utc ASC, event ASC
     `;
 

@@ -3,8 +3,10 @@ import { useState, useEffect, useCallback } from 'react';
 export interface EconomicEvent {
   id: number;
   date: string;
+  date_utc: string;
   time: string;
   time_utc: string;
+  time_zone: string;
   currency: string;
   impact: string;
   event: string;
