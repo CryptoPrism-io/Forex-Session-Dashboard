@@ -2,6 +2,10 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useEconomicCalendar } from '../hooks/useEconomicCalendar';
 import { Timezone } from '../types';
 import { IconEyeOff, IconEye, IconRefreshCcw } from './icons';
+import { FilterChip, FilterChipGroup } from './FilterChip';
+import { FilterSummaryBar } from './FilterSummaryBar';
+import { BottomSheetDrawer, BottomSheetCTABar } from './BottomSheetDrawer';
+import { CompactFilterBar } from './CompactFilterBar';
 
 type DateRangeFilter = 'yesterday' | 'today' | 'tomorrow' | 'lastWeek' | 'thisWeek' | 'nextWeek' | 'lastMonth' | 'thisMonth' | 'nextMonth';
 type FilterCategory = 'daily' | 'weekly' | 'monthly';
@@ -61,10 +65,12 @@ interface EconomicCalendarProps {
 
 const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone }) => {
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
-  const [selectedImpact, setSelectedImpact] = useState<string | undefined>(undefined);
+  const [selectedImpacts, setSelectedImpacts] = useState<Set<'high' | 'medium' | 'low'>>(new Set(['high']));
   const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('today');
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('daily');
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [currencySearchQuery, setCurrencySearchQuery] = useState('');
 
   // Calculate date ranges based on filter
   const dateRange = useMemo(() => {
@@ -162,17 +168,17 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
     dateRange.start,
     dateRange.end,
     undefined,
-    selectedImpact
+    undefined // Don't filter by impact at API level, do it client-side for multi-select
   );
 
   // Client-side filtering to ensure UI filters even if API returns a superset
   const filteredData = useMemo(() => {
     return data.filter(ev => {
       const byCcy = selectedCurrencies.length === 0 || selectedCurrencies.includes(ev.currency);
-      const byImpact = !selectedImpact || (ev.impact ?? '').toLowerCase() === selectedImpact.toLowerCase();
+      const byImpact = selectedImpacts.size === 0 || selectedImpacts.has((ev.impact ?? '').toLowerCase() as 'high' | 'medium' | 'low');
       return byCcy && byImpact;
     });
-  }, [data, selectedCurrencies, selectedImpact]);
+  }, [data, selectedCurrencies, selectedImpacts]);
 
   // Get unique currencies from full dataset so multi-select options stay available
   const currencies = useMemo(
@@ -212,16 +218,18 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
   }, [lastUpdated]);
 
   const filterSummary = useMemo(() => {
-    const impactLabel = selectedImpact ? `${selectedImpact.charAt(0).toUpperCase()}${selectedImpact.slice(1)} Impact` : 'All Impact Levels';
+    const impactLabel = selectedImpacts.size === 0
+      ? 'All Impact Levels'
+      : Array.from(selectedImpacts).map(i => i.charAt(0).toUpperCase() + i.slice(1)).join(', ');
     const currencyLabel = selectedCurrencies.length === 0 ? 'All Currencies' : selectedCurrencies.join(', ');
     const rangeLabel = DATE_RANGE_LABELS[dateRangeFilter];
     const categoryLabel = CATEGORY_LABELS[activeCategory];
     return `${categoryLabel} · ${rangeLabel} · ${currencyLabel} · ${impactLabel}`;
-  }, [activeCategory, dateRangeFilter, selectedCurrencies, selectedImpact]);
+  }, [activeCategory, dateRangeFilter, selectedCurrencies, selectedImpacts]);
 
   const handleResetFilters = useCallback(() => {
     setSelectedCurrencies([]);
-    setSelectedImpact(undefined);
+    setSelectedImpacts(new Set(['high']));
     setActiveCategory('daily');
     setDateRangeFilter('today');
   }, []);
@@ -236,6 +244,80 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
       setDateRangeFilter('thisMonth');
     }
   }, []);
+
+  // Toggle currency selection
+  const toggleCurrency = useCallback((currency: string) => {
+    setSelectedCurrencies(prev =>
+      prev.includes(currency)
+        ? prev.filter(c => c !== currency)
+        : [...prev, currency]
+    );
+  }, []);
+
+  // Toggle impact selection (multi-select)
+  const toggleImpact = useCallback((impact: 'high' | 'medium' | 'low') => {
+    setSelectedImpacts(prev => {
+      const next = new Set(prev);
+      if (next.has(impact)) {
+        next.delete(impact);
+      } else {
+        next.add(impact);
+      }
+      return next;
+    });
+  }, []);
+
+  // Navigate to previous date range
+  const handlePrevious = useCallback(() => {
+    if (activeCategory === 'daily') {
+      if (dateRangeFilter === 'today') setDateRangeFilter('yesterday');
+      else if (dateRangeFilter === 'tomorrow') setDateRangeFilter('today');
+      else if (dateRangeFilter === 'yesterday') setDateRangeFilter('yesterday'); // Stay at yesterday
+    } else if (activeCategory === 'weekly') {
+      if (dateRangeFilter === 'thisWeek') setDateRangeFilter('lastWeek');
+      else if (dateRangeFilter === 'nextWeek') setDateRangeFilter('thisWeek');
+      else if (dateRangeFilter === 'lastWeek') setDateRangeFilter('lastWeek'); // Stay at last week
+    } else {
+      if (dateRangeFilter === 'thisMonth') setDateRangeFilter('lastMonth');
+      else if (dateRangeFilter === 'nextMonth') setDateRangeFilter('thisMonth');
+      else if (dateRangeFilter === 'lastMonth') setDateRangeFilter('lastMonth'); // Stay at last month
+    }
+  }, [activeCategory, dateRangeFilter]);
+
+  // Navigate to next date range
+  const handleNext = useCallback(() => {
+    if (activeCategory === 'daily') {
+      if (dateRangeFilter === 'yesterday') setDateRangeFilter('today');
+      else if (dateRangeFilter === 'today') setDateRangeFilter('tomorrow');
+      else if (dateRangeFilter === 'tomorrow') setDateRangeFilter('tomorrow'); // Stay at tomorrow
+    } else if (activeCategory === 'weekly') {
+      if (dateRangeFilter === 'lastWeek') setDateRangeFilter('thisWeek');
+      else if (dateRangeFilter === 'thisWeek') setDateRangeFilter('nextWeek');
+      else if (dateRangeFilter === 'nextWeek') setDateRangeFilter('nextWeek'); // Stay at next week
+    } else {
+      if (dateRangeFilter === 'lastMonth') setDateRangeFilter('thisMonth');
+      else if (dateRangeFilter === 'thisMonth') setDateRangeFilter('nextMonth');
+      else if (dateRangeFilter === 'nextMonth') setDateRangeFilter('nextMonth'); // Stay at next month
+    }
+  }, [activeCategory, dateRangeFilter]);
+
+  // Select all currencies
+  const selectAllCurrencies = useCallback(() => {
+    setSelectedCurrencies([]);
+  }, []);
+
+  // Apply mobile filters and close drawer
+  const applyMobileFilters = useCallback(() => {
+    setIsMobileFilterOpen(false);
+  }, []);
+
+  // Filtered currencies based on search
+  const filteredCurrencies = useMemo(() => {
+    if (!currencySearchQuery) return currencies;
+    return currencies.filter(currency =>
+      currency.toLowerCase().includes(currencySearchQuery.toLowerCase())
+    );
+  }, [currencies, currencySearchQuery]);
 
   const impactCounts = useMemo(() => {
     return filteredData.reduce(
@@ -292,15 +374,33 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
 
   // Helper to get time left in minutes for sorting
   // Note: times are in UTC (time_utc column from database)
-  const getTimeLeftMinutes = (dateStr: string, timeStr: string | undefined): number => {
+  const getTimeLeftMinutes = (dateStr: string, timeStr: string | undefined, timezoneOffset: number): number => {
     if (!timeStr || timeStr.toLowerCase() === 'tentative' || timeStr.includes('th')) return Infinity;
 
     try {
       // Handle time format
       if (!timeStr.includes(':')) return Infinity;
 
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      if (isNaN(hours) || isNaN(minutes)) return Infinity;
+      const [utcHours, utcMinutes] = timeStr.split(':').map(Number);
+      if (isNaN(utcHours) || isNaN(utcMinutes)) return Infinity;
+
+      // Convert UTC time to local time using timezone offset
+      const totalMinutesUTC = utcHours * 60 + utcMinutes;
+      const offsetMinutes = Math.round(timezoneOffset * 60);
+      let totalMinutesLocal = totalMinutesUTC + offsetMinutes;
+
+      // Handle day boundary crossing
+      let dayOffset = 0;
+      if (totalMinutesLocal < 0) {
+        dayOffset = -1;
+        totalMinutesLocal += 24 * 60;
+      } else if (totalMinutesLocal >= 24 * 60) {
+        dayOffset = 1;
+        totalMinutesLocal -= 24 * 60;
+      }
+
+      const localHours = Math.floor(totalMinutesLocal / 60);
+      const localMinutes = totalMinutesLocal % 60;
 
       // Parse date properly - handle both ISO and simple date formats
       let year, month, day;
@@ -318,8 +418,16 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
         day = parseInt(dateParts[2]);
       }
 
-      // Create UTC date object (time is already in UTC)
-      const eventDate = new Date(Date.UTC(year, month, day, hours, minutes, 0, 0));
+      // Apply day offset if time conversion crossed midnight
+      if (dayOffset !== 0) {
+        const tempDate = new Date(year, month, day + dayOffset);
+        year = tempDate.getFullYear();
+        month = tempDate.getMonth();
+        day = tempDate.getDate();
+      }
+
+      // Create local date object (time is now in user's local timezone)
+      const eventDate = new Date(year, month, day, localHours, localMinutes, 0, 0);
       const diff = currentTime.getTime() - eventDate.getTime();
 
       // If passed, return Infinity to push to bottom
@@ -333,16 +441,34 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
   };
 
   // Calculate time left until event
-  // Note: times are in UTC (time_utc column from database)
-  const getTimeLeft = (dateStr: string, timeStr: string | undefined): string => {
+  // Note: times are in UTC (time_utc column from database), converted to local timezone for display
+  const getTimeLeft = (dateStr: string, timeStr: string | undefined, timezoneOffset: number): string => {
     if (!timeStr || timeStr.toLowerCase() === 'tentative' || timeStr.includes('th')) return '--';
 
     try {
       // Handle time format validation
       if (!timeStr.includes(':')) return '--';
 
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      if (isNaN(hours) || isNaN(minutes)) return '--';
+      const [utcHours, utcMinutes] = timeStr.split(':').map(Number);
+      if (isNaN(utcHours) || isNaN(utcMinutes)) return '--';
+
+      // Convert UTC time to local time using timezone offset
+      const totalMinutesUTC = utcHours * 60 + utcMinutes;
+      const offsetMinutes = Math.round(timezoneOffset * 60);
+      let totalMinutesLocal = totalMinutesUTC + offsetMinutes;
+
+      // Handle day boundary crossing
+      let dayOffset = 0;
+      if (totalMinutesLocal < 0) {
+        dayOffset = -1;
+        totalMinutesLocal += 24 * 60;
+      } else if (totalMinutesLocal >= 24 * 60) {
+        dayOffset = 1;
+        totalMinutesLocal -= 24 * 60;
+      }
+
+      const localHours = Math.floor(totalMinutesLocal / 60);
+      const localMinutes = totalMinutesLocal % 60;
 
       // Parse date properly - handle both ISO and simple date formats
       let year, month, day;
@@ -360,8 +486,16 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
         day = parseInt(dateParts[2]);
       }
 
-      // Create UTC date object (time is already in UTC)
-      const eventDate = new Date(Date.UTC(year, month, day, hours, minutes, 0, 0));
+      // Apply day offset if time conversion crossed midnight
+      if (dayOffset !== 0) {
+        const tempDate = new Date(year, month, day + dayOffset);
+        year = tempDate.getFullYear();
+        month = tempDate.getMonth();
+        day = tempDate.getDate();
+      }
+
+      // Create local date object (time is now in user's local timezone)
+      const eventDate = new Date(year, month, day, localHours, localMinutes, 0, 0);
 
       // Calculate difference: currentTime - eventTime
       const diff = currentTime.getTime() - eventDate.getTime();
@@ -450,29 +584,30 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
         </div>
       </div>
 
-      {/* Filter summary always visible */}
-      <div className="mb-3 px-3 py-2 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-cyan-400/30 text-[11px] text-cyan-100 shadow-lg shadow-cyan-500/20 flex items-center justify-between">
-        <span className="font-medium tracking-wide">{filterSummary}</span>
+      {/* Compact Filter Bar - Desktop & Mobile */}
+      <CompactFilterBar
+        currentRange={dateRangeFilter}
+        currentCategory={activeCategory}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+        rangeLabel={DATE_RANGE_LABELS[dateRangeFilter]}
+        selectedImpacts={selectedImpacts}
+        onToggleImpact={toggleImpact}
+        impactCounts={impactCounts}
+        isExpanded={!filtersCollapsed}
+        onToggleExpand={() => setFiltersCollapsed(prev => !prev)}
+      />
+
+      {/* Mobile Currency Filter Button */}
+      <div className="sm:hidden mb-3">
         <button
-          onClick={() => setFiltersCollapsed(prev => !prev)}
-          className={`ml-3 px-3 py-1.5 rounded-full text-[10px] font-semibold flex items-center gap-1.5 transition-all duration-200 active:scale-95 ${
-            filtersCollapsed
-              ? 'bg-cyan-500/20 border border-cyan-300/50 text-cyan-50 shadow-[0_5px_20px_rgba(14,165,233,0.35)] hover:bg-cyan-500/30 hover:border-cyan-200 hover:text-white'
-              : 'bg-slate-800/30 border border-slate-700/50 text-slate-200 shadow-[0_5px_15px_rgba(15,23,42,0.8)] hover:bg-slate-900/60 hover:border-cyan-400/60 hover:text-cyan-100'
-          }`}
-          aria-label={filtersCollapsed ? 'Show filters' : 'Hide filters'}
+          onClick={() => setIsMobileFilterOpen(true)}
+          className="w-full px-4 py-2.5 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-cyan-400/30 text-xs text-cyan-100 shadow-lg shadow-cyan-500/20 flex items-center justify-between active:scale-95 transition-transform"
         >
-          {filtersCollapsed ? (
-            <>
-              <IconEye className="w-3.5 h-3.5" />
-              Show Filters
-            </>
-          ) : (
-            <>
-              <IconEyeOff className="w-3.5 h-3.5" />
-              Hide Filters
-            </>
-          )}
+          <span className="font-medium">
+            {selectedCurrencies.length === 0 ? 'All Currencies' : `${selectedCurrencies.length} currencies selected`}
+          </span>
+          <span className="text-cyan-400">Edit</span>
         </button>
       </div>
 
@@ -480,69 +615,44 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
         <div className="mb-2 rounded-[28px] border border-slate-800/60 bg-slate-950/40 backdrop-blur-2xl p-3 shadow-inner shadow-black/30">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-stretch">
           {/* Currency Filter (Left) */}
-          <div className="lg:w-44 xl:w-56 rounded-2xl border border-slate-800/50 bg-slate-900/35 p-2 backdrop-blur-md shadow-inner shadow-black/20">
-            <div className="text-[9px] uppercase text-slate-500 mb-1.5 tracking-wide">Currencies</div>
-            <div className="grid grid-cols-3 gap-1 max-h-36 overflow-y-auto pr-1">
-              {currencyTiles.map((option) => {
-                if (option === 'ALL') {
-                  const isSelected = selectedCurrencies.length === 0;
-                  return (
-                    <label
-                      key="all-option"
-                      className={`flex items-center gap-1.5 px-1.5 py-1 rounded-md text-[10px] cursor-pointer border ${
-                        isSelected
-                          ? 'border-cyan-400/60 bg-cyan-500/10 text-cyan-200'
-                          : 'border-slate-700/50 bg-slate-800/40 text-slate-300 hover:border-slate-600'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="text-cyan-500 focus:ring-cyan-400 scale-90"
-                        checked={isSelected}
-                        onChange={() => setSelectedCurrencies([])}
-                      />
-                      <span className="flex items-center justify-center">
-                        <span className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold tracking-wide bg-cyan-500/25 text-cyan-50 border border-cyan-400/50">
-                          ALL
-                        </span>
-                      </span>
-                    </label>
-                  );
-                }
+          <div className="lg:w-44 xl:w-56 rounded-2xl border border-slate-800/50 bg-slate-900/35 p-3 backdrop-blur-md shadow-inner shadow-black/20">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[9px] uppercase text-slate-500 tracking-wide">Currencies</div>
+              <button
+                onClick={selectAllCurrencies}
+                className="text-[9px] text-cyan-400 hover:text-cyan-300 font-medium"
+              >
+                {selectedCurrencies.length === 0 ? 'All Selected' : 'Select All'}
+              </button>
+            </div>
 
-                const isSelected = selectedCurrencies.includes(option);
-                return (
-                  <label
-                    key={option}
-                    className={`flex items-center gap-1.5 px-1.5 py-1 rounded-md text-[10px] cursor-pointer border ${
-                      isSelected
-                        ? 'border-cyan-400/60 bg-cyan-500/10 text-cyan-200'
-                        : 'border-slate-700/50 bg-slate-800/40 text-slate-300 hover:border-slate-600'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      className="text-cyan-500 focus:ring-cyan-400 scale-90"
-                      checked={isSelected}
-                      onChange={() =>
-                        setSelectedCurrencies(prev =>
-                          prev.includes(option)
-                            ? prev.filter(c => c !== option)
-                            : [...prev, option]
-                        )
-                      }
-                    />
-                    <span className="flex items-center justify-center">
-                      <span
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold tracking-wide ${getCurrencyTintClass(option)}`}
-                        title={option}
-                      >
-                        {option.slice(0, 2)}
-                      </span>
-                    </span>
-                  </label>
-                );
-              })}
+            {/* Search Input */}
+            <input
+              type="text"
+              placeholder="Search..."
+              value={currencySearchQuery}
+              onChange={(e) => setCurrencySearchQuery(e.target.value)}
+              className="w-full px-2 py-1.5 mb-2 text-[10px] rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-400/50"
+            />
+
+            {/* Currency Chips */}
+            <div className="max-h-40 overflow-y-auto pr-1">
+              <FilterChipGroup columns={2} gap={1}>
+                {filteredCurrencies.map((currency) => (
+                  <FilterChip
+                    key={currency}
+                    label={currency}
+                    value={currency}
+                    isSelected={selectedCurrencies.length === 0 || selectedCurrencies.includes(currency)}
+                    onClick={() => toggleCurrency(currency)}
+                    variant="currency"
+                    size="sm"
+                    icon={
+                      <span className="text-xs">{getCurrencyFlag(currency)}</span>
+                    }
+                  />
+                ))}
+              </FilterChipGroup>
             </div>
           </div>
 
@@ -571,7 +681,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
 
                 <div className="border-t border-slate-800/60 pt-2">
                   <div className="text-[9px] uppercase tracking-[0.35em] text-slate-500 mb-1">Range</div>
-                  <div className="grid grid-cols-3 gap-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1">
                     {DATE_RANGE_GROUPS[activeCategory].map(option => (
                       <button
                         key={option}
@@ -606,7 +716,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
 
           {/* Impact Filter (Right) */}
           <div className="lg:w-48 xl:w-60 flex flex-col gap-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-1">
               <span className="text-[9px] uppercase tracking-[0.35em] text-slate-500">Impact</span>
               <div className="flex gap-1.5">
                 {[
@@ -624,33 +734,37 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-2 space-y-1.5">
-              {impactOptions.map((option) => {
-                const value = option === 'all' ? undefined : option;
-                const isSelected = value ? selectedImpact?.toLowerCase() === value : !selectedImpact;
-                const label =
-                  option === 'all'
-                    ? 'All'
-                    : `${option.charAt(0).toUpperCase() + option.slice(1)}`;
-                const style = impactVisualStyles[option as keyof typeof impactVisualStyles] || impactVisualStyles.low;
-                return (
-                  <label
-                    key={option}
-                    className={`flex items-center justify-between px-2 py-1 rounded-lg text-[10px] cursor-pointer border ${
-                      isSelected ? style.selected : style.unselected
-                    }`}
-                  >
-                    <span className="font-medium">{label}</span>
-                    <input
-                      type="radio"
-                      name="impact-filter"
-                      className="text-amber-400 focus:ring-amber-400 scale-90"
-                      checked={isSelected}
-                      onChange={() => setSelectedImpact(value)}
-                    />
-                  </label>
-                );
-              })}
+            <div className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-3 backdrop-blur-md shadow-inner shadow-black/20">
+              <div className="text-[10px] text-slate-400 mb-2">Multi-select (visible in compact bar above)</div>
+              <FilterChipGroup columns={3} gap={1}>
+                <FilterChip
+                  label="High"
+                  value="high"
+                  isSelected={selectedImpacts.has('high')}
+                  onClick={() => toggleImpact('high')}
+                  variant="impact"
+                  size="sm"
+                  count={impactCounts.high}
+                />
+                <FilterChip
+                  label="Medium"
+                  value="medium"
+                  isSelected={selectedImpacts.has('medium')}
+                  onClick={() => toggleImpact('medium')}
+                  variant="impact"
+                  size="sm"
+                  count={impactCounts.medium}
+                />
+                <FilterChip
+                  label="Low"
+                  value="low"
+                  isSelected={selectedImpacts.has('low')}
+                  onClick={() => toggleImpact('low')}
+                  variant="impact"
+                  size="sm"
+                  count={impactCounts.low}
+                />
+              </FilterChipGroup>
             </div>
           </div>
           </div>
@@ -684,8 +798,93 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
         </div>
       )}
 
-      {/* Events Table */}
-      <div className="flex-1 overflow-auto">
+      {/* Mobile Card View (visible on mobile) */}
+      <div className="md:hidden flex-1 overflow-auto space-y-2 pb-4">
+        {Object.entries(eventsByDate)
+          .flatMap(([date, events]) =>
+            events.map((event, idx) => ({ date, event, idx }))
+          )
+          .sort((a, b) => {
+            const aMinutes = getTimeLeftMinutes(a.event.date_utc, a.event.time_utc, selectedTimezone.offset);
+            const bMinutes = getTimeLeftMinutes(b.event.date_utc, b.event.time_utc, selectedTimezone.offset);
+            return aMinutes - bMinutes;
+          })
+          .map(({ date, event, idx }) => {
+            const impactColor = getImpactColor(event.impact || 'low');
+            const rawTime = event.time_utc || '';
+            const isTentative = rawTime.toLowerCase() === 'tentative';
+            const convertedTime = isTentative ? '' : convertUTCToTimezone(event.time_utc, selectedTimezone.offset);
+            const displayTime = convertedTime || rawTime;
+            const timeLeft = getTimeLeft(event.date_utc, event.time_utc, selectedTimezone.offset);
+
+            return (
+              <div
+                key={`${date}-${event.id}-${idx}-mobile`}
+                className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-4 shadow-lg hover:border-slate-600/60 transition-all"
+              >
+                {/* Header Row: Flag + Event Name + Impact */}
+                <div className="flex items-start gap-3 mb-3">
+                  <span className="text-2xl flex-shrink-0">{getCurrencyFlag(event.currency)}</span>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-slate-100 mb-1">{event.event}</h3>
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <span>{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                      <span>•</span>
+                      <span>{displayTime}</span>
+                    </div>
+                  </div>
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                    style={{
+                      backgroundColor: impactColor,
+                      boxShadow: `0 0 8px ${impactColor}`,
+                    }}
+                    title={event.impact || 'low'}
+                  />
+                </div>
+
+                {/* Time Left Badge */}
+                <div className="mb-3">
+                  <span className={`inline-block px-3 py-1.5 rounded-full text-sm font-semibold ${
+                    timeLeft === 'Passed' ? 'bg-slate-700/40 text-slate-400' :
+                    timeLeft.includes('d') ? 'bg-slate-700/40 text-slate-300' :
+                    parseInt(timeLeft) < 2 ? 'bg-red-500/20 text-red-300 border border-red-400/40' :
+                    parseInt(timeLeft) < 6 ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40' :
+                    'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40'
+                  }`}>
+                    {timeLeft === 'Passed' ? '✓ Passed' : `⏱ ${timeLeft}`}
+                  </span>
+                </div>
+
+                {/* Data Row: Previous, Forecast, Actual */}
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-3 text-center">
+                  <div className="bg-slate-900/40 rounded-lg p-2">
+                    <div className="text-[10px] uppercase text-slate-500 mb-1">Previous</div>
+                    <div className="text-sm font-mono text-slate-300">{event.previous || '--'}</div>
+                  </div>
+                  <div className="bg-slate-900/40 rounded-lg p-2">
+                    <div className="text-[10px] uppercase text-slate-500 mb-1">Forecast</div>
+                    <div className="text-sm font-mono text-slate-300">{event.forecast || '--'}</div>
+                  </div>
+                  <div className="bg-slate-900/40 rounded-lg p-2">
+                    <div className="text-[10px] uppercase text-slate-500 mb-1">Actual</div>
+                    <div className={`text-sm font-mono font-semibold ${
+                      !event.actual ? 'text-slate-500' :
+                      event.actual_status === 'better' ? 'text-green-400' :
+                      event.actual_status === 'worse' ? 'text-red-400' :
+                      'text-cyan-300'
+                    }`}>
+                      {event.actual || '--'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+      </div>
+
+      {/* Desktop Table View (hidden on mobile) */}
+      <div className="hidden md:block flex-1 overflow-auto">
         <table className="w-full text-xs border-collapse">
           <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-sm z-10">
             <tr className="border-b border-slate-700/50">
@@ -705,8 +904,8 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
               )
               .sort((a, b) => {
                 // Sort by time left ascending (soonest first), with passed/blank events at bottom
-                const aMinutes = getTimeLeftMinutes(a.event.date_utc, a.event.time_utc);
-                const bMinutes = getTimeLeftMinutes(b.event.date_utc, b.event.time_utc);
+                const aMinutes = getTimeLeftMinutes(a.event.date_utc, a.event.time_utc, selectedTimezone.offset);
+                const bMinutes = getTimeLeftMinutes(b.event.date_utc, b.event.time_utc, selectedTimezone.offset);
                 return aMinutes - bMinutes;
               })
               .map(({ date, event, idx }) => {
@@ -715,7 +914,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
                 const isTentative = rawTime.toLowerCase() === 'tentative';
                 const convertedTime = isTentative ? '' : convertUTCToTimezone(event.time_utc, selectedTimezone.offset);
                 const displayTime = convertedTime || rawTime;
-                const timeLeft = getTimeLeft(event.date_utc, event.time_utc);
+                const timeLeft = getTimeLeft(event.date_utc, event.time_utc, selectedTimezone.offset);
 
                 return (
                   <tr
@@ -791,6 +990,132 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
           </tbody>
         </table>
       </div>
+
+      {/* Mobile Filter Bottom Sheet */}
+      <BottomSheetDrawer
+        isOpen={isMobileFilterOpen}
+        onClose={() => setIsMobileFilterOpen(false)}
+        title="Filter Events"
+        maxHeight="85vh"
+      >
+        <div className="p-4 space-y-4">
+          {/* Currency Filter */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs uppercase text-slate-400 tracking-wide font-semibold">Currencies</div>
+              <button
+                onClick={selectAllCurrencies}
+                className="text-xs text-cyan-400 hover:text-cyan-300 font-medium"
+              >
+                {selectedCurrencies.length === 0 ? 'All Selected' : 'Select All'}
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <input
+              type="text"
+              placeholder="Search currencies..."
+              value={currencySearchQuery}
+              onChange={(e) => setCurrencySearchQuery(e.target.value)}
+              className="w-full px-3 py-2 mb-3 text-sm rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+            />
+
+            {/* Currency Chips */}
+            <FilterChipGroup columns={3} gap={2}>
+              {filteredCurrencies.map((currency) => (
+                <FilterChip
+                  key={currency}
+                  label={currency}
+                  value={currency}
+                  isSelected={selectedCurrencies.length === 0 || selectedCurrencies.includes(currency)}
+                  onClick={() => toggleCurrency(currency)}
+                  variant="currency"
+                  size="md"
+                  icon={
+                    <span className="text-sm">{getCurrencyFlag(currency)}</span>
+                  }
+                />
+              ))}
+            </FilterChipGroup>
+          </div>
+
+          {/* Impact Filter */}
+          <div>
+            <div className="text-xs uppercase text-slate-400 tracking-wide font-semibold mb-2">Impact Level (Multi-Select)</div>
+            <FilterChipGroup columns={3} gap={2}>
+              <FilterChip
+                label="High"
+                value="high"
+                isSelected={selectedImpacts.has('high')}
+                onClick={() => toggleImpact('high')}
+                variant="impact"
+                size="md"
+                count={impactCounts.high}
+              />
+              <FilterChip
+                label="Medium"
+                value="medium"
+                isSelected={selectedImpacts.has('medium')}
+                onClick={() => toggleImpact('medium')}
+                variant="impact"
+                size="md"
+                count={impactCounts.medium}
+              />
+              <FilterChip
+                label="Low"
+                value="low"
+                isSelected={selectedImpacts.has('low')}
+                onClick={() => toggleImpact('low')}
+                variant="impact"
+                size="md"
+                count={impactCounts.low}
+              />
+            </FilterChipGroup>
+          </div>
+
+          {/* Date Range Filter */}
+          <div>
+            <div className="text-xs uppercase text-slate-400 tracking-wide font-semibold mb-2">View</div>
+            <FilterChipGroup columns={3} gap={2}>
+              {(['daily', 'weekly', 'monthly'] as FilterCategory[]).map(category => (
+                <FilterChip
+                  key={category}
+                  label={CATEGORY_LABELS[category]}
+                  value={category}
+                  isSelected={activeCategory === category}
+                  onClick={() => handleCategoryChange(category)}
+                  variant="range"
+                  size="md"
+                />
+              ))}
+            </FilterChipGroup>
+          </div>
+
+          <div>
+            <div className="text-xs uppercase text-slate-400 tracking-wide font-semibold mb-2">Range</div>
+            <FilterChipGroup columns={3} gap={2}>
+              {DATE_RANGE_GROUPS[activeCategory].map(option => (
+                <FilterChip
+                  key={option}
+                  label={DATE_RANGE_LABELS[option]}
+                  value={option}
+                  isSelected={dateRangeFilter === option}
+                  onClick={() => setDateRangeFilter(option)}
+                  variant="range"
+                  size="md"
+                />
+              ))}
+            </FilterChipGroup>
+          </div>
+        </div>
+
+        <BottomSheetCTABar
+          onApply={applyMobileFilters}
+          onReset={handleResetFilters}
+          applyLabel="Apply Filters"
+          resetLabel="Reset All"
+        />
+      </BottomSheetDrawer>
     </div>
   );
 };

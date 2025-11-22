@@ -210,7 +210,7 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
                 <span className="text-xs text-slate-400">Loading...</span>
               </div>
             ) : calendarEvents.length > 0 ? (
-              calendarEvents.map((event: any) => {
+              calendarEvents.map((event: any, idx: number) => {
                 const impactColor = getImpactColor(event.impact || 'low');
                 const rawTime = event.time_utc || '';
                 const isTentative = rawTime.toLowerCase() === 'tentative';
@@ -219,7 +219,7 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
 
                 return (
                   <div
-                    key={event.id}
+                    key={event.id || `event-${idx}-${event.time_utc}-${event.currency}`}
                     className="rounded-lg p-2 transition-colors border border-slate-800/40 bg-slate-800/30 hover:bg-slate-800/50"
                   >
                     <div className="flex items-start gap-2">
