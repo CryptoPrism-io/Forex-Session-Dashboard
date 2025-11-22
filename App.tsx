@@ -295,6 +295,15 @@ const App: React.FC = () => {
                   : 'closedMobile'
                 : 'desktop'
             }
+            drag={typeof window !== 'undefined' && window.innerWidth < 768 && leftPaneOpen ? 'x' : false}
+            dragConstraints={{ left: -300, right: 0 }}
+            dragElastic={0.2}
+            onDragEnd={(e, { offset, velocity }) => {
+              // Close if dragged left more than 100px or velocity is high
+              if (offset.x < -100 || velocity.x < -500) {
+                setLeftPaneOpen(false);
+              }
+            }}
           >
             {/* TOP ROW: Title and Timezone Selector */}
             <div className="flex items-center justify-between gap-4 mb-4">
