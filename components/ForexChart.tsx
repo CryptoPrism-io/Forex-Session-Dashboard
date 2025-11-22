@@ -1,9 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SESSIONS } from '../constants';
-import { ChartBarDetails, TooltipInfo } from '../types';
+import { ChartBarDetails, TooltipInfo, SessionData } from '../types';
 import { SessionStatus } from '../App';
 import { IconChevronDown, IconCalendarTab } from './icons';
 import VolumeChart from './VolumeChart';
+import { AccessibleTooltip } from './Tooltip';
+import { PopoverMenu, CheckboxMenuItem, MenuSection, MenuButton } from './Menu';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 // Global Forex Trading Volume Profile (UTC, 30-min intervals, 48 points = 24 hours)
 const VOLUME_DATA = [
@@ -93,89 +97,15 @@ const formatTime = (hour: number, offset: number): string => {
   return `${String(finalHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 };
 
-interface TooltipState {
-  block: TimeBlock | null;
-  position: { x: number; y: number };
-}
-
-const UnifiedTooltip: React.FC<{
-  tooltip: TooltipState | null;
-  timezoneOffset: number;
-  timezoneLabel: string;
-  isVisible?: boolean;
-}> = ({ tooltip, timezoneOffset, timezoneLabel, isVisible = true }) => {
-  if (!isVisible || !tooltip || !tooltip.block) return null;
-
-  const { block, position } = tooltip;
-  const { details, range } = block;
-  const [startUTC, endUTC] = range;
-  const startTimeLocal = formatTime(startUTC, timezoneOffset);
-  const endTimeLocal = formatTime(endUTC, timezoneOffset);
-
-  const tooltipWidth = 300;
-  const tooltipHeight = 160;
-  const padding = 10;
-
-  let left = position.x;
-  let top = position.y;
-
-  // Clamp within container bounds
-  const maxLeft = window.innerWidth - tooltipWidth - padding;
-  if (left + tooltipWidth > window.innerWidth - padding) {
-    left = maxLeft > 0 ? maxLeft : padding;
-  }
-  if (left < padding) {
-    left = padding;
-  }
-
-  const maxTop = window.innerHeight - tooltipHeight - padding;
-  if (top + tooltipHeight > window.innerHeight - padding) {
-    top = maxTop > 0 ? maxTop : padding;
-  }
-  if (top < padding) {
-    top = padding;
-  }
-
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left,
-        top,
-        zIndex: 50,
-        pointerEvents: 'none',
-      }}
-      className="bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-3 text-sm text-slate-200 w-80"
-    >
-      <h3 className="font-bold text-base text-white mb-2">{details.name}</h3>
-      <p className="text-xs text-cyan-300 mb-2">
-        <span className="font-semibold">{startTimeLocal}</span> - <span className="font-semibold">{endTimeLocal}</span> {timezoneLabel}
-      </p>
-      <p className="text-xs text-slate-400">
-        <strong>Volatility:</strong> {block.tooltip.volatility}
-      </p>
-      <p className="text-xs text-slate-400">
-        <strong>Best Pairs:</strong> {block.tooltip.bestPairs}
-      </p>
-      <p className="text-xs text-slate-400 pt-2 border-t border-slate-700 mt-2">
-        <strong>Strategy:</strong> {block.tooltip.strategy}
-      </p>
-    </div>
-  );
-};
-
 const ForexChart: React.FC<ForexChartProps> = ({
   nowLine, currentTimezoneLabel, timezoneOffset, sessionStatus, currentTime = new Date(),
   isDSTActive = false, activeSessions, isAutoDetectDST = true, manualDSTOverride,
   onToggleDSTOverride, onAutoDetectToggle
 }) => {
-  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [viewMode, setViewMode] = useState<'unified' | 'separate' | 'volume'>('unified');
   const [chartsVisible, setChartsVisible] = useState(true);
   const [showDSTMenu, setShowDSTMenu] = useState(false);
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
-  const tooltipTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const eventFilterRef = React.useRef<HTMLDivElement>(null);
   const [nowBlinkVisible, setNowBlinkVisible] = useState(true);
   const [showEventFilterMenu, setShowEventFilterMenu] = useState(false);
   const [visibleLayers, setVisibleLayers] = useState({
@@ -191,13 +121,76 @@ const ForexChart: React.FC<ForexChartProps> = ({
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [selectedImpactLevels, setSelectedImpactLevels] = useState<string[]>(['high', 'medium']);
   const [eventsLoading, setEventsLoading] = useState(false);
-  const [eventTooltip, setEventTooltip] = useState<{ event: any; position: { x: number; y: number } } | null>(null);
 
   // Use activeSessions from props if provided, otherwise fall back to SESSIONS constant
   const sessions = activeSessions || SESSIONS;
 
   // API base URL from environment variable
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+  // Reduced motion preference for animations
+  const prefersReducedMotion = useReducedMotion();
+
+  // Session bar animation variants
+  const sessionBarVariants = {
+    hidden: {
+      scaleY: 0.8,
+      opacity: 0,
+    },
+    visible: (i: number) => ({
+      scaleY: 1,
+      opacity: 1,
+      transition: prefersReducedMotion
+        ? { duration: 0 }
+        : {
+            duration: 0.3,
+            delay: i * 0.05, // Stagger: 50ms between each bar
+            ease: 'easeOut',
+            type: 'tween', // Use tween for predictable GPU-accelerated animation
+          },
+    }),
+    hover: {
+      scaleY: prefersReducedMotion ? 1 : 1.25,
+      transition: prefersReducedMotion
+        ? { duration: 0 }
+        : {
+            duration: 0.2,
+            ease: 'easeOut',
+            type: 'tween',
+          },
+    },
+  };
+
+  // Economic event indicator animation variants
+  const eventIndicatorVariants = {
+    hidden: {
+      scale: 0,
+      opacity: 0,
+    },
+    visible: (i: number) => ({
+      scale: 1,
+      opacity: 0.67,
+      transition: prefersReducedMotion
+        ? { duration: 0 }
+        : {
+            duration: 0.4,
+            delay: i * 0.03, // Stagger: 30ms between each event
+            ease: [0.34, 1.56, 0.64, 1], // Spring-like ease
+            type: 'tween',
+          },
+    }),
+    hover: {
+      scale: prefersReducedMotion ? 1 : 1.1,
+      opacity: 1,
+      transition: prefersReducedMotion
+        ? { duration: 0 }
+        : {
+            duration: 0.2,
+            ease: 'easeOut',
+            type: 'tween',
+          },
+    },
+  };
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -236,29 +229,12 @@ const ForexChart: React.FC<ForexChartProps> = ({
     return () => clearInterval(interval);
   }, [API_BASE_URL]);
 
-  // Click-outside handler for event filter menu
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (eventFilterRef.current && !eventFilterRef.current.contains(event.target as Node)) {
-        setShowEventFilterMenu(false);
-      }
-    };
-
-    if (showEventFilterMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showEventFilterMenu]);
-
-  const nowLineStyle = useMemo(() => ({
+  // Now line position - optimized with useMemo to prevent unnecessary recalculations
+  // No transition needed: position changes are incremental (0.00116% per second)
+  // Smooth transitions would make it appear choppy. Direct updates are optimal.
+  const nowLinePosition = useMemo(() => ({
     left: `${(nowLine / 24) * 100}%`,
-    opacity: nowBlinkVisible ? 1 : 0.15,
-    boxShadow: nowBlinkVisible ? '0 0 14px rgba(250, 204, 21, 0.8)' : 'none',
-    transition: 'opacity 0.2s ease'
-  }), [nowLine, nowBlinkVisible]);
+  }), [nowLine]);
 
 
   const timeBlocks = useMemo(() => {
@@ -323,40 +299,6 @@ const ForexChart: React.FC<ForexChartProps> = ({
 
     return blocks;
   }, [timezoneOffset]);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, block: TimeBlock) => {
-    // Only show tooltip for highest priority block (highest yLevel)
-    if (tooltip?.block && tooltip.block.yLevel > block.yLevel) {
-      return;
-    }
-
-    // Clear previous timeout
-    if (tooltipTimeoutRef.current) {
-      clearTimeout(tooltipTimeoutRef.current);
-    }
-
-    // Show tooltip after 1 second delay
-    tooltipTimeoutRef.current = setTimeout(() => {
-      // Calculate container-relative coordinates
-      const rect = chartContainerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      const relativeX = e.clientX - rect.left;
-      const relativeY = e.clientY - rect.top;
-
-      setTooltip({
-        block,
-        position: { x: relativeX, y: relativeY },
-      });
-    }, 300);
-  };
-
-  const handleMouseLeave = () => {
-    if (tooltipTimeoutRef.current) {
-      clearTimeout(tooltipTimeoutRef.current);
-    }
-    setTooltip(null);
-  };
 
   const getStatusColor = (status: SessionStatus) => {
     const statusConfig = {
@@ -516,185 +458,145 @@ const ForexChart: React.FC<ForexChartProps> = ({
         <div className="flex items-center gap-2">
           {/* Unified Filter Menu */}
           {(viewMode === 'separate' || viewMode === 'unified') && (
-            <div className="relative" ref={eventFilterRef}>
-              <button
-                onClick={() => setShowEventFilterMenu(!showEventFilterMenu)}
-                className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md border flex items-center gap-1 transition-all duration-200 ${
-                  showEventFilterMenu
-                    ? 'bg-cyan-500/30 border-cyan-400/60 text-cyan-100 shadow-lg shadow-cyan-500/25 scale-95'
-                    : 'bg-slate-700/20 border-slate-600/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-500/60 hover:text-slate-200 hover:shadow-md active:scale-95 active:bg-slate-700/60'
-                }`}
-                title="Filter chart layers and events"
-              >
-                {/* Filter Icon SVG */}
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                </svg>
-                <span>Filters</span>
-              </button>
+            <PopoverMenu
+              trigger={
+                <>
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                  </svg>
+                  <span>Filters</span>
+                </>
+              }
+              triggerClassName={`px-2.5 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md border flex items-center gap-1 transition-all duration-200 ${
+                showEventFilterMenu
+                  ? 'bg-cyan-500/30 border-cyan-400/60 text-cyan-100 shadow-lg shadow-cyan-500/25'
+                  : 'bg-slate-700/20 border-slate-600/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-500/60 hover:text-slate-200 hover:shadow-md active:bg-slate-700/60'
+              }`}
+              menuClassName="w-48"
+              isOpen={showEventFilterMenu}
+              onOpenChange={setShowEventFilterMenu}
+            >
+              <div className="p-3">
+                <MenuSection title="Layers">
+                  <CheckboxMenuItem
+                    label="Sessions"
+                    checked={visibleLayers.sessions}
+                    onChange={(checked) => setVisibleLayers({ ...visibleLayers, sessions: checked })}
+                  />
+                  <CheckboxMenuItem
+                    label="Overlaps"
+                    checked={visibleLayers.overlaps}
+                    onChange={(checked) => setVisibleLayers({ ...visibleLayers, overlaps: checked })}
+                  />
+                  <CheckboxMenuItem
+                    label="Killzones"
+                    checked={visibleLayers.killzones}
+                    onChange={(checked) => setVisibleLayers({ ...visibleLayers, killzones: checked })}
+                  />
+                  <CheckboxMenuItem
+                    label="Volume"
+                    checked={visibleLayers.volume}
+                    onChange={(checked) => setVisibleLayers({ ...visibleLayers, volume: checked })}
+                  />
+                  <CheckboxMenuItem
+                    label="📰 News"
+                    checked={visibleLayers.news}
+                    onChange={(checked) => setVisibleLayers({ ...visibleLayers, news: checked })}
+                  />
+                </MenuSection>
 
-              {/* Unified Filter Menu */}
-              {showEventFilterMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {/* Layers Section */}
-                  <div className="space-y-2">
-                    <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-2">Layers</div>
+                {visibleLayers.news && (
+                  <MenuSection title="Impact Levels" showDivider>
                     <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
                       <input
                         type="checkbox"
-                        checked={visibleLayers.sessions}
-                        onChange={(e) => setVisibleLayers({ ...visibleLayers, sessions: e.target.checked })}
+                        checked={selectedImpactLevels.includes('high')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedImpactLevels([...selectedImpactLevels, 'high']);
+                          } else {
+                            setSelectedImpactLevels(selectedImpactLevels.filter(l => l !== 'high'));
+                          }
+                        }}
                         className="cursor-pointer"
                       />
-                      <span className="text-xs text-slate-300">Sessions</span>
+                      <span className="text-xs text-red-300 font-medium">High</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
                       <input
                         type="checkbox"
-                        checked={visibleLayers.overlaps}
-                        onChange={(e) => setVisibleLayers({ ...visibleLayers, overlaps: e.target.checked })}
+                        checked={selectedImpactLevels.includes('medium')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedImpactLevels([...selectedImpactLevels, 'medium']);
+                          } else {
+                            setSelectedImpactLevels(selectedImpactLevels.filter(l => l !== 'medium'));
+                          }
+                        }}
                         className="cursor-pointer"
                       />
-                      <span className="text-xs text-slate-300">Overlaps</span>
+                      <span className="text-xs text-amber-300 font-medium">Medium</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
                       <input
                         type="checkbox"
-                        checked={visibleLayers.killzones}
-                        onChange={(e) => setVisibleLayers({ ...visibleLayers, killzones: e.target.checked })}
+                        checked={selectedImpactLevels.includes('low')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedImpactLevels([...selectedImpactLevels, 'low']);
+                          } else {
+                            setSelectedImpactLevels(selectedImpactLevels.filter(l => l !== 'low'));
+                          }
+                        }}
                         className="cursor-pointer"
                       />
-                      <span className="text-xs text-slate-300">Killzones</span>
+                      <span className="text-xs text-green-300 font-medium">Low</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={visibleLayers.volume}
-                        onChange={(e) => setVisibleLayers({ ...visibleLayers, volume: e.target.checked })}
-                        className="cursor-pointer"
-                      />
-                      <span className="text-xs text-slate-300">Volume</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={visibleLayers.news}
-                        onChange={(e) => setVisibleLayers({ ...visibleLayers, news: e.target.checked })}
-                        className="cursor-pointer"
-                      />
-                      <span className="text-xs text-slate-300">📰 News</span>
-                    </label>
-                  </div>
-
-                  {/* Impact Levels Section */}
-                  {visibleLayers.news && (
-                    <div className="mt-3 pt-3 border-t border-slate-700/50 space-y-2">
-                      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-2">Impact Levels</div>
-                      <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={selectedImpactLevels.includes('high')}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedImpactLevels([...selectedImpactLevels, 'high']);
-                            } else {
-                              setSelectedImpactLevels(selectedImpactLevels.filter(l => l !== 'high'));
-                            }
-                          }}
-                          className="cursor-pointer"
-                        />
-                        <span className="text-xs text-red-300 font-medium">High</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={selectedImpactLevels.includes('medium')}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedImpactLevels([...selectedImpactLevels, 'medium']);
-                            } else {
-                              setSelectedImpactLevels(selectedImpactLevels.filter(l => l !== 'medium'));
-                            }
-                          }}
-                          className="cursor-pointer"
-                        />
-                        <span className="text-xs text-amber-300 font-medium">Medium</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={selectedImpactLevels.includes('low')}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedImpactLevels([...selectedImpactLevels, 'low']);
-                            } else {
-                              setSelectedImpactLevels(selectedImpactLevels.filter(l => l !== 'low'));
-                            }
-                          }}
-                          className="cursor-pointer"
-                        />
-                        <span className="text-xs text-green-300 font-medium">Low</span>
-                      </label>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                  </MenuSection>
+                )}
+              </div>
+            </PopoverMenu>
           )}
 
-          {/* DST Toggle Button */}
-          <div className="relative">
-            <button
-              onClick={() => setShowDSTMenu(!showDSTMenu)}
-              className="px-2.5 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 transition-all duration-300"
-              title={isDSTActive ? "Summer Time (DST Active)" : "Standard Time"}
-            >
-              {isDSTActive ? '🌞 DST' : '❄️ ST'}
-            </button>
+          {/* DST Toggle Menu */}
+          <PopoverMenu
+            trigger={isDSTActive ? '🌞 DST' : '❄️ ST'}
+            triggerClassName="px-2.5 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 transition-all duration-300"
+            menuClassName="w-56"
+            isOpen={showDSTMenu}
+            onOpenChange={setShowDSTMenu}
+          >
+            <div className="p-3 space-y-2">
+              <CheckboxMenuItem
+                label="Auto-detect DST"
+                checked={isAutoDetectDST ?? false}
+                onChange={(checked) => onAutoDetectToggle?.(checked)}
+              />
 
-            {/* DST Menu */}
-            {showDSTMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-3 z-50 space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={isAutoDetectDST}
-                    onChange={(e) => onAutoDetectToggle?.(e.target.checked)}
-                    className="cursor-pointer"
-                  />
-                  <span className="text-xs text-slate-300">Auto-detect DST</span>
-                </label>
-                <div className="border-t border-slate-700 pt-2 mt-2">
-                  <p className="text-xs text-slate-400 px-2 pb-2">Manual Override:</p>
-                  <button
+              <MenuSection title="Manual Override" showDivider>
+                <div className="space-y-1">
+                  <MenuButton
+                    label="🌞 Summer (DST)"
                     onClick={() => {
                       onToggleDSTOverride?.(true);
                       setShowDSTMenu(false);
                     }}
-                    className={`w-full px-3 py-1.5 text-xs rounded-lg border transition-all ${ manualDSTOverride === true
-                      ? 'bg-amber-500/30 border-amber-400/50 text-amber-100'
-                      : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 text-slate-300'
-                    }`}
-                  >
-                    🌞 Summer (DST)
-                  </button>
-                  <button
+                    isActive={manualDSTOverride === true}
+                    className={manualDSTOverride === true ? 'bg-amber-500/30 border-amber-400/50 text-amber-100' : ''}
+                  />
+                  <MenuButton
+                    label="❄️ Winter (Standard)"
                     onClick={() => {
                       onToggleDSTOverride?.(false);
                       setShowDSTMenu(false);
                     }}
-                    className={`w-full px-3 py-1.5 text-xs rounded-lg border transition-all mt-1 ${
-                      manualDSTOverride === false
-                        ? 'bg-blue-500/30 border-blue-400/50 text-blue-100'
-                        : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 text-slate-300'
-                    }`}
-                  >
-                    ❄️ Winter (Standard)
-                  </button>
+                    isActive={manualDSTOverride === false}
+                    className={manualDSTOverride === false ? 'bg-blue-500/30 border-blue-400/50 text-blue-100' : ''}
+                  />
                 </div>
-              </div>
-            )}
-          </div>
+              </MenuSection>
+            </div>
+          </PopoverMenu>
         </div>
       </div>
 
@@ -762,75 +664,112 @@ const ForexChart: React.FC<ForexChartProps> = ({
                       opacity: block.details.opacity,
                     };
 
+                    const [startUTC, endUTC] = block.range;
+                    const startTimeLocal = formatTime(startUTC, timezoneOffset);
+                    const endTimeLocal = formatTime(endUTC, timezoneOffset);
+
                     return (
-                      <div
+                      <AccessibleTooltip
                         key={block.key}
-                        className="absolute rounded transition-all duration-200 ease-in-out hover:scale-y-125 cursor-pointer"
-                        style={style}
-                        onMouseMove={(e) => handleMouseMove(e, block)}
-                        onMouseLeave={handleMouseLeave}
-                        aria-label={block.details.name}
-                      />
+                        content={{
+                          type: 'session',
+                          name: block.details.name,
+                          timeRange: `${startTimeLocal} - ${endTimeLocal}`,
+                          timezoneLabel: currentTimezoneLabel,
+                          tooltipInfo: block.tooltip,
+                        }}
+                        delay={300}
+                      >
+                        <motion.div
+                          className="absolute rounded cursor-pointer"
+                          style={style}
+                          variants={sessionBarVariants}
+                          initial="hidden"
+                          animate="visible"
+                          whileHover="hover"
+                          custom={block.yLevel}
+                        />
+                      </AccessibleTooltip>
                     );
                   })}
 
                 {/* Economic Event Indicators for this session */}
-                {visibleLayers.news && processedEvents.map((event: any, idx: number) => {
-                  // Calculate vertical stack position for overlapping events
-                  const posKey = Math.floor(event.position * 10).toString();
-                  const stackGroup = stackedEvents[posKey] || [];
-                  const stackIndex = stackGroup.findIndex((e: any) => e.id === event.id);
-                  const stackOffset = stackIndex * 14; // 14px vertical spacing for separate view
+                <AnimatePresence>
+                  {visibleLayers.news && processedEvents.map((event: any, idx: number) => {
+                    // Calculate vertical stack position for overlapping events
+                    const posKey = Math.floor(event.position * 10).toString();
+                    const stackGroup = stackedEvents[posKey] || [];
+                    const stackIndex = stackGroup.findIndex((e: any) => e.id === event.id);
+                    const stackOffset = stackIndex * 14; // 14px vertical spacing for separate view
 
-                  return (
-                    <div
-                      key={`event-${session.name}-${event.id || idx}`}
-                      className="absolute cursor-pointer transition-all duration-200 hover:scale-110 opacity-33 hover:opacity-100"
-                      style={{
-                        left: `${event.position}%`,
-                        bottom: `${6 + stackOffset}px`,
-                        transform: 'translateX(-50%)',
-                        zIndex: 10 + stackIndex,
-                        opacity: 0.67,
-                      }}
-                      onMouseEnter={(e) => {
-                        const rect = chartContainerRef.current?.getBoundingClientRect();
-                        if (!rect) return;
-                        setEventTooltip({
-                          event,
-                          position: { x: e.clientX - rect.left, y: e.clientY - rect.top },
-                        });
-                        e.currentTarget.style.opacity = '1';
-                      }}
-                      onMouseLeave={(e) => {
-                        setEventTooltip(null);
-                        e.currentTarget.style.opacity = '0.67';
-                      }}
-                    >
-                      <div
-                        className="w-3.5 h-3.5 rounded-full flex items-center justify-center shadow-lg"
-                        style={{
-                          backgroundColor: event.color,
-                          boxShadow: `0 0 6px ${event.color}80`,
+                    return (
+                      <AccessibleTooltip
+                        key={`event-${session.name}-${event.id || idx}`}
+                        content={{
+                          type: 'event',
+                          impact: event.impact,
+                          color: event.color,
+                          event: event.event,
+                          timeUtc: event.time_utc,
+                          currency: event.currency,
+                          forecast: event.forecast,
+                          previous: event.previous,
+                          actual: event.actual,
                         }}
+                        delay={300}
                       >
-                        <IconCalendarTab
-                          className="w-2 h-2"
-                          style={{ color: 'white' }}
-                        />
-                      </div>
-                    </div>
+                        <motion.div
+                          className="absolute cursor-pointer"
+                          style={{
+                            left: `${event.position}%`,
+                            bottom: `${6 + stackOffset}px`,
+                            transform: 'translateX(-50%)',
+                            zIndex: 10 + stackIndex,
+                          }}
+                          variants={eventIndicatorVariants}
+                          initial="hidden"
+                          animate="visible"
+                          exit="hidden"
+                          whileHover="hover"
+                          custom={idx}
+                        >
+                        <div
+                          className="w-3.5 h-3.5 rounded-full flex items-center justify-center shadow-lg"
+                          style={{
+                            backgroundColor: event.color,
+                            boxShadow: `0 0 6px ${event.color}80`,
+                          }}
+                        >
+                          <IconCalendarTab
+                            className="w-2 h-2"
+                            style={{ color: 'white' }}
+                          />
+                        </div>
+                      </motion.div>
+                    </AccessibleTooltip>
                   );
                 })}
+                </AnimatePresence>
 
-                <div
+                <motion.div
                   className="absolute top-0 bottom-0 w-0.5 bg-yellow-400"
-                  style={nowLineStyle}
+                  style={nowLinePosition}
+                  animate={{
+                    opacity: nowBlinkVisible ? 1 : 0.15,
+                    boxShadow: nowBlinkVisible
+                      ? '0 0 14px rgba(250, 204, 21, 0.8)'
+                      : '0 0 0px rgba(250, 204, 21, 0)',
+                  }}
+                  transition={
+                    prefersReducedMotion
+                      ? { duration: 0 }
+                      : { opacity: { duration: 0.2 }, boxShadow: { duration: 0.2 } }
+                  }
                 >
                   <div className="absolute -top-5 -translate-x-1/2 text-xs text-yellow-300 font-bold whitespace-nowrap">
                     Now
                   </div>
-                </div>
+                </motion.div>
               </div>
             </div>
           );
@@ -908,75 +847,112 @@ const ForexChart: React.FC<ForexChartProps> = ({
                   mixBlendMode: 'normal',
                 };
 
+                const [startUTC, endUTC] = block.range;
+                const startTimeLocal = formatTime(startUTC, timezoneOffset);
+                const endTimeLocal = formatTime(endUTC, timezoneOffset);
+
                 return (
-                  <div
+                  <AccessibleTooltip
                     key={block.key}
-                    className="absolute rounded transition-all duration-200 ease-in-out hover:scale-y-110 cursor-pointer"
-                    style={style}
-                    onMouseMove={(e) => handleMouseMove(e, block)}
-                    onMouseLeave={handleMouseLeave}
-                    aria-label={block.details.name}
-                  />
+                    content={{
+                      type: 'session',
+                      name: block.details.name,
+                      timeRange: `${startTimeLocal} - ${endTimeLocal}`,
+                      timezoneLabel: currentTimezoneLabel,
+                      tooltipInfo: block.tooltip,
+                    }}
+                    delay={300}
+                  >
+                    <motion.div
+                      className="absolute rounded cursor-pointer"
+                      style={style}
+                      variants={sessionBarVariants}
+                      initial="hidden"
+                      animate="visible"
+                      whileHover="hover"
+                      custom={block.yLevel}
+                    />
+                  </AccessibleTooltip>
                 );
               })}
 
             {/* Economic Event Indicators */}
-            {visibleLayers.news && processedEvents.map((event: any, idx: number) => {
-              // Calculate vertical stack position for overlapping events
-              const posKey = Math.floor(event.position * 10).toString();
-              const stackGroup = stackedEvents[posKey] || [];
-              const stackIndex = stackGroup.findIndex((e: any) => e.id === event.id);
-              const stackOffset = stackIndex * 18; // 18px vertical spacing between stacked icons
+            <AnimatePresence>
+              {visibleLayers.news && processedEvents.map((event: any, idx: number) => {
+                // Calculate vertical stack position for overlapping events
+                const posKey = Math.floor(event.position * 10).toString();
+                const stackGroup = stackedEvents[posKey] || [];
+                const stackIndex = stackGroup.findIndex((e: any) => e.id === event.id);
+                const stackOffset = stackIndex * 18; // 18px vertical spacing between stacked icons
 
-              return (
-                <div
-                  key={`event-${event.id || idx}`}
-                  className="absolute cursor-pointer transition-all duration-200 hover:scale-110"
-                  style={{
-                    left: `${event.position}%`,
-                    bottom: `${8 + stackOffset}px`,
-                    transform: 'translateX(-50%)',
-                    zIndex: 10 + stackIndex,
-                    opacity: 0.67,
-                  }}
-                  onMouseEnter={(e) => {
-                    const rect = chartContainerRef.current?.getBoundingClientRect();
-                    if (!rect) return;
-                    setEventTooltip({
-                      event,
-                      position: { x: e.clientX - rect.left, y: e.clientY - rect.top },
-                    });
-                    e.currentTarget.style.opacity = '1';
-                  }}
-                  onMouseLeave={(e) => {
-                    setEventTooltip(null);
-                    e.currentTarget.style.opacity = '0.67';
-                  }}
-                >
-                  <div
-                    className="w-4 h-4 rounded-full flex items-center justify-center shadow-lg"
-                    style={{
-                      backgroundColor: event.color,
-                      boxShadow: `0 0 8px ${event.color}80`,
+                return (
+                  <AccessibleTooltip
+                    key={`event-${event.id || idx}`}
+                    content={{
+                      type: 'event',
+                      impact: event.impact,
+                      color: event.color,
+                      event: event.event,
+                      timeUtc: event.time_utc,
+                      currency: event.currency,
+                      forecast: event.forecast,
+                      previous: event.previous,
+                      actual: event.actual,
                     }}
+                    delay={300}
                   >
-                    <IconCalendarTab
-                      className="w-2.5 h-2.5"
-                      style={{ color: 'white' }}
-                    />
-                  </div>
-                </div>
+                    <motion.div
+                      className="absolute cursor-pointer"
+                      style={{
+                        left: `${event.position}%`,
+                        bottom: `${8 + stackOffset}px`,
+                        transform: 'translateX(-50%)',
+                        zIndex: 10 + stackIndex,
+                      }}
+                      variants={eventIndicatorVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="hidden"
+                      whileHover="hover"
+                      custom={idx}
+                    >
+                    <div
+                      className="w-4 h-4 rounded-full flex items-center justify-center shadow-lg"
+                      style={{
+                        backgroundColor: event.color,
+                        boxShadow: `0 0 8px ${event.color}80`,
+                      }}
+                    >
+                      <IconCalendarTab
+                        className="w-2.5 h-2.5"
+                        style={{ color: 'white' }}
+                      />
+                    </div>
+                  </motion.div>
+                </AccessibleTooltip>
               );
             })}
+            </AnimatePresence>
 
-            <div
+            <motion.div
               className="absolute top-0 bottom-0 w-0.5 bg-yellow-400"
-              style={nowLineStyle}
+              style={nowLinePosition}
+              animate={{
+                opacity: nowBlinkVisible ? 1 : 0.15,
+                boxShadow: nowBlinkVisible
+                  ? '0 0 14px rgba(250, 204, 21, 0.8)'
+                  : '0 0 0px rgba(250, 204, 21, 0)',
+              }}
+              transition={
+                prefersReducedMotion
+                  ? { duration: 0 }
+                  : { opacity: { duration: 0.2 }, boxShadow: { duration: 0.2 } }
+              }
             >
               <div className="absolute -top-5 -translate-x-1/2 text-xs text-yellow-300 font-bold whitespace-nowrap">
                 Now
               </div>
-            </div>
+            </motion.div>
           </div>
 
           {/* Legend for unified view */}
@@ -1011,78 +987,9 @@ const ForexChart: React.FC<ForexChartProps> = ({
             calendarEvents={processedEvents}
             stackedEvents={stackedEvents}
             visibleLayers={visibleLayers}
-            eventTooltip={eventTooltip}
-            setEventTooltip={setEventTooltip}
             chartContainerRef={chartContainerRef}
           />
           <p className="mt-3 text-[11px] text-slate-500 text-right italic">{timezoneAxisNote}</p>
-        </div>
-      )}
-
-      {viewMode === 'unified' && (
-        <UnifiedTooltip
-          tooltip={tooltip}
-          timezoneOffset={timezoneOffset}
-          timezoneLabel={currentTimezoneLabel}
-          isVisible={true}
-        />
-      )}
-
-      {/* Economic Event Tooltip */}
-      {eventTooltip && eventTooltip.event && (
-        <div
-          style={{
-            position: 'absolute',
-            left: eventTooltip.position.x,
-            top: eventTooltip.position.y - 120,
-            zIndex: 100,
-            pointerEvents: 'none',
-          }}
-          className="bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-lg shadow-2xl p-3 text-xs text-slate-200 w-64"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{
-                backgroundColor: eventTooltip.event.color,
-                boxShadow: `0 0 6px ${eventTooltip.event.color}80`,
-              }}
-            />
-            <span className="font-bold text-sm text-white capitalize">
-              {eventTooltip.event.impact || 'Medium'} Impact
-            </span>
-          </div>
-
-          <p className="font-semibold text-slate-100 mb-2">{eventTooltip.event.event}</p>
-
-          <div className="space-y-1 text-[11px]">
-            <p className="text-slate-400">
-              <span className="font-semibold">Time (UTC):</span>{' '}
-              {eventTooltip.event.time_utc || 'TBD'}
-            </p>
-            <p className="text-slate-400">
-              <span className="font-semibold">Currency:</span>{' '}
-              {eventTooltip.event.currency || 'N/A'}
-            </p>
-            {eventTooltip.event.forecast && (
-              <p className="text-slate-400">
-                <span className="font-semibold">Forecast:</span>{' '}
-                {eventTooltip.event.forecast}
-              </p>
-            )}
-            {eventTooltip.event.previous && (
-              <p className="text-slate-400">
-                <span className="font-semibold">Previous:</span>{' '}
-                {eventTooltip.event.previous}
-              </p>
-            )}
-            {eventTooltip.event.actual && (
-              <p className="text-slate-400">
-                <span className="font-semibold">Actual:</span>{' '}
-                {eventTooltip.event.actual}
-              </p>
-            )}
-          </div>
         </div>
       )}
     </div>

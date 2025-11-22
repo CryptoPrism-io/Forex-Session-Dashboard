@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import ForexChart from './components/ForexChart';
 import SessionGuide from './components/SessionGuide';
 import CalendarErrorBoundary from './components/CalendarErrorBoundary';
@@ -11,6 +12,7 @@ import InstallModal from './components/InstallModal';
 import AlertsToggleHeader from './components/AlertsToggleHeader';
 import { usePWAInstall } from './hooks/usePWAInstall';
 import { useSessionAlerts } from './hooks/useSessionAlerts';
+import { useReducedMotion } from './hooks/useReducedMotion';
 import { TIMEZONES, SESSIONS_STANDARD, SESSIONS_DAYLIGHT } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
 import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow, IconMenu, IconX, IconCalendarTab, IconChartsTab, IconGuideTab, IconWorldClockTab } from './components/icons';
@@ -64,6 +66,36 @@ const App: React.FC = () => {
     handleInstallClick,
     handleDismissModal,
   } = usePWAInstall();
+
+  // Reduced motion preference
+  const prefersReducedMotion = useReducedMotion();
+
+  // Animation variants for left pane - memoized to handle reduced motion dependency
+  const leftPaneVariants = useMemo(() => ({
+    // Mobile: Slide in from left
+    openMobile: {
+      x: 0,
+      opacity: 1,
+      transition: prefersReducedMotion
+        ? { duration: 0 }
+        : { type: 'spring', stiffness: 300, damping: 30 }
+    },
+    closedMobile: {
+      x: '-100%',
+      opacity: 0,
+      transition: prefersReducedMotion
+        ? { duration: 0 }
+        : { type: 'spring', stiffness: 300, damping: 30 }
+    },
+    // Desktop: Always visible (no x translation)
+    desktop: {
+      x: 0,
+      opacity: 1,
+      transition: prefersReducedMotion
+        ? { duration: 0 }
+        : { type: 'spring', stiffness: 300, damping: 30 }
+    }
+  }), [prefersReducedMotion]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000); // Update every 1 second for real-time countdown
@@ -248,32 +280,22 @@ const App: React.FC = () => {
       background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%)',
       backdropFilter: 'blur(10px)'
     }}>
-      {/* Portrait Mode Blocker for Mobile */}
-      <div className="portrait-blocker bg-gradient-to-br from-slate-950 to-slate-900" style={{
-        position: 'fixed',
-        inset: 0,
-        display: 'none',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 10000
-      }}>
-        <div className="text-center space-y-6 px-6">
-          <div className="text-6xl">📱</div>
-          <h1 className="text-3xl font-bold text-cyan-400">Rotate Your Device</h1>
-          <p className="text-lg text-slate-300 max-w-sm">
-            This application is optimized for <span className="font-semibold text-cyan-300">landscape mode</span> on mobile devices for the best trading experience.
-          </p>
-          <p className="text-sm text-slate-400">
-            Please rotate your device to landscape orientation to continue.
-          </p>
-        </div>
-      </div>
-
       <main className="w-full max-w-7xl mx-auto p-3 sm:p-4 flex flex-col items-center">
-        {/* LAYOUT: Collapsible Left Pane (1/4) + Right Pane (3/4) */}
-        <div className="w-full mb-3 flex gap-3 h-[85vh]">
-          {/* LEFT PANE: Title, Subtitle, Time, and Timezone Selector - Collapsible */}
-          <div className={`transition-all duration-300 overflow-hidden ${leftPaneOpen ? 'md:w-1/4 w-full sm:w-1/2' : 'w-0 md:w-0'} bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-3 sm:p-4 shadow-lg shadow-black/20 flex flex-col overflow-y-auto ${!leftPaneOpen && 'md:hidden'}`}>
+        {/* LAYOUT: Bento Grid - Vertical on Mobile, Horizontal on Desktop */}
+        <div className="w-full mb-3 grid grid-cols-1 md:grid-cols-[1fr_3fr] gap-3 h-auto md:h-[85vh]">
+          {/* LEFT PANE: Title, Subtitle, Time, and Timezone Selector - Bento Grid Item */}
+          <motion.div
+            className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-3 sm:p-4 shadow-lg shadow-black/20 flex flex-col ${leftPaneOpen ? 'block' : 'hidden md:block'} md:overflow-y-auto overflow-visible h-auto md:h-full`}
+            variants={leftPaneVariants}
+            initial={false}
+            animate={
+              typeof window !== 'undefined' && window.innerWidth < 768
+                ? leftPaneOpen
+                  ? 'openMobile'
+                  : 'closedMobile'
+                : 'desktop'
+            }
+          >
             {/* TOP ROW: Title and Timezone Selector */}
             <div className="flex items-center justify-between gap-4 mb-4">
               {/* Left: Icon and Title */}
@@ -291,10 +313,10 @@ const App: React.FC = () => {
 
               {/* Right: Timezone Selector */}
               <div className="relative flex-shrink-0">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   {/* Current Selected Timezone */}
                   <button
-                    className="px-2.5 py-1 text-xs font-semibold rounded-full transition-all duration-300 backdrop-blur-md whitespace-nowrap bg-cyan-500/30 border border-cyan-400/60 text-cyan-100 shadow-md shadow-cyan-500/20"
+                    className="px-3 py-2 text-sm font-semibold rounded-full transition-all duration-300 backdrop-blur-md whitespace-nowrap bg-cyan-500/30 border border-cyan-400/60 text-cyan-100 shadow-md shadow-cyan-500/20 min-h-[40px]"
                   >
                     {selectedTimezone.label.includes('UTC+5:30') ? 'IST' : selectedTimezone.label}
                   </button>
@@ -303,7 +325,7 @@ const App: React.FC = () => {
                   {selectedTimezone.label !== 'UTC' && (
                     <button
                       onClick={() => handleTimezoneChange(TIMEZONES.find(tz => tz.label === 'UTC')!)}
-                      className="px-2.5 py-1 text-xs font-semibold rounded-full transition-all duration-300 backdrop-blur-md whitespace-nowrap bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300"
+                      className="px-3 py-2 text-sm font-semibold rounded-full transition-all duration-300 backdrop-blur-md whitespace-nowrap bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300 min-h-[40px]"
                     >
                       UTC
                     </button>
@@ -312,7 +334,7 @@ const App: React.FC = () => {
                   {/* More Button */}
                   <button
                     onClick={() => setIsMoreTimezonesOpen(!isMoreTimezonesOpen)}
-                    className="px-2.5 py-1 text-xs font-semibold rounded-full transition-all duration-300 backdrop-blur-md whitespace-nowrap bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300"
+                    className="px-3 py-2 text-sm font-semibold rounded-full transition-all duration-300 backdrop-blur-md whitespace-nowrap bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300 min-h-[40px]"
                   >
                     More {isMoreTimezonesOpen ? '▲' : '▼'}
                   </button>
@@ -412,76 +434,76 @@ const App: React.FC = () => {
                 })}
               </div>
             )}
-          </div>
+          </motion.div>
 
-          {/* RIGHT PANE: Main Content Area with 4 Tabs */}
-          <div className="flex-1 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-3 shadow-lg shadow-black/20 flex flex-col overflow-hidden">
+          {/* RIGHT PANE: Main Content Area with 4 Tabs - Bento Grid Item */}
+          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-3 shadow-lg shadow-black/20 flex flex-col overflow-hidden h-[60vh] md:h-full">
             {/* Header with Toggle Button and Tab Buttons */}
             <div className="flex items-center gap-2 mb-2.5 flex-shrink-0">
               {/* Collapse/Expand Toggle Button */}
               <button
                 onClick={() => setLeftPaneOpen(!leftPaneOpen)}
-                className="p-1.5 rounded-lg transition-all duration-200 bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300 md:hidden"
+                className="p-2.5 rounded-lg transition-all duration-200 bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300 md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center"
                 title={leftPaneOpen ? "Close info panel" : "Open info panel"}
               >
-                {leftPaneOpen ? <IconX className="w-4 h-4" /> : <IconMenu className="w-4 h-4" />}
+                {leftPaneOpen ? <IconX className="w-5 h-5" /> : <IconMenu className="w-5 h-5" />}
               </button>
 
               {/* 4-Tab Navigation with Individual Colors & SVG Icons */}
-              <div className="flex gap-1.5 flex-1 overflow-x-auto">
+              <div className="flex gap-2 flex-1 overflow-x-auto">
                 {/* Calendar Tab - Green */}
                 <button
                   onClick={() => setActiveView('calendar')}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px] ${
                     activeView === 'calendar'
                       ? 'bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold'
                       : 'bg-slate-700/20 border border-slate-700/40 text-emerald-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
                   }`}
                   title="Economic Calendar"
                 >
-                  <IconCalendarTab className="w-4 h-4" />
+                  <IconCalendarTab className="w-5 h-5" />
                   <span className="hidden sm:inline">Calendar</span>
                 </button>
 
                 {/* Charts Tab - Cyan */}
                 <button
                   onClick={() => setActiveView('charts')}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px] ${
                     activeView === 'charts'
                       ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-bold'
                       : 'bg-slate-700/20 border border-slate-700/40 text-cyan-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
                   }`}
                   title="Trading Charts"
                 >
-                  <IconChartsTab className="w-4 h-4" />
+                  <IconChartsTab className="w-5 h-5" />
                   <span className="hidden sm:inline">Charts</span>
                 </button>
 
                 {/* Guide Tab - Amber/Yellow */}
                 <button
                   onClick={() => setActiveView('guide')}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px] ${
                     activeView === 'guide'
                       ? 'bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold'
                       : 'bg-slate-700/20 border border-slate-700/40 text-amber-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
                   }`}
                   title="Trading Guide"
                 >
-                  <IconGuideTab className="w-4 h-4" />
+                  <IconGuideTab className="w-5 h-5" />
                   <span className="hidden sm:inline">Guide</span>
                 </button>
 
                 {/* World Clock Tab - Violet */}
                 <button
                   onClick={() => setActiveView('clocks')}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px] ${
                     activeView === 'clocks'
                       ? 'bg-violet-500/20 border border-violet-400/40 text-violet-300 font-bold'
                       : 'bg-slate-700/20 border border-slate-700/40 text-violet-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
                   }`}
                   title="World Clock"
                 >
-                  <IconWorldClockTab className="w-4 h-4" />
+                  <IconWorldClockTab className="w-5 h-5" />
                   <span className="hidden sm:inline">World Clock</span>
                 </button>
               </div>
