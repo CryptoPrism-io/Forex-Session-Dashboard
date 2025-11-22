@@ -16,7 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? '*' : ['http://localhost:3000', 'https://localhost:3000'],
+  origin: process.env.NODE_ENV === 'production' ? '*' : /^https?:\/\/localhost:\d+$/,
   credentials: true
 }));
 app.use(express.json());

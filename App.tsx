@@ -1,12 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ForexChart from './components/ForexChart';
-import SessionGuide from './components/SessionGuide';
 import CalendarErrorBoundary from './components/CalendarErrorBoundary';
 import SocialLinks from './components/SocialLinks';
 import SessionClocks from './components/SessionClocks';
-import WorldClockPanel from './components/WorldClockPanel';
-import EconomicCalendar from './components/EconomicCalendar';
 import InstallButton from './components/InstallButton';
 import InstallModal from './components/InstallModal';
 import AlertsToggleHeader from './components/AlertsToggleHeader';
@@ -15,8 +11,14 @@ import { useSessionAlerts } from './hooks/useSessionAlerts';
 import { useReducedMotion } from './hooks/useReducedMotion';
 import { TIMEZONES, SESSIONS_STANDARD, SESSIONS_DAYLIGHT } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
-import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow, IconMenu, IconX, IconCalendarTab, IconChartsTab, IconGuideTab, IconWorldClockTab } from './components/icons';
+import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow, IconMenu, IconX, IconCalendarTab, IconChartsTab, IconGuideTab, IconWorldClockTab, IconSettings } from './components/icons';
+import { PopoverMenu, MenuButton } from './components/Menu';
 import { isDSTActive } from './utils/dstUtils';
+
+const ForexChart = lazy(() => import('./components/ForexChart'));
+const EconomicCalendar = lazy(() => import('./components/EconomicCalendar'));
+const SessionGuide = lazy(() => import('./components/SessionGuide'));
+const WorldClockPanel = lazy(() => import('./components/WorldClockPanel'));
 
 export type SessionStatus = 'OPEN' | 'CLOSED' | 'WARNING';
 
@@ -30,6 +32,8 @@ const App: React.FC = () => {
   const [selectedTimezone, setSelectedTimezone] = useState<Timezone>(getInitialTimezone());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAutoDetectDST, setIsAutoDetectDST] = useState(true);
+  const [timezoneSearchQuery, setTimezoneSearchQuery] = useState('');
+  const [isTimezoneMenuOpen, setIsTimezoneMenuOpen] = useState(false);
   const [manualDSTOverride, setManualDSTOverride] = useState<boolean | null>(null);
   const [activeView, setActiveView] = useState<'clocks' | 'calendar' | 'charts' | 'guide'>('calendar');
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
@@ -305,82 +309,121 @@ const App: React.FC = () => {
               }
             }}
           >
-            {/* TOP ROW: Title and Timezone Selector */}
-            <div className="flex items-center justify-between gap-4 mb-4">
-              {/* Left: Icon and Title */}
-              <div className="flex items-center gap-3">
-                <h1
-                  className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
-                  style={{
-                    textShadow: '0 0 30px rgba(34, 211, 238, 0.3), 0 0 60px rgba(59, 130, 246, 0.2)',
-                    filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.25))'
-                  }}
-                >
-                  Global FX Trading Sessions
-                </h1>
-              </div>
-
-              {/* Right: Timezone Selector */}
-              <div className="relative flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  {/* Current Selected Timezone */}
-                  <button
-                    className="px-3 py-2 text-sm font-semibold rounded-full transition-all duration-300 backdrop-blur-md whitespace-nowrap bg-cyan-500/30 border border-cyan-400/60 text-cyan-100 shadow-md shadow-cyan-500/20 min-h-[40px]"
-                  >
-                    {selectedTimezone.label.includes('UTC+5:30') ? 'IST' : selectedTimezone.label}
-                  </button>
-
-                  {/* UTC Button (if not already selected) */}
-                  {selectedTimezone.label !== 'UTC' && (
-                    <button
-                      onClick={() => handleTimezoneChange(TIMEZONES.find(tz => tz.label === 'UTC')!)}
-                      className="px-3 py-2 text-sm font-semibold rounded-full transition-all duration-300 backdrop-blur-md whitespace-nowrap bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300 min-h-[40px]"
-                    >
-                      UTC
-                    </button>
-                  )}
-
-                  {/* More Button */}
-                  <button
-                    onClick={() => setIsMoreTimezonesOpen(!isMoreTimezonesOpen)}
-                    className="px-3 py-2 text-sm font-semibold rounded-full transition-all duration-300 backdrop-blur-md whitespace-nowrap bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300 min-h-[40px]"
-                  >
-                    More {isMoreTimezonesOpen ? '▲' : '▼'}
-                  </button>
-                </div>
-
-                {/* Timezone Dropdown */}
-                {isMoreTimezonesOpen && (
-                  <div className="absolute top-full mt-2 right-0 z-50 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-xl p-2 shadow-lg shadow-black/30">
-                    <div className="flex gap-1.5">
-                      {TIMEZONES.filter(tz => ['GMT', 'EST', 'PST', 'BST'].includes(tz.label)).map(tz => {
-                        return (
-                          <button
-                            key={tz.label}
-                            onClick={() => handleTimezoneChange(tz)}
-                            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap ${
-                              selectedTimezone.label === tz.label
-                                ? 'bg-cyan-500/30 border border-cyan-400/60 text-cyan-100'
-                                : 'bg-slate-800/40 hover:bg-slate-700/60 text-slate-300'
-                            }`}
-                          >
-                            {tz.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
+            {/* TOP ROW: Title Only */}
+            <div className="mb-2">
+              <h1
+                className="text-base sm:text-lg font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent whitespace-nowrap"
+                style={{
+                  textShadow: '0 0 15px rgba(34, 211, 238, 0.3), 0 0 30px rgba(59, 130, 246, 0.2)',
+                  filter: 'drop-shadow(0 0 4px rgba(34, 211, 238, 0.25))'
+                }}
+              >
+                FX_Saarthi
+              </h1>
+              <p className="text-xs text-slate-300 font-light tracking-wide mt-1">
+                Real-time session tracking with killzones and overlaps
+              </p>
             </div>
-            <p className="text-xs text-slate-300 font-light tracking-wide mb-3">
-              Real-time session tracking with killzones and overlaps
-            </p>
 
             {/* Big Time Display */}
             <div className="mb-4 space-y-0.5">
-              <div className="text-[10px] uppercase tracking-[0.45em] text-slate-500">
-                Current Time
+              <div className="flex items-center gap-2">
+                <div className="text-[10px] uppercase tracking-[0.45em] text-slate-500">
+                  Current Time
+                </div>
+                {/* Settings Menu for Timezone */}
+                <PopoverMenu
+                  trigger={
+                    <div className="relative">
+                      <IconSettings
+                        className={`
+                          w-4 h-4 transition-all duration-300
+                          ${isTimezoneMenuOpen
+                            ? 'text-cyan-400 rotate-90 scale-110'
+                            : 'text-blue-400/70 hover:text-cyan-400 hover:scale-105'
+                          }
+                        `}
+                        style={{
+                          filter: isTimezoneMenuOpen
+                            ? 'drop-shadow(0 0 4px rgba(34, 211, 238, 0.6))'
+                            : 'none'
+                        }}
+                      />
+                    </div>
+                  }
+                  triggerClassName={`
+                    p-1.5 rounded-lg transition-all duration-300
+                    ${isTimezoneMenuOpen
+                      ? 'bg-cyan-500/20 ring-2 ring-cyan-400/40'
+                      : 'hover:bg-blue-500/10 focus:ring-2 focus:ring-blue-400/30'
+                    }
+                  `}
+                  menuClassName="w-64"
+                  isOpen={isTimezoneMenuOpen}
+                  onOpenChange={setIsTimezoneMenuOpen}
+                >
+                  <div className="p-3 space-y-2">
+                    <div className="text-xs text-slate-400 uppercase tracking-wider mb-3 font-semibold">
+                      Select Timezone
+                    </div>
+
+                    {/* Quick Select: UTC and IST */}
+                    <div className="space-y-1.5 mb-3">
+                      <MenuButton
+                        label="UTC (GMT)"
+                        onClick={() => setSelectedTimezone(TIMEZONES.find(tz => tz.label === 'UTC') || TIMEZONES[0])}
+                        isActive={selectedTimezone.label === 'UTC'}
+                      />
+                      <MenuButton
+                        label="IST (UTC+5:30)"
+                        onClick={() => setSelectedTimezone(TIMEZONES.find(tz => tz.label === 'IST (UTC+5:30)') || TIMEZONES[0])}
+                        isActive={selectedTimezone.label === 'IST (UTC+5:30)'}
+                      />
+                    </div>
+
+                    {/* All Timezones Dropdown */}
+                    <details className="group border-t border-slate-700/50 pt-3">
+                      <summary className="cursor-pointer text-xs text-slate-300 hover:text-cyan-400 transition-colors list-none flex items-center justify-between">
+                        <span>More Timezones</span>
+                        <span className="group-open:rotate-180 transition-transform">▼</span>
+                      </summary>
+                      <div className="mt-2 space-y-2">
+                        {/* Search Box */}
+                        <input
+                          type="text"
+                          placeholder="Search timezone..."
+                          value={timezoneSearchQuery}
+                          onChange={(e) => setTimezoneSearchQuery(e.target.value)}
+                          className="w-full px-2 py-1.5 text-xs bg-slate-800/50 border border-slate-600/50 rounded text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all"
+                        />
+                        {/* Filtered Timezone List */}
+                        <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
+                          {TIMEZONES.filter(tz =>
+                            tz.label.toLowerCase().includes(timezoneSearchQuery.toLowerCase())
+                          ).map((tz) => (
+                            <MenuButton
+                              key={tz.label}
+                              label={tz.label}
+                              onClick={() => {
+                                setSelectedTimezone(tz);
+                                setTimezoneSearchQuery(''); // Clear search after selection
+                              }}
+                              isActive={selectedTimezone.label === tz.label}
+                            />
+                          ))}
+                          {/* No results message */}
+                          {TIMEZONES.filter(tz =>
+                            tz.label.toLowerCase().includes(timezoneSearchQuery.toLowerCase())
+                          ).length === 0 && (
+                            <p className="text-xs text-slate-500 text-center py-4">
+                              No timezones found
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                </PopoverMenu>
               </div>
               <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-green-400 bg-clip-text text-transparent tracking-wider font-mono">
                 {timeFormatted}
@@ -521,41 +564,49 @@ const App: React.FC = () => {
             {/* Conditional Render: Calendar, Clocks, Charts, or Guide */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden">
               {activeView === 'calendar' && (
-                <CalendarErrorBoundary>
-                  <EconomicCalendar selectedTimezone={selectedTimezone} />
-                </CalendarErrorBoundary>
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading calendar...</div>}>
+                  <CalendarErrorBoundary>
+                    <EconomicCalendar selectedTimezone={selectedTimezone} />
+                  </CalendarErrorBoundary>
+                </Suspense>
               )}
               {activeView === 'clocks' && (
-                <WorldClockPanel
-                  compact
-                  sessionStatus={sessionStatus}
-                  activeSessions={activeSessions}
-                  selectedTimezone={selectedTimezone}
-                />
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading clocks...</div>}>
+                  <WorldClockPanel
+                    compact
+                    sessionStatus={sessionStatus}
+                    activeSessions={activeSessions}
+                    selectedTimezone={selectedTimezone}
+                  />
+                </Suspense>
               )}
               {activeView === 'charts' && (
-                <ForexChart
-                  nowLine={nowLine}
-                  currentTimezoneLabel={selectedTimezone.label}
-                  timezoneOffset={selectedTimezone.offset}
-                  sessionStatus={sessionStatus}
-                  currentTime={currentTime}
-                  isDSTActive={currentDSTStatus}
-                  activeSessions={activeSessions_config}
-                  isAutoDetectDST={isAutoDetectDST}
-                  manualDSTOverride={manualDSTOverride}
-                  onToggleDSTOverride={(override) => setManualDSTOverride(override)}
-                  onAutoDetectToggle={(enabled) => {
-                    setIsAutoDetectDST(enabled);
-                    if (enabled) setManualDSTOverride(null);
-                  }}
-                />
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading charts...</div>}>
+                  <ForexChart
+                    nowLine={nowLine}
+                    currentTimezoneLabel={selectedTimezone.label}
+                    timezoneOffset={selectedTimezone.offset}
+                    sessionStatus={sessionStatus}
+                    currentTime={currentTime}
+                    isDSTActive={currentDSTStatus}
+                    activeSessions={activeSessions_config}
+                    isAutoDetectDST={isAutoDetectDST}
+                    manualDSTOverride={manualDSTOverride}
+                    onToggleDSTOverride={(override) => setManualDSTOverride(override)}
+                    onAutoDetectToggle={(enabled) => {
+                      setIsAutoDetectDST(enabled);
+                      if (enabled) setManualDSTOverride(null);
+                    }}
+                  />
+                </Suspense>
               )}
               {activeView === 'guide' && (
-                <SessionGuide
-                  currentTimezoneLabel={selectedTimezone.label}
-                  timezoneOffset={selectedTimezone.offset}
-                />
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading guide...</div>}>
+                  <SessionGuide
+                    currentTimezoneLabel={selectedTimezone.label}
+                    timezoneOffset={selectedTimezone.offset}
+                  />
+                </Suspense>
               )}
             </div>
           </div>

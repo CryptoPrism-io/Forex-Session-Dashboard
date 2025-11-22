@@ -1,9 +1,12 @@
 // Service Worker for Global FX Trading Sessions PWA
 
-const CACHE_NAME = 'fx-sessions-v1';
+const CACHE_NAME = 'fx-sessions-v3';
 const urlsToCache = [
+  '/',
+  '/index.html',
   '/Forex-Session-Dashboard/',
   '/Forex-Session-Dashboard/index.html',
+  '/sw.js',
 ];
 
 // Install event
@@ -36,36 +39,41 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch event - Network first, fallback to cache
+const staticPattern = /\/assets\/.*\.(js|css)$/;
+
 self.addEventListener('fetch', (event) => {
-  // Only cache GET requests
   if (event.request.method !== 'GET') {
     return;
   }
 
-  // Skip non-http(s) URLs (chrome-extension, blob, data, etc.)
-  // Service workers cannot cache these schemes
   const url = new URL(event.request.url);
-  if (!url.protocol.startsWith('http')) {
+  if (!url.protocol.startsWith('http')) return;
+
+  const fetchAndCache = async (request) => {
+    const response = await fetch(request);
+    if (response && response.status === 200) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  };
+
+  const shouldServeFromCacheFirst =
+    staticPattern.test(url.pathname) || url.pathname.includes('sessionWorker');
+
+  if (shouldServeFromCacheFirst) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) return cachedResponse;
+        return fetchAndCache(event.request).catch(() => cachedResponse);
+      })
+    );
     return;
   }
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Cache successful responses
-        if (response.status === 200) {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        // Fall back to cache if network fails
-        return caches.match(event.request).then((cachedResponse) => {
-          return cachedResponse || new Response('Offline - Resource not cached');
-        });
-      })
+    fetchAndCache(event.request).catch(() =>
+      caches.match(event.request).then((cachedResponse) => cachedResponse || new Response('Offline', { status: 503 }))
+    )
   );
 });

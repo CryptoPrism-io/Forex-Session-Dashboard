@@ -91,11 +91,23 @@ const ClockCard: React.FC<ClockCardProps> = ({ label, timezone, accent, compact,
   const minuteAngle = minuteProgress * 6;
   const secondAngle = secondProgress * 6;
 
-  const clockSize = compact ? 128 : 184;
-  const tickLength = compact ? 48 : 68;
-  const hourHandLength = compact ? 40 : 60;
-  const minuteHandLength = compact ? 50 : 76;
-  const secondHandLength = compact ? 56 : 84;
+  // Responsive clock sizes: mobile (< 640px) uses smaller, desktop uses larger
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const clockSize = compact ?
+    (isMobile ? 96 : 128) :
+    (isMobile ? 140 : 184);
+  const tickLength = compact ?
+    (isMobile ? 36 : 48) :
+    (isMobile ? 52 : 68);
+  const hourHandLength = compact ?
+    (isMobile ? 30 : 40) :
+    (isMobile ? 45 : 60);
+  const minuteHandLength = compact ?
+    (isMobile ? 38 : 50) :
+    (isMobile ? 57 : 76);
+  const secondHandLength = compact ?
+    (isMobile ? 42 : 56) :
+    (isMobile ? 63 : 84);
 
   const status: SessionStatusValue = sessionStatus?.[sessionKey];
   const isActive = status === 'OPEN' || status === 'WARNING';
@@ -190,7 +202,7 @@ const SessionClocks: React.FC<{
   sessionStatus?: Record<string, SessionStatusValue>;
 }> = ({ compact = false, sessionStatus }) => {
   return (
-    <div className={`grid ${compact ? 'grid-cols-2 gap-2' : 'grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3'}`}>
+    <div className={`grid ${compact ? 'grid-cols-1 sm:grid-cols-2 gap-2' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3'}`}>
       {CLOCKS.map((config) => (
         <ClockCard key={config.label} {...config} compact={compact} sessionStatus={sessionStatus} />
       ))}

@@ -25,7 +25,7 @@ export default async function handler(req, res) {
       SELECT
         id,
         date,
-        date_utc,
+        to_char(date_utc, 'YYYY-MM-DD') as date_utc,
         time,
         time_utc,
         time_zone,

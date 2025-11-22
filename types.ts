@@ -44,6 +44,70 @@ export interface SessionData {
   killzonePM?: ChartBarDetails & { range: [number, number] };
 }
 
+export interface TimeBlock {
+  key: string;
+  sessionName: string;
+  details: ChartBarDetails;
+  left: number;
+  width: number;
+  yLevel: number;
+  tooltip: TooltipInfo;
+  range: [number, number];
+}
+
+export interface VisibleLayers {
+  sessions: boolean;
+  zones: boolean;
+  overlaps: boolean;
+  killzones: boolean;
+  volume: boolean;
+  news: boolean;
+}
+
+export interface ProcessedEvent {
+  id?: number | string;
+  impact?: string;
+  color: string;
+  borderColor: string;
+  event?: string;
+  time_utc?: string;
+  currency?: string;
+  forecast?: string;
+  previous?: string;
+  actual?: string;
+  position: number;
+}
+
+export interface VolumeHistogram {
+  interpolatedVolume: number[];
+  chartWidth: number;
+  chartHeight: number;
+  barWidth: number;
+  volumeScale: number;
+  baselineY: number;
+}
+
+export interface SessionWorkerRequest {
+  type: 'compute';
+  id: number;
+  cacheKey: string;
+  timezoneOffset: number;
+  visibleLayers: VisibleLayers;
+  calendarEvents: any[];
+  selectedImpactLevels: string[];
+}
+
+export interface SessionWorkerResponse {
+  type: 'result';
+  id: number;
+  cacheKey: string;
+  timezoneOffset: number;
+  timeBlocks: TimeBlock[];
+  processedEvents: ProcessedEvent[];
+  stackedEvents: Record<string, ProcessedEvent[]>;
+  volumeHistogram: VolumeHistogram | null;
+}
+
 // Alert Types
 export type AlertEventType = 'open-before' | 'open' | 'close-before' | 'close';
 

@@ -1,7 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { SESSIONS } from '../constants';
-import { ChartBarDetails, TooltipInfo, SessionData } from '../types';
+import {
+  ChartBarDetails,
+  SessionData,
+  TimeBlock,
+  VolumeHistogram,
+  VisibleLayers,
+  SessionWorkerRequest,
+  SessionWorkerResponse,
+} from '../types';
 import { SessionStatus } from '../App';
 import { IconChevronDown, IconCalendarTab } from './icons';
 import VolumeChart from './VolumeChart';
@@ -79,17 +87,6 @@ interface ForexChartProps {
   onAutoDetectToggle?: (enabled: boolean) => void;
 }
 
-interface TimeBlock {
-  key: string;
-  sessionName: string;
-  details: ChartBarDetails;
-  left: number; // percentage
-  width: number; // percentage
-  yLevel: number; // 0 for session, 1 for overlap, 2 for killzone
-  tooltip: TooltipInfo;
-  range: [number, number];
-}
-
 const formatTime = (hour: number, offset: number): string => {
   const localHour = hour + offset;
   const finalHour = (Math.floor(localHour) % 24 + 24) % 24;
@@ -108,14 +105,20 @@ const ForexChart: React.FC<ForexChartProps> = ({
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
   const [nowBlinkVisible, setNowBlinkVisible] = useState(true);
   const [showEventFilterMenu, setShowEventFilterMenu] = useState(false);
-  const [visibleLayers, setVisibleLayers] = useState({
+  const [visibleLayers, setVisibleLayers] = useState<VisibleLayers>({
     sessions: true,
     zones: true,
     overlaps: true,
     killzones: true,
     volume: true,
-    news: true // Default visible
+    news: true, // Default visible
   });
+
+  const workerRef = useRef<Worker | null>(null);
+  const workerCacheRef = useRef<Map<string, SessionWorkerResponse>>(new Map());
+  const cacheKeyRef = useRef('');
+  const requestIdRef = useRef(0);
+  const [workerResponse, setWorkerResponse] = useState<SessionWorkerResponse | null>(null);
 
   // Economic event indicators state
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
@@ -132,65 +135,71 @@ const ForexChart: React.FC<ForexChartProps> = ({
   const prefersReducedMotion = useReducedMotion();
 
   // Session bar animation variants
-  const sessionBarVariants = {
-    hidden: {
-      scaleY: 0.8,
-      opacity: 0,
-    },
-    visible: (i: number) => ({
-      scaleY: 1,
-      opacity: 1,
-      transition: prefersReducedMotion
-        ? { duration: 0 }
-        : {
-            duration: 0.3,
-            delay: i * 0.05, // Stagger: 50ms between each bar
-            ease: 'easeOut',
-            type: 'tween', // Use tween for predictable GPU-accelerated animation
-          },
+  const sessionBarVariants = useMemo(
+    () => ({
+      hidden: {
+        scaleY: 0.8,
+        opacity: 0,
+      },
+      visible: (i: number) => ({
+        scaleY: 1,
+        opacity: 1,
+        transition: prefersReducedMotion
+          ? { duration: 0 }
+          : {
+              duration: 0.3,
+              delay: i * 0.05, // Stagger: 50ms between each bar
+              ease: 'easeOut',
+              type: 'tween', // Use tween for predictable GPU-accelerated animation
+            },
+      }),
+      hover: {
+        scaleY: prefersReducedMotion ? 1 : 1.25,
+        transition: prefersReducedMotion
+          ? { duration: 0 }
+          : {
+              duration: 0.2,
+              ease: 'easeOut',
+              type: 'tween',
+            },
+      },
     }),
-    hover: {
-      scaleY: prefersReducedMotion ? 1 : 1.25,
-      transition: prefersReducedMotion
-        ? { duration: 0 }
-        : {
-            duration: 0.2,
-            ease: 'easeOut',
-            type: 'tween',
-          },
-    },
-  };
+    [prefersReducedMotion]
+  );
 
   // Economic event indicator animation variants
-  const eventIndicatorVariants = {
-    hidden: {
-      scale: 0,
-      opacity: 0,
-    },
-    visible: (i: number) => ({
-      scale: 1,
-      opacity: 0.67,
-      transition: prefersReducedMotion
-        ? { duration: 0 }
-        : {
-            duration: 0.4,
-            delay: i * 0.03, // Stagger: 30ms between each event
-            ease: [0.34, 1.56, 0.64, 1], // Spring-like ease
-            type: 'tween',
-          },
+  const eventIndicatorVariants = useMemo(
+    () => ({
+      hidden: {
+        scale: 0,
+        opacity: 0,
+      },
+      visible: (i: number) => ({
+        scale: 1,
+        opacity: 0.67,
+        transition: prefersReducedMotion
+          ? { duration: 0 }
+          : {
+              duration: 0.4,
+              delay: i * 0.03, // Stagger: 30ms between each event
+              ease: [0.34, 1.56, 0.64, 1], // Spring-like ease
+              type: 'tween',
+            },
+      }),
+      hover: {
+        scale: prefersReducedMotion ? 1 : 1.1,
+        opacity: 1,
+        transition: prefersReducedMotion
+          ? { duration: 0 }
+          : {
+              duration: 0.2,
+              ease: 'easeOut',
+              type: 'tween',
+            },
+      },
     }),
-    hover: {
-      scale: prefersReducedMotion ? 1 : 1.1,
-      opacity: 1,
-      transition: prefersReducedMotion
-        ? { duration: 0 }
-        : {
-            duration: 0.2,
-            ease: 'easeOut',
-            type: 'tween',
-          },
-    },
-  };
+    [prefersReducedMotion]
+  );
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -229,6 +238,80 @@ const ForexChart: React.FC<ForexChartProps> = ({
     return () => clearInterval(interval);
   }, [API_BASE_URL]);
 
+  useEffect(() => {
+    const worker = new Worker(new URL('../workers/sessionWorker.ts', import.meta.url), { type: 'module' });
+    workerRef.current = worker;
+    const handleMessage = (event: MessageEvent<SessionWorkerResponse>) => {
+      const data = event.data;
+      workerCacheRef.current.set(data.cacheKey, data);
+      if (data.cacheKey === cacheKeyRef.current && data.id === requestIdRef.current) {
+        setWorkerResponse(data);
+      }
+    };
+    worker.addEventListener('message', handleMessage);
+    return () => {
+      worker.removeEventListener('message', handleMessage);
+      worker.terminate();
+      workerRef.current = null;
+    };
+  }, []);
+
+  const impactKey = useMemo(() => selectedImpactLevels.join(','), [selectedImpactLevels]);
+  const visibleLayerKey = useMemo(
+    () =>
+      `${visibleLayers.sessions}-${visibleLayers.overlaps}-${visibleLayers.killzones}-${visibleLayers.volume}-${visibleLayers.news}-${visibleLayers.zones}`,
+    [visibleLayers]
+  );
+
+  useEffect(() => {
+    const worker = workerRef.current;
+    if (!worker) return;
+    const cacheKey = `${timezoneOffset}-${visibleLayerKey}-${impactKey}`;
+    cacheKeyRef.current = cacheKey;
+    const cached = workerCacheRef.current.get(cacheKey);
+    if (cached) {
+      setWorkerResponse(cached);
+      return;
+    }
+
+    requestIdRef.current += 1;
+    const payload: SessionWorkerRequest = {
+      type: 'compute',
+      id: requestIdRef.current,
+      cacheKey,
+      timezoneOffset,
+      visibleLayers,
+      calendarEvents,
+      selectedImpactLevels,
+    };
+    worker.postMessage(payload);
+    setWorkerResponse(null);
+  }, [timezoneOffset, visibleLayerKey, impactKey, calendarEvents, visibleLayers]);
+
+  const workerData =
+    workerResponse && workerResponse.cacheKey === cacheKeyRef.current ? workerResponse : null;
+  const timeBlocks = workerData?.timeBlocks ?? [];
+  const processedEvents = workerData?.processedEvents ?? [];
+  const stackedEvents = workerData?.stackedEvents ?? {};
+  const volumeHistogram = workerData?.volumeHistogram ?? null;
+
+  const virtualizedEvents = useMemo(() => {
+    const MAX_EVENTS = 160;
+    if (processedEvents.length <= MAX_EVENTS) return processedEvents;
+    const step = Math.ceil(processedEvents.length / MAX_EVENTS);
+    return processedEvents.filter((_, index) => index % step === 0);
+  }, [processedEvents]);
+
+  const virtualizedStackedEvents = useMemo(() => {
+    const groups: { [key: string]: typeof virtualizedEvents } = {};
+    virtualizedEvents.forEach((event) => {
+      const key = Math.floor(event.position * 10).toString();
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(event);
+    });
+    return groups;
+  }, [virtualizedEvents]);
+
   // Now line position - optimized with useMemo to prevent unnecessary recalculations
   // No transition needed: position changes are incremental (0.00116% per second)
   // Smooth transitions would make it appear choppy. Direct updates are optimal.
@@ -236,69 +319,6 @@ const ForexChart: React.FC<ForexChartProps> = ({
     left: `${(nowLine / 24) * 100}%`,
   }), [nowLine]);
 
-
-  const timeBlocks = useMemo(() => {
-    const blocks: TimeBlock[] = [];
-
-    const processBar = (session: typeof SESSIONS[0], bar: (ChartBarDetails & { range: [number, number] }) | undefined, yLevel: number) => {
-      if (!bar || !bar.key) return;
-
-      const duration = bar.range[1] - bar.range[0];
-      const adjustedStart = bar.range[0] + timezoneOffset;
-      const startPos = (adjustedStart % 24 + 24) % 24;
-      const endPos = startPos + duration;
-
-      if (endPos <= 24) {
-        blocks.push({
-          key: `${bar.key}_1`,
-          sessionName: session.name,
-          details: bar,
-          left: (startPos / 24) * 100,
-          width: (duration / 24) * 100,
-          yLevel,
-          tooltip: bar.tooltip,
-          range: bar.range,
-        });
-      } else {
-        const width1 = 24 - startPos;
-        blocks.push({
-          key: `${bar.key}_1`,
-          sessionName: session.name,
-          details: bar,
-          left: (startPos / 24) * 100,
-          width: (width1 / 24) * 100,
-          yLevel,
-          tooltip: bar.tooltip,
-          range: bar.range,
-        });
-
-        const width2 = endPos - 24;
-        if (width2 > 0.001) {
-          blocks.push({
-            key: `${bar.key}_2`,
-            sessionName: session.name,
-            details: bar,
-            left: 0,
-            width: (width2 / 24) * 100,
-            yLevel,
-            tooltip: bar.tooltip,
-            range: bar.range,
-          });
-        }
-      }
-    };
-
-    SESSIONS.forEach(session => {
-      processBar(session, session.main, 0); // Main session
-      processBar(session, session.overlapAsia, 1); // Overlap
-      processBar(session, session.overlapLondon, 1); // Overlap
-      processBar(session, session.killzone, 2); // Killzone
-      processBar(session, session.killzoneAM, 2); // Killzone
-      processBar(session, session.killzonePM, 2); // Killzone
-    });
-
-    return blocks;
-  }, [timezoneOffset]);
 
   const getStatusColor = (status: SessionStatus) => {
     const statusConfig = {
@@ -309,7 +329,6 @@ const ForexChart: React.FC<ForexChartProps> = ({
     return statusConfig[status];
   };
 
-  const ticks = Array.from({ length: 24 }, (_, i) => i); // Every hour
   const cityBadges = useMemo(
     () =>
       SESSION_CITY_REFERENCES.map((city) => ({
@@ -323,101 +342,28 @@ const ForexChart: React.FC<ForexChartProps> = ({
     [currentTimezoneLabel, timezoneOffset]
   );
 
-  // Pre-calculate volume histogram data (hooks must be called at top level)
-  const volumeHistogramSVG = useMemo(() => {
-    if (!visibleLayers.volume) return null;
-
-    let rotationSteps = Math.round((timezoneOffset % 24) * 2);
-    rotationSteps = ((rotationSteps % 48) + 48) % 48;
-
-    const rotatedVolume = [
-      ...VOLUME_DATA.slice(48 - rotationSteps),
-      ...VOLUME_DATA.slice(0, 48 - rotationSteps)
-    ];
-
-    const interpolatedVolume: number[] = [];
-    for (let i = 0; i < rotatedVolume.length - 1; i++) {
-      interpolatedVolume.push(rotatedVolume[i]);
-      const v1 = rotatedVolume[i];
-      const v2 = rotatedVolume[i + 1];
-      interpolatedVolume.push(v1 + (v2 - v1) * 0.333);
-      interpolatedVolume.push(v1 + (v2 - v1) * 0.667);
-    }
-    interpolatedVolume.push(rotatedVolume[rotatedVolume.length - 1]);
-
-    const chartWidth = 1000;
-    const chartHeight = 100;
-    const barWidth = chartWidth / interpolatedVolume.length;
-    const volumeScale = chartHeight * 0.85;
-    const baselineY = chartHeight - 5;
-
-    return { interpolatedVolume, chartWidth, chartHeight, barWidth, volumeScale, baselineY };
-  }, [timezoneOffset, visibleLayers.volume]);
-
-  // Process economic events for display
-  const processedEvents = useMemo(() => {
-    if (!calendarEvents.length || !visibleLayers.news) return [];
-
-    // Helper: Convert UTC time string to hours (0-24)
-    // Note: Database stores time_utc (already in UTC)
-    const convertUTCTimeToHours = (utcTimeString: string | undefined): number => {
-      if (!utcTimeString) return -1;
-      const [hStr = '0', mStr = '0'] = utcTimeString.split(':');
-      const hours = parseInt(hStr, 10) || 0;
-      const minutes = parseInt(mStr, 10) || 0;
-      return hours + minutes / 60;
-    };
-
-    // Helper: Get impact color
-    const getImpactColor = (impact: string): string => {
-      switch (impact?.toLowerCase()) {
-        case 'high': return '#ef4444'; // red-500
-        case 'medium': return '#f59e0b'; // amber-500
-        case 'low': return '#10b981'; // green-500
-        default: return '#64748b'; // slate-500
+  const ticks = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
+  const blocksBySession = useMemo(() => {
+    const map = new Map<string, TimeBlock[]>();
+    timeBlocks.forEach((block) => {
+      const arr = map.get(block.sessionName);
+      if (arr) {
+        arr.push(block);
+      } else {
+        map.set(block.sessionName, [block]);
       }
-    };
-
-    // Filter by selected impact levels
-    const filtered = calendarEvents.filter((event) => {
-      const impact = event.impact?.toLowerCase();
-      return selectedImpactLevels.includes(impact);
     });
+    return map;
+  }, [timeBlocks]);
 
-    // Transform events with position calculation
-    return filtered.map((event) => {
-      const utcHours = convertUTCTimeToHours(event.time_utc);
-      if (utcHours < 0) return null; // Skip events without valid time
-
-      // Convert UTC to target timezone
-      const localHours = (utcHours + timezoneOffset + 24) % 24;
-      const position = (localHours / 24) * 100; // percentage
-
-      return {
-        ...event,
-        utcHours,
-        localHours,
-        position,
-        color: getImpactColor(event.impact),
-      };
-    }).filter(Boolean); // Remove null entries
-  }, [calendarEvents, selectedImpactLevels, timezoneOffset, visibleLayers.news]);
-
+  // Pre-calculate volume histogram data (hooks must be called at top level)
+  // Process economic events for display
   // Group events by position for stacking
-  const stackedEvents = useMemo(() => {
-    const groups: { [key: string]: any[] } = {};
-
-    processedEvents.forEach((event: any) => {
-      const posKey = Math.floor(event.position * 10).toString(); // Group by ~2.4hr intervals
-      if (!groups[posKey]) groups[posKey] = [];
-      groups[posKey].push(event);
-    });
-
-    return groups;
-  }, [processedEvents]);
-
   return (
-    <div ref={chartContainerRef} className="relative w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 p-6 rounded-2xl shadow-2xl shadow-black/30 hover:border-slate-600/50 transition-all duration-300">
+    <div
+      ref={chartContainerRef}
+      className="relative w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 border border-slate-700/30 p-6 rounded-2xl shadow-lg shadow-black/20 hover:border-slate-600/50 transition-all duration-300 sm:backdrop-blur-2xl backdrop-blur-none sm:shadow-2xl"
+    >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-slate-100">Session Timeline</h3>
@@ -649,107 +595,22 @@ const ForexChart: React.FC<ForexChartProps> = ({
                   />
                 ))}
 
-                {timeBlocks
-                  .filter(block => block.sessionName === session.name)
-                  .map(block => {
-                    const yPositions = ['60%', '40%', '10%'];
-                    const heights = ['35%', '25%', '20%'];
+                <SessionBlocks
+                  sessionName={session.name}
+                  blocks={blocksBySession.get(session.name) || []}
+                  timezoneOffset={timezoneOffset}
+                  currentTimezoneLabel={currentTimezoneLabel}
+                  sessionBarVariants={sessionBarVariants}
+                />
 
-                    const style: React.CSSProperties = {
-                      left: `${block.left}%`,
-                      width: `${block.width}%`,
-                      top: yPositions[block.yLevel],
-                      height: heights[block.yLevel],
-                      backgroundColor: block.details.color,
-                      opacity: block.details.opacity,
-                    };
+                <SessionEventIndicators
+                  sessionName={session.name}
+                  events={virtualizedEvents}
+                  stackedEvents={virtualizedStackedEvents}
+                  visible={visibleLayers.news}
+                  eventIndicatorVariants={eventIndicatorVariants}
+                />
 
-                    const [startUTC, endUTC] = block.range;
-                    const startTimeLocal = formatTime(startUTC, timezoneOffset);
-                    const endTimeLocal = formatTime(endUTC, timezoneOffset);
-
-                    return (
-                      <AccessibleTooltip
-                        key={block.key}
-                        content={{
-                          type: 'session',
-                          name: block.details.name,
-                          timeRange: `${startTimeLocal} - ${endTimeLocal}`,
-                          timezoneLabel: currentTimezoneLabel,
-                          tooltipInfo: block.tooltip,
-                        }}
-                        delay={300}
-                      >
-                        <motion.div
-                          className="absolute rounded cursor-pointer"
-                          style={style}
-                          variants={sessionBarVariants}
-                          initial="hidden"
-                          animate="visible"
-                          whileHover="hover"
-                          custom={block.yLevel}
-                        />
-                      </AccessibleTooltip>
-                    );
-                  })}
-
-                {/* Economic Event Indicators for this session */}
-                <AnimatePresence>
-                  {visibleLayers.news && processedEvents.map((event: any, idx: number) => {
-                    // Calculate vertical stack position for overlapping events
-                    const posKey = Math.floor(event.position * 10).toString();
-                    const stackGroup = stackedEvents[posKey] || [];
-                    const stackIndex = stackGroup.findIndex((e: any) => e.id === event.id);
-                    const stackOffset = stackIndex * 14; // 14px vertical spacing for separate view
-
-                    return (
-                      <AccessibleTooltip
-                        key={`event-${session.name}-${event.id || idx}`}
-                        content={{
-                          type: 'event',
-                          impact: event.impact,
-                          color: event.color,
-                          event: event.event,
-                          timeUtc: event.time_utc,
-                          currency: event.currency,
-                          forecast: event.forecast,
-                          previous: event.previous,
-                          actual: event.actual,
-                        }}
-                        delay={300}
-                      >
-                        <motion.div
-                          className="absolute cursor-pointer"
-                          style={{
-                            left: `${event.position}%`,
-                            bottom: `${6 + stackOffset}px`,
-                            transform: 'translateX(-50%)',
-                            zIndex: 10 + stackIndex,
-                          }}
-                          variants={eventIndicatorVariants}
-                          initial="hidden"
-                          animate="visible"
-                          exit="hidden"
-                          whileHover="hover"
-                          custom={idx}
-                        >
-                        <div
-                          className="w-3.5 h-3.5 rounded-full flex items-center justify-center shadow-lg"
-                          style={{
-                            backgroundColor: event.color,
-                            boxShadow: `0 0 6px ${event.color}80`,
-                          }}
-                        >
-                          <IconCalendarTab
-                            className="w-2 h-2"
-                            style={{ color: 'white' }}
-                          />
-                        </div>
-                      </motion.div>
-                    </AccessibleTooltip>
-                  );
-                })}
-                </AnimatePresence>
 
                 <motion.div
                   className="absolute top-0 bottom-0 w-0.5 bg-yellow-400"
@@ -779,42 +640,9 @@ const ForexChart: React.FC<ForexChartProps> = ({
       ) : viewMode === 'unified' ? (
         // Unified view - all sessions on one timeline
         <div className="mb-5">
-          <div className="relative w-full h-32 bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
+          <div className="relative w-full h-48 sm:h-40 md:h-32 bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
             {/* Volume Histogram Background */}
-            {volumeHistogramSVG && (
-              <svg
-                className="absolute inset-0 w-full h-full"
-                style={{ pointerEvents: 'none' }}
-                viewBox={`0 0 ${volumeHistogramSVG.chartWidth} ${volumeHistogramSVG.chartHeight}`}
-                preserveAspectRatio="none"
-              >
-                <defs>
-                  {/* Gradient from red (bottom) to orange to green (top), bottom-to-top direction */}
-                  <linearGradient id="volumeHistogramGradient" x1="0%" y1="100%" x2="0%" y2="0%">
-                    <stop offset="0%" stopColor="rgb(220, 38, 38)" stopOpacity="0.10" />
-                    <stop offset="50%" stopColor="rgb(234, 88, 12)" stopOpacity="0.10" />
-                    <stop offset="100%" stopColor="rgb(34, 197, 94)" stopOpacity="0.10" />
-                  </linearGradient>
-                </defs>
-                {/* Draw histogram bars */}
-                {volumeHistogramSVG.interpolatedVolume.map((volume, i) => {
-                  const x = i * volumeHistogramSVG.barWidth;
-                  const barHeight = (volume / 100) * volumeHistogramSVG.volumeScale;
-                  const y = volumeHistogramSVG.baselineY - barHeight;
-
-                  return (
-                    <rect
-                      key={`bar-${i}`}
-                      x={x}
-                      y={y}
-                      width={volumeHistogramSVG.barWidth}
-                      height={barHeight}
-                      fill="url(#volumeHistogramGradient)"
-                    />
-                  );
-                })}
-              </svg>
-            )}
+            {volumeHistogram && <VolumeHistogramCanvas histogram={volumeHistogram} />}
 
             {/* Vertical hour grid lines */}
             {ticks.map(hour => (
@@ -917,15 +745,21 @@ const ForexChart: React.FC<ForexChartProps> = ({
                       custom={idx}
                     >
                     <div
-                      className="w-4 h-4 rounded-full flex items-center justify-center shadow-lg"
+                      className="w-4.5 h-4.5 rounded-full flex items-center justify-center"
                       style={{
                         backgroundColor: event.color,
-                        boxShadow: `0 0 8px ${event.color}80`,
+                        border: `1.5px solid ${event.borderColor}`,
+                        boxShadow: `
+                          0 0 10px ${event.color}80,
+                          0 2px 4px rgba(0, 0, 0, 0.4),
+                          inset 0 1px 2px rgba(255, 255, 255, 0.3),
+                          inset 0 -1px 2px rgba(0, 0, 0, 0.3)
+                        `,
                       }}
                     >
                       <IconCalendarTab
                         className="w-2.5 h-2.5"
-                        style={{ color: 'white' }}
+                        style={{ color: 'white', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.4))' }}
                       />
                     </div>
                   </motion.div>
@@ -997,3 +831,197 @@ const ForexChart: React.FC<ForexChartProps> = ({
 };
 
 export default ForexChart;
+
+interface SessionBlocksProps {
+  sessionName: string;
+  blocks: TimeBlock[];
+  timezoneOffset: number;
+  currentTimezoneLabel: string;
+  sessionBarVariants: Variants;
+}
+
+const SessionBlocks = React.memo(
+  ({ blocks, timezoneOffset, currentTimezoneLabel, sessionBarVariants }: SessionBlocksProps) => {
+    if (!blocks.length) return null;
+
+    const yPositions = ['60%', '40%', '10%'];
+    const heights = ['35%', '25%', '20%'];
+
+    return (
+      <>
+        {blocks.map((block) => {
+          const style: React.CSSProperties = {
+            left: `${block.left}%`,
+            width: `${block.width}%`,
+            top: yPositions[block.yLevel],
+            height: heights[block.yLevel],
+            backgroundColor: block.details.color,
+            opacity: block.details.opacity,
+          };
+
+          const [startUTC, endUTC] = block.range;
+          const startTimeLocal = formatTime(startUTC, timezoneOffset);
+          const endTimeLocal = formatTime(endUTC, timezoneOffset);
+
+          return (
+            <AccessibleTooltip
+              key={block.key}
+              content={{
+                type: 'session',
+                name: block.details.name,
+                timeRange: `${startTimeLocal} - ${endTimeLocal}`,
+                timezoneLabel: currentTimezoneLabel,
+                tooltipInfo: block.tooltip,
+              }}
+              delay={300}
+            >
+              <motion.div
+                className="absolute rounded cursor-pointer"
+                style={style}
+                variants={sessionBarVariants}
+                initial="hidden"
+                animate="visible"
+                whileHover="hover"
+                custom={block.yLevel}
+              />
+            </AccessibleTooltip>
+          );
+        })}
+      </>
+    );
+  },
+  (prev, next) =>
+    prev.blocks === next.blocks &&
+    prev.timezoneOffset === next.timezoneOffset &&
+    prev.currentTimezoneLabel === next.currentTimezoneLabel &&
+    prev.sessionBarVariants === next.sessionBarVariants
+);
+
+interface SessionEventIndicatorsProps {
+  sessionName: string;
+  events: any[];
+  stackedEvents: { [key: string]: any[] };
+  visible: boolean;
+  eventIndicatorVariants: Variants;
+}
+
+const SessionEventIndicators = React.memo(
+  ({ sessionName, events, stackedEvents, visible, eventIndicatorVariants }: SessionEventIndicatorsProps) => {
+    if (!visible || !events.length) return null;
+
+    return (
+      <AnimatePresence>
+        {events.map((event: any, idx: number) => {
+          const posKey = Math.floor(event.position * 10).toString();
+          const stackGroup = stackedEvents[posKey] || [];
+          const stackIndex = stackGroup.findIndex((e: any) => e.id === event.id);
+          const stackOffset = stackIndex * 14;
+
+          return (
+            <AccessibleTooltip
+              key={`event-${sessionName}-${event.id || idx}`}
+              content={{
+                type: 'event',
+                impact: event.impact,
+                color: event.color,
+                event: event.event,
+                timeUtc: event.time_utc,
+                currency: event.currency,
+                forecast: event.forecast,
+                previous: event.previous,
+                actual: event.actual,
+              }}
+              delay={300}
+            >
+              <motion.div
+                className="absolute cursor-pointer"
+                style={{
+                  left: `${event.position}%`,
+                  bottom: `${6 + stackOffset}px`,
+                  transform: 'translateX(-50%)',
+                  zIndex: 10 + stackIndex,
+                }}
+                variants={eventIndicatorVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                whileHover="hover"
+                custom={idx}
+              >
+                <div
+                  className="w-4 h-4 rounded-full flex items-center justify-center"
+                  style={{
+                    backgroundColor: event.color,
+                    border: `1.5px solid ${event.borderColor}`,
+                    boxShadow: `
+                      0 0 8px ${event.color}80,
+                      0 2px 4px rgba(0, 0, 0, 0.4),
+                      inset 0 1px 2px rgba(255, 255, 255, 0.3),
+                      inset 0 -1px 2px rgba(0, 0, 0, 0.3)
+                    `,
+                  }}
+                >
+                  <IconCalendarTab
+                    className="w-2 h-2"
+                    style={{
+                      color: 'white',
+                      filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.4))'
+                    }}
+                  />
+                </div>
+              </motion.div>
+            </AccessibleTooltip>
+          );
+        })}
+      </AnimatePresence>
+    );
+  },
+  (prev, next) =>
+    prev.visible === next.visible &&
+    prev.events === next.events &&
+    prev.stackedEvents === next.stackedEvents &&
+    prev.eventIndicatorVariants === next.eventIndicatorVariants &&
+    prev.sessionName === next.sessionName
+);
+
+const VolumeHistogramCanvas = React.memo(
+  ({ histogram }: { histogram: VolumeHistogram }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+      if (!histogram) return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      canvas.width = histogram.chartWidth;
+      canvas.height = histogram.chartHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const gradient = ctx.createLinearGradient(0, 0, 0, histogram.chartHeight);
+      gradient.addColorStop(0, 'rgba(16, 185, 129, 0.75)');
+      gradient.addColorStop(0.5, 'rgba(234, 88, 12, 0.75)');
+      gradient.addColorStop(1, 'rgba(239, 68, 68, 0.6)');
+      ctx.fillStyle = gradient;
+
+      histogram.interpolatedVolume.forEach((volume, idx) => {
+        const barHeight = (volume / 100) * histogram.volumeScale;
+        const x = idx * histogram.barWidth;
+        const y = histogram.baselineY - barHeight;
+        ctx.fillRect(x, y, histogram.barWidth, barHeight);
+      });
+    }, [histogram]);
+
+    return (
+      <canvas
+        ref={canvasRef}
+        width={histogram.chartWidth}
+        height={histogram.chartHeight}
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        aria-hidden="true"
+      />
+    );
+  },
+  (prev, next) => prev.histogram === next.histogram
+);

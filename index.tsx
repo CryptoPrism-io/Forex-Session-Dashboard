@@ -2,6 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { reportWebVitals } from './utils/reportWebVitals';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -14,6 +15,9 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Start tracking Core Web Vitals
+reportWebVitals();
 
 // Register service worker for PWA support with correct base path on GitHub Pages
 if ('serviceWorker' in navigator) {

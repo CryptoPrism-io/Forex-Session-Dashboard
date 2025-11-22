@@ -86,20 +86,7 @@
           backdrop-filter: var(--tw-backdrop-filter);
         }
       }
-      /* Portrait Mode Lock - Mobile Only */
-      .portrait-blocker {
-        display: none !important;
-        visibility: hidden !important;
-      }
-      @media (orientation: portrait) and (max-width: 768px) {
-        main, footer {
-          display: none !important;
-        }
-        .portrait-blocker {
-          display: flex !important;
-          visibility: visible !important;
-        }
-      }
+      /* Portrait Mode Lock - Removed for mobile optimization */
     </style>
   <script type="importmap">
 {

@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   TooltipTrigger,
@@ -97,6 +97,22 @@ export function AccessibleTooltip({
 }: AccessibleTooltipProps) {
   const prefersReducedMotion = useReducedMotion();
 
+  const markTooltipHoverStart = useCallback(() => {
+    if (typeof performance === 'undefined' || typeof performance.mark !== 'function') return;
+    performance.mark('AccessibleTooltip-hover-start');
+  }, []);
+
+  const markTooltipHoverEnd = useCallback(() => {
+    if (typeof performance === 'undefined' || typeof performance.mark !== 'function') return;
+    const startEntries = performance.getEntriesByName('AccessibleTooltip-hover-start');
+    if (!startEntries.length) return;
+    performance.mark('AccessibleTooltip-hover-end');
+    performance.measure('AccessibleTooltip-hover', 'AccessibleTooltip-hover-start', 'AccessibleTooltip-hover-end');
+    performance.clearMarks('AccessibleTooltip-hover-start');
+    performance.clearMarks('AccessibleTooltip-hover-end');
+    performance.clearMeasures('AccessibleTooltip-hover');
+  }, []);
+
   // Tooltip animation variants - fade in with gentle scale
   const tooltipVariants = {
     hidden: {
@@ -120,7 +136,11 @@ export function AccessibleTooltip({
       delay={delay}
       closeDelay={0}
     >
-      <Button className="contents">
+      <Button
+        className="contents"
+        onPointerEnter={markTooltipHoverStart}
+        onPointerLeave={markTooltipHoverEnd}
+      >
         {children}
       </Button>
       <AriaTooltip

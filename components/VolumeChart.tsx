@@ -12,6 +12,8 @@ import {
   Customized,
 } from 'recharts';
 import { IconCalendarTab } from './icons';
+import { AccessibleTooltip } from './Tooltip';
+import { useInstrumentedMemo } from '../utils/performance';
 
 interface VolumeChartProps {
   nowLine: number;
@@ -21,8 +23,6 @@ interface VolumeChartProps {
   calendarEvents?: any[];
   stackedEvents?: { [key: string]: any[] };
   visibleLayers?: { news?: boolean };
-  eventTooltip?: { event: any; position: { x: number; y: number } } | null;
-  setEventTooltip?: (tooltip: { event: any; position: { x: number; y: number } } | null) => void;
   chartContainerRef?: React.RefObject<HTMLDivElement>;
 }
 
@@ -177,8 +177,6 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
   calendarEvents = [],
   stackedEvents = {},
   visibleLayers = {},
-  eventTooltip,
-  setEventTooltip,
   chartContainerRef
 }) => {
   // Convert local time (nowLine) back to UTC for accurate session detection
@@ -199,7 +197,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
   };
 
   // Prepare chart data with timezone-adjusted times
-  const chartData = useMemo(() => {
+  const chartData = useInstrumentedMemo('VolumeChart-chartData', () => {
     // Calculate rotation amount based on timezone offset
     // Each 0.5-hour step = 1 data point, so multiply offset by 2
     // Normalize to 0-47 range (48 data points for 24 hours)
@@ -264,7 +262,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
   }, [nowLine, timezoneOffset]);
 
   // Function to detect what events are at a given local time
-  const getSessionEventsAtTime = useMemo(() => {
+  const getSessionEventsAtTime = useInstrumentedMemo('VolumeChart-sessionEvents', () => {
     return (localHour: number) => {
       const utcHour = getUTCHour(localHour, timezoneOffset);
       const events: { name: string; color: string }[] = [];
@@ -292,7 +290,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
   }, [timezoneOffset]);
 
   // Function to get session data for any given local time (used by tooltip)
-  const getSessionAtTime = useMemo(() => {
+  const getSessionAtTime = useInstrumentedMemo('VolumeChart-sessionAtTime', () => {
     return (localHour: number) => {
       const utcHour = getUTCHour(localHour, timezoneOffset);
       const hour = Math.floor(utcHour);
@@ -341,7 +339,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
   // Current session data (for header display)
   const normalizedNowLine = useMemo(() => normalizeHour(nowLine), [nowLine]);
 
-  const sessionLayerSegments = useMemo(() => {
+  const sessionLayerSegments = useInstrumentedMemo('VolumeChart-sessionLayerSegments', () => {
     const segmentsByType: Record<SessionLayerType, Array<{ start: number; end: number; color: string; name: string }>> = {
       main: [],
       overlap: [],
@@ -362,25 +360,25 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
   }, [timezoneOffset]);
 
   return (
-    <div className="w-full mt-6 bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-6 shadow-lg shadow-black/20">
+    <div className="w-full mt-4 sm:mt-6 bg-slate-900/40 border border-slate-800/50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-md shadow-black/10 sm:shadow-lg backdrop-blur-none sm:backdrop-blur-xl">
       {/* Header with Title and Session Info */}
-      <div className="flex justify-between items-start mb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3 sm:mb-4">
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-slate-100 mb-1">Trading Volume</h2>
+          <h2 className="text-base sm:text-lg md:text-xl font-bold text-slate-100 mb-1">Trading Volume</h2>
         </div>
 
-        {/* Session Info - Top Right (Current Session Only) */}
-        <div className="hidden sm:block text-xs text-slate-300 space-y-1 max-w-xs bg-slate-800/50 border border-slate-700/50 rounded-lg p-3">
-          <div className="font-semibold text-slate-200 mb-1">Current Session</div>
-          <div className="text-slate-300">
+        {/* Session Info - Mobile: below title, Desktop: top right */}
+        <div className="text-xs text-slate-300 space-y-1 max-w-xs sm:max-w-sm bg-slate-800/50 border border-slate-700/50 rounded-lg p-2 sm:p-3">
+          <div className="font-semibold text-slate-200 mb-1 text-[10px] sm:text-xs">Current Session</div>
+          <div className="text-slate-300 text-[10px] sm:text-xs">
             <span className="font-medium text-cyan-400">{currentSession.label}</span>
-            <span className="text-slate-400"> — {currentSession.desc}</span>
+            <span className="text-slate-400 hidden sm:inline"> — {currentSession.desc}</span>
           </div>
         </div>
       </div>
 
       <div className="relative">
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer width="100%" height={window.innerWidth < 640 ? 320 : window.innerWidth < 768 ? 280 : 250}>
           <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
@@ -395,18 +393,28 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
               dataKey="hour"
               type="number"
               domain={[0, 24]}
-              ticks={Array.from({ length: 13 }, (_, idx) => idx * 2)}
+              ticks={window.innerWidth < 640
+                ? Array.from({ length: 7 }, (_, idx) => idx * 4)  // Mobile: every 4 hours
+                : Array.from({ length: 13 }, (_, idx) => idx * 2)  // Desktop: every 2 hours
+              }
               tickFormatter={(h) => formatHourLabel(h)}
               stroke="rgba(148, 163, 184, 0.5)"
-              tick={{ fill: 'rgba(148, 163, 184, 0.7)', fontSize: 12 }}
+              tick={{
+                fill: 'rgba(148, 163, 184, 0.7)',
+                fontSize: window.innerWidth < 640 ? 10 : 12
+              }}
               interval={0}
-              height={40}
+              height={window.innerWidth < 640 ? 35 : 40}
             />
 
             <YAxis
               stroke="rgba(148, 163, 184, 0.5)"
-              tick={{ fill: 'rgba(148, 163, 184, 0.7)', fontSize: 12 }}
+              tick={{
+                fill: 'rgba(148, 163, 184, 0.7)',
+                fontSize: window.innerWidth < 640 ? 10 : 12
+              }}
               domain={[0, 100]}
+              width={window.innerWidth < 640 ? 35 : 45}
             />
 
             <Tooltip
@@ -510,55 +518,68 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
           const stackOffset = stackIndex * 18; // 18px vertical spacing
 
           return (
-            <div
+            <AccessibleTooltip
               key={`event-volume-${event.id || idx}`}
-              className="absolute cursor-pointer transition-all duration-200 hover:scale-110"
-              style={{
-                left: `${event.position}%`,
-                bottom: `${8 + stackOffset}px`,
-                transform: 'translateX(-50%)',
-                zIndex: 10 + stackIndex,
-                opacity: 0.67,
+              content={{
+                type: 'event',
+                impact: event.impact,
+                color: event.color,
+                event: event.event,
+                timeUtc: event.time_utc,
+                currency: event.currency,
+                forecast: event.forecast,
+                previous: event.previous,
+                actual: event.actual,
               }}
-              onMouseEnter={(e) => {
-                if (!chartContainerRef?.current || !setEventTooltip) return;
-                const rect = chartContainerRef.current.getBoundingClientRect();
-                setEventTooltip({
-                  event,
-                  position: { x: e.clientX - rect.left, y: e.clientY - rect.top },
-                });
-                e.currentTarget.style.opacity = '1';
-              }}
-              onMouseLeave={(e) => {
-                setEventTooltip?.(null);
-                e.currentTarget.style.opacity = '0.67';
-              }}
+              delay={300}
             >
               <div
-                className="w-4 h-4 rounded-full flex items-center justify-center shadow-lg"
+                className="absolute cursor-pointer transition-all duration-200 hover:scale-110 hover:opacity-100"
                 style={{
-                  backgroundColor: event.color,
-                  boxShadow: `0 0 8px ${event.color}80`,
+                  left: `${event.position}%`,
+                  bottom: `${8 + stackOffset}px`,
+                  transform: 'translateX(-50%)',
+                  zIndex: 10 + stackIndex,
+                  opacity: 0.67,
                 }}
               >
-                <IconCalendarTab
-                  className="w-2.5 h-2.5"
-                  style={{ color: 'white' }}
-                />
+                <div
+                  className="w-4.5 h-4.5 rounded-full flex items-center justify-center"
+                  style={{
+                    backgroundColor: event.color,
+                    border: `1.5px solid ${event.borderColor}`,
+                    boxShadow: `
+                      0 0 10px ${event.color}80,
+                      0 2px 4px rgba(0, 0, 0, 0.4),
+                      inset 0 1px 2px rgba(255, 255, 255, 0.3),
+                      inset 0 -1px 2px rgba(0, 0, 0, 0.3)
+                    `,
+                  }}
+                >
+                  <IconCalendarTab
+                    className="w-2.5 h-2.5"
+                    style={{
+                      color: 'white',
+                      filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.4))'
+                    }}
+                  />
+                </div>
               </div>
-            </div>
+            </AccessibleTooltip>
           );
         })}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-4 text-[10px] uppercase tracking-[0.35em] text-slate-400">
+      <div className="mt-3 sm:mt-4 flex flex-wrap gap-3 sm:gap-4 text-[9px] sm:text-[10px] uppercase tracking-[0.25em] sm:tracking-[0.35em] text-slate-400">
         {(['main', 'overlap', 'killzone'] as SessionLayerType[]).map((type) => (
-          <span key={`${type}-legend`} className="flex items-center gap-2">
+          <span key={`${type}-legend`} className="flex items-center gap-1.5 sm:gap-2">
             <span
-              className="h-2 w-6 rounded-full"
+              className="h-2 w-5 sm:w-6 rounded-full flex-shrink-0"
               style={{ backgroundColor: sessionLayerSegments[type][0]?.color ?? '#94a3b8' }}
             />
-            {type === 'main' ? 'Main Sessions' : type === 'overlap' ? 'Session Overlaps' : 'Killzones'}
+            <span className="whitespace-nowrap">
+              {type === 'main' ? 'Main Sessions' : type === 'overlap' ? 'Session Overlaps' : 'Killzones'}
+            </span>
           </span>
         ))}
       </div>

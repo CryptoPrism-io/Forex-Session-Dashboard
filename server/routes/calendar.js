@@ -48,7 +48,7 @@ router.get('/events', async (req, res) => {
       SELECT
         id,
         date,
-        date_utc,
+        date_utc::date as date_utc,
         time,
         time_utc,
         time_zone,
@@ -194,7 +194,7 @@ router.get('/today', async (req, res) => {
       SELECT
         id,
         date,
-        date_utc,
+        to_char(date_utc, 'YYYY-MM-DD') as date_utc,
         time,
         time_utc,
         time_zone,
