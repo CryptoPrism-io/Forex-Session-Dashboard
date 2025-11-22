@@ -15,6 +15,8 @@ The application consists of:
 **Key Tech Stack:**
 - React 19.2 with TypeScript
 - Vite (build tool)
+- Framer Motion 11.18.2 (animations)
+- React Aria Components 1.13.0 (accessibility)
 - Recharts (charting library)
 - Tailwind CSS (via CDN)
 - Express.js (backend API)
@@ -120,6 +122,79 @@ User → Vite Dev Server (3000) → React Components → Backend API (5000) → 
    - Shows session times, durations, overlap hours, killzone hours
    - Educational descriptions for each trading concept
    - Fully collapsible sections for better UX
+
+### Animation System (Framer Motion + React Aria)
+
+**Core Components:**
+
+1. **components/Tooltip.tsx** - Unified accessible tooltip system
+   - `AccessibleTooltip`: Main tooltip with fade + scale animation (200ms)
+   - `SimpleTooltip`: Lightweight text-only tooltip
+   - Supports both session tooltips (with volatility, pairs, strategy) and event tooltips (impact, time, forecast/previous/actual)
+   - Automatic viewport collision detection and ARIA attributes
+   - Keyboard accessible (Tab to focus, Escape to close)
+
+2. **components/Menu.tsx** - Accessible popover menu system
+   - `PopoverMenu`: Base menu with automatic click-outside and Escape handling
+   - `CheckboxMenuItem`: Styled checkbox with hover states
+   - `MenuSection`: Grouped menu items with headers and dividers
+   - `MenuButton`: Clickable action buttons with active states
+
+3. **hooks/useReducedMotion.ts** - Accessibility hook
+   - Detects `prefers-reduced-motion` OS/browser setting
+   - All animations respect this preference (duration becomes 0ms)
+   - Utility functions: `getAnimationDuration()`, `getMotionTransition()`
+
+**Animation Inventory:**
+
+1. **Left Pane (Mobile Slide)** - App.tsx:73-98, 287-306
+   - Spring animation: stiffness 300, damping 30
+   - Mobile-only (< 768px): slides in from left with opacity fade
+   - Swipe gesture: Drag left to close (100px threshold or 500px/s velocity)
+   - 20% elastic drag for natural feel
+
+2. **Tooltips (Fade + Scale)** - Tooltip.tsx:100-116
+   - 200ms entrance with scale from 95% to 100%
+   - 150ms exit with fade out
+   - GPU-accelerated with `type: 'tween'`
+
+3. **Session Bars (Staggered Scale)** - ForexChart.tsx:134-162
+   - 50ms stagger delay between each bar
+   - 300ms entrance with scaleY from 80% to 100%
+   - Hover: scales to 125% in 200ms
+
+4. **Event Indicators (Spring Bounce)** - ForexChart.tsx:164-193
+   - 30ms stagger delay between each event
+   - 400ms entrance with spring overshoot (custom cubic bezier)
+   - Hover: scales to 110% with full opacity
+   - Exit animations via `AnimatePresence` when toggled off
+
+5. **"Now" Line (Blink + Glow)** - ForexChart.tsx:232-237, 752-768, 935-951
+   - 1-second blink cycle: opacity 1 → 0.15
+   - Synced glow effect via boxShadow
+   - Position updates optimized with `useMemo` (no transition needed)
+
+**Performance Optimizations:**
+- All animations use GPU-accelerated properties (transform, opacity)
+- `type: 'tween'` for predictable GPU rendering
+- `AnimatePresence` for smooth exit animations
+- `useMemo` prevents unnecessary recalculations
+- 60fps target maintained across all devices
+
+**Accessibility Features:**
+- All animations respect `prefers-reduced-motion` (instant transitions when enabled)
+- Full keyboard navigation (Tab, Escape, Arrow keys)
+- Automatic ARIA attributes via React Aria
+- Screen reader compatible
+- Focus management
+
+**Documentation:**
+See `ANIMATIONS.md` for comprehensive documentation including:
+- Detailed animation specs and timing
+- Usage patterns and code examples
+- Best practices and anti-patterns
+- Debugging guide and performance profiling
+- Future enhancement suggestions
 
 ### Backend Architecture (server/)
 
@@ -301,6 +376,58 @@ docker run -p 3000:5000 -e VITE_API_BASE_URL=http://localhost:5000 forex-dashboa
 - Session colors: Modify `color` field in session definitions (constants.ts)
 - Custom CSS: Edit `index.html` for scrollbar, animations, Recharts overrides
 
+**Adding Animations:**
+1. Import Framer Motion and useReducedMotion hook:
+   ```typescript
+   import { motion } from 'framer-motion';
+   import { useReducedMotion } from '../hooks/useReducedMotion';
+   ```
+
+2. Create animation variants that respect reduced motion:
+   ```typescript
+   const prefersReducedMotion = useReducedMotion();
+
+   const variants = {
+     hidden: { opacity: 0, y: 20 },
+     visible: {
+       opacity: 1,
+       y: 0,
+       transition: prefersReducedMotion
+         ? { duration: 0 }
+         : { duration: 0.3, type: 'tween' }
+     }
+   };
+   ```
+
+3. Apply to component:
+   ```typescript
+   <motion.div
+     variants={variants}
+     initial="hidden"
+     animate="visible"
+   >
+     Content
+   </motion.div>
+   ```
+
+4. For exit animations, wrap in `AnimatePresence`:
+   ```typescript
+   import { AnimatePresence } from 'framer-motion';
+
+   <AnimatePresence>
+     {isVisible && (
+       <motion.div exit="hidden">Content</motion.div>
+     )}
+   </AnimatePresence>
+   ```
+
+**Best Practices:**
+- Always use GPU-accelerated properties (transform, opacity, scale)
+- Set `type: 'tween'` for predictable rendering
+- Respect `prefers-reduced-motion` in all animations
+- Use `useMemo` for static variant objects
+- Refer to `ANIMATIONS.md` for detailed guidelines
+
 ## Troubleshooting
 
 | Issue | Solution |
@@ -310,3 +437,7 @@ docker run -p 3000:5000 -e VITE_API_BASE_URL=http://localhost:5000 forex-dashboa
 | Timezone offsets incorrect | Check TIMEZONES array in constants.ts matches your requirements |
 | GitHub Pages 404 errors | Verify VITE_BASE_PATH is `/Forex-Session-Dashboard/` in pages.yml workflow |
 | Cloud Run build fails | Check env.yaml has all required vars; verify Dockerfile multi-stage build is correct |
+| Animations not smooth/janky | Check DevTools Performance tab for layout thrashing; ensure using transform properties (not left/top); verify GPU acceleration is active in DevTools Layers panel |
+| Animation not firing | Verify `initial` prop is set on motion component; check variant names match between `variants` and `animate` props |
+| Exit animation skipped | Wrap in `<AnimatePresence>` and add `exit` prop to motion component; ensure unique `key` prop on each element |
+| Reduced motion not working | Check `prefers-reduced-motion` in browser DevTools (Chrome: Rendering tab → Emulate CSS prefers-reduced-motion) |
