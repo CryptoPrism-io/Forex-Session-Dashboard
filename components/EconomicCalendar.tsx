@@ -71,6 +71,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [currencySearchQuery, setCurrencySearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'timeLeft' | 'date'>('timeLeft');
 
   // Calculate date ranges based on filter
   const dateRange = useMemo(() => {
@@ -554,6 +555,26 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
     return acc;
   }, {} as Record<string, typeof filteredData>);
 
+  // Sort comparator based on sortBy state
+  const sortEvents = useCallback((a: { date: string; event: typeof filteredData[0]; idx: number }, b: { date: string; event: typeof filteredData[0]; idx: number }) => {
+    if (sortBy === 'timeLeft') {
+      // Sort by time left ascending (soonest first), with passed/blank events at bottom
+      const aMinutes = getTimeLeftMinutes(a.event.date_utc, a.event.time_utc, selectedTimezone.offset);
+      const bMinutes = getTimeLeftMinutes(b.event.date_utc, b.event.time_utc, selectedTimezone.offset);
+      return aMinutes - bMinutes;
+    } else {
+      // Sort by date ascending (earliest first)
+      const aDate = new Date(a.event.date_utc || a.event.date).getTime();
+      const bDate = new Date(b.event.date_utc || b.event.date).getTime();
+      if (aDate !== bDate) return aDate - bDate;
+
+      // If same date, sort by time
+      const aTime = a.event.time_utc || '';
+      const bTime = b.event.time_utc || '';
+      return aTime.localeCompare(bTime);
+    }
+  }, [sortBy, selectedTimezone.offset]);
+
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header with Filters */}
@@ -576,6 +597,25 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
           {/* Timezone Indicator */}
           <div className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-500/20 border border-yellow-400/40 text-yellow-200">
             Times: {timezoneLabel}
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="relative">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'timeLeft' | 'date')}
+              className="h-8 px-3 pr-8 text-xs font-medium rounded-full border border-slate-700/50 bg-slate-800/40 hover:border-cyan-400/40 hover:bg-cyan-500/10 text-slate-200 transition-all appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+              title="Sort by"
+              aria-label="Sort events by"
+            >
+              <option value="timeLeft">⏱ Time Left</option>
+              <option value="date">📅 Date</option>
+            </select>
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
 
           <button
@@ -810,11 +850,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
           .flatMap(([date, events]) =>
             events.map((event, idx) => ({ date, event, idx }))
           )
-          .sort((a, b) => {
-            const aMinutes = getTimeLeftMinutes(a.event.date_utc, a.event.time_utc, selectedTimezone.offset);
-            const bMinutes = getTimeLeftMinutes(b.event.date_utc, b.event.time_utc, selectedTimezone.offset);
-            return aMinutes - bMinutes;
-          })
+          .sort(sortEvents)
           .map(({ date, event, idx }) => {
             const impactColor = getImpactColor(event.impact || 'low');
             const rawTime = event.time_utc || '';
@@ -908,12 +944,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
               .flatMap(([date, events]) =>
                 events.map((event, idx) => ({ date, event, idx }))
               )
-              .sort((a, b) => {
-                // Sort by time left ascending (soonest first), with passed/blank events at bottom
-                const aMinutes = getTimeLeftMinutes(a.event.date_utc, a.event.time_utc, selectedTimezone.offset);
-                const bMinutes = getTimeLeftMinutes(b.event.date_utc, b.event.time_utc, selectedTimezone.offset);
-                return aMinutes - bMinutes;
-              })
+              .sort(sortEvents)
               .map(({ date, event, idx }) => {
                 const impactColor = getImpactColor(event.impact || 'low');
                 const rawTime = event.time_utc || '';
