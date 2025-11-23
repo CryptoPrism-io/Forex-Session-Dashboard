@@ -1,4 +1,4 @@
-import { onCLS, onFCP, onFID, onINP, onLCP, onTTFB, type Metric } from 'web-vitals';
+import { onCLS, onFCP, onINP, onLCP, onTTFB, type Metric } from 'web-vitals';
 
 /**
  * Web Vitals Reporting Utility
@@ -9,8 +9,7 @@ import { onCLS, onFCP, onFID, onINP, onLCP, onTTFB, type Metric } from 'web-vita
  * Metrics tracked:
  * - CLS (Cumulative Layout Shift): Target < 0.1
  * - FCP (First Contentful Paint): Target < 1.8s
- * - FID (First Input Delay): Target < 100ms
- * - INP (Interaction to Next Paint): Target < 200ms
+ * - INP (Interaction to Next Paint): Target < 200ms (replaces FID)
  * - LCP (Largest Contentful Paint): Target < 2.5s
  * - TTFB (Time to First Byte): Target < 800ms
  */
@@ -22,7 +21,6 @@ const getMetricColor = (name: string, value: number): string => {
   const thresholds: Record<string, { good: number; needsImprovement: number }> = {
     CLS: { good: 0.1, needsImprovement: 0.25 },
     FCP: { good: 1800, needsImprovement: 3000 },
-    FID: { good: 100, needsImprovement: 300 },
     INP: { good: 200, needsImprovement: 500 },
     LCP: { good: 2500, needsImprovement: 4000 },
     TTFB: { good: 800, needsImprovement: 1800 },
@@ -104,7 +102,6 @@ const handleMetric = (metric: Metric) => {
 export const reportWebVitals = () => {
   onCLS(handleMetric);
   onFCP(handleMetric);
-  onFID(handleMetric);
   onINP(handleMetric);
   onLCP(handleMetric);
   onTTFB(handleMetric);
@@ -115,7 +112,7 @@ export const reportWebVitals = () => {
       'background: #0ea5e9; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold'
     );
     console.log(
-      '%cTargets: CLS < 0.1 | FCP < 1.8s | LCP < 2.5s | FID < 100ms | INP < 200ms | TTFB < 800ms',
+      '%cTargets: CLS < 0.1 | FCP < 1.8s | LCP < 2.5s | INP < 200ms | TTFB < 800ms',
       'color: #64748b; font-size: 11px'
     );
   }
