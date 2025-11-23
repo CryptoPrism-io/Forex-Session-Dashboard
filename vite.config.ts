@@ -51,8 +51,9 @@ export default defineConfig(({ mode }) => {
             manualChunks(id) {
               // Split vendor libraries into separate chunks for better caching
               if (id.includes('node_modules')) {
-                // React core (frequently used, rarely changes)
-                if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+                // React core + React Aria (bundle together to avoid initialization issues)
+                if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler') ||
+                    id.includes('react-aria') || id.includes('@react-aria') || id.includes('@react-stately')) {
                   return 'react-vendor';
                 }
 
@@ -64,11 +65,6 @@ export default defineConfig(({ mode }) => {
                 // Framer Motion (animation library)
                 if (id.includes('framer-motion')) {
                   return 'motion-vendor';
-                }
-
-                // React Aria (accessibility library)
-                if (id.includes('react-aria') || id.includes('@react-aria') || id.includes('@react-stately')) {
-                  return 'aria-vendor';
                 }
 
                 // Everything else (utilities, small libs)
