@@ -46,43 +46,6 @@ export default defineConfig(({ mode }) => {
       ,
       build: {
         chunkSizeWarningLimit: 500,
-        rollupOptions: {
-          output: {
-            manualChunks(id) {
-              // Split vendor libraries into separate chunks for better caching
-              if (id.includes('node_modules')) {
-                // React core + React Aria (bundle together to avoid initialization issues)
-                if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler') ||
-                    id.includes('react-aria') || id.includes('@react-aria') || id.includes('@react-stately')) {
-                  return 'react-vendor';
-                }
-
-                // Recharts (large charting library)
-                if (id.includes('recharts') || id.includes('d3-')) {
-                  return 'chart-vendor';
-                }
-
-                // Framer Motion (animation library)
-                if (id.includes('framer-motion')) {
-                  return 'motion-vendor';
-                }
-
-                // Everything else (utilities, small libs)
-                return 'utils-vendor';
-              }
-
-              // Chart components (lazy loaded)
-              if (id.includes('components/ForexChart') || id.includes('components/VolumeChart') || id.includes('components/Tooltip')) {
-                return 'charts';
-              }
-
-              // Web workers
-              if (id.includes('workers')) {
-                return 'workers';
-              }
-            },
-          },
-        },
       },
     };
 });
