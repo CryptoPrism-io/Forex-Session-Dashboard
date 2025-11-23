@@ -319,8 +319,14 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
     );
   }, [currencies, currencySearchQuery]);
 
+  // Calculate impact counts from data filtered only by currency (not by impact)
+  // This ensures counts show the true number of events regardless of which impacts are selected
   const impactCounts = useMemo(() => {
-    return filteredData.reduce(
+    const currencyFilteredData = data.filter(ev => {
+      return selectedCurrencies.length === 0 || selectedCurrencies.includes(ev.currency);
+    });
+
+    return currencyFilteredData.reduce(
       (acc, event) => {
         const level = (event.impact || 'low').toLowerCase();
         if (level.includes('high')) acc.high += 1;
@@ -330,7 +336,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
       },
       { high: 0, medium: 0, low: 0 }
     );
-  }, [filteredData]);
+  }, [data, selectedCurrencies]);
 
   // Get impact color
   const getImpactColor = (impact: string): string => {
