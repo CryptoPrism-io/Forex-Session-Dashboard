@@ -6,6 +6,9 @@ import SessionClocks from './components/SessionClocks';
 import InstallButton from './components/InstallButton';
 import InstallModal from './components/InstallModal';
 import AlertsToggleHeader from './components/AlertsToggleHeader';
+import BottomNavBar from './components/BottomNavBar';
+import SwipeableFooter from './components/SwipeableFooter';
+import OverviewPanel from './components/OverviewPanel';
 import { usePWAInstall } from './hooks/usePWAInstall';
 import { useSessionAlerts } from './hooks/useSessionAlerts';
 import { useReducedMotion } from './hooks/useReducedMotion';
@@ -35,7 +38,7 @@ const App: React.FC = () => {
   const [timezoneSearchQuery, setTimezoneSearchQuery] = useState('');
   const [isTimezoneMenuOpen, setIsTimezoneMenuOpen] = useState(false);
   const [manualDSTOverride, setManualDSTOverride] = useState<boolean | null>(null);
-  const [activeView, setActiveView] = useState<'clocks' | 'calendar' | 'charts' | 'guide'>('calendar');
+  const [activeView, setActiveView] = useState<'overview' | 'clocks' | 'calendar' | 'charts' | 'guide'>('overview');
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
 
   // Initialize left pane state from localStorage, default to closed on mobile
@@ -280,227 +283,17 @@ const App: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen font-sans text-slate-200" style={{
+    <div className="h-screen font-sans text-slate-200 overflow-hidden" style={{
       background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%)',
       backdropFilter: 'blur(10px)'
     }}>
-      <main className="w-full max-w-7xl mx-auto p-3 sm:p-4 flex flex-col items-center">
-        {/* LAYOUT: Bento Grid - Vertical on Mobile, Horizontal on Desktop */}
-        <div className="w-full mb-3 grid grid-cols-1 md:grid-cols-[1fr_3fr] gap-3 h-auto md:h-[85vh]">
-          {/* LEFT PANE: Title, Subtitle, Time, and Timezone Selector - Bento Grid Item */}
-          <motion.div
-            className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-3 sm:p-4 shadow-lg shadow-black/20 flex flex-col ${leftPaneOpen ? 'block' : 'hidden md:block'} md:overflow-y-auto overflow-visible h-auto md:h-full`}
-            variants={leftPaneVariants}
-            initial={false}
-            animate={
-              typeof window !== 'undefined' && window.innerWidth < 768
-                ? leftPaneOpen
-                  ? 'openMobile'
-                  : 'closedMobile'
-                : 'desktop'
-            }
-            drag={typeof window !== 'undefined' && window.innerWidth < 768 && leftPaneOpen ? 'x' : false}
-            dragConstraints={{ left: -300, right: 0 }}
-            dragElastic={0.2}
-            onDragEnd={(e, { offset, velocity }) => {
-              // Close if dragged left more than 100px or velocity is high
-              if (offset.x < -100 || velocity.x < -500) {
-                setLeftPaneOpen(false);
-              }
-            }}
-          >
-            {/* TOP ROW: Title Only */}
-            <div className="mb-2">
-              <h1
-                className="text-base sm:text-lg font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent whitespace-nowrap"
-                style={{
-                  textShadow: '0 0 15px rgba(34, 211, 238, 0.3), 0 0 30px rgba(59, 130, 246, 0.2)',
-                  filter: 'drop-shadow(0 0 4px rgba(34, 211, 238, 0.25))'
-                }}
-              >
-                FX_Saarthi
-              </h1>
-              <p className="text-xs text-slate-300 font-light tracking-wide mt-1">
-                Real-time session tracking with killzones and overlaps
-              </p>
-            </div>
-
-            {/* Big Time Display */}
-            <div className="mb-4 space-y-0.5">
-              <div className="flex items-center gap-2">
-                <div className="text-[10px] uppercase tracking-[0.45em] text-slate-500">
-                  Current Time
-                </div>
-                {/* Settings Menu for Timezone */}
-                <PopoverMenu
-                  trigger={
-                    <div className="relative">
-                      <IconSettings
-                        className={`
-                          w-4 h-4 transition-all duration-300
-                          ${isTimezoneMenuOpen
-                            ? 'text-cyan-400 rotate-90 scale-110'
-                            : 'text-blue-400/70 hover:text-cyan-400 hover:scale-105'
-                          }
-                        `}
-                        style={{
-                          filter: isTimezoneMenuOpen
-                            ? 'drop-shadow(0 0 4px rgba(34, 211, 238, 0.6))'
-                            : 'none'
-                        }}
-                      />
-                    </div>
-                  }
-                  triggerClassName={`
-                    p-1.5 rounded-lg transition-all duration-300
-                    ${isTimezoneMenuOpen
-                      ? 'bg-cyan-500/20 ring-2 ring-cyan-400/40'
-                      : 'hover:bg-blue-500/10 focus:ring-2 focus:ring-blue-400/30'
-                    }
-                  `}
-                  menuClassName="w-64"
-                  isOpen={isTimezoneMenuOpen}
-                  onOpenChange={setIsTimezoneMenuOpen}
-                >
-                  <div className="p-3 space-y-2">
-                    <div className="text-xs text-slate-400 uppercase tracking-wider mb-3 font-semibold">
-                      Select Timezone
-                    </div>
-
-                    {/* Quick Select: UTC and IST */}
-                    <div className="space-y-1.5 mb-3">
-                      <MenuButton
-                        label="UTC (GMT)"
-                        onClick={() => setSelectedTimezone(TIMEZONES.find(tz => tz.label === 'UTC') || TIMEZONES[0])}
-                        isActive={selectedTimezone.label === 'UTC'}
-                      />
-                      <MenuButton
-                        label="IST (UTC+5:30)"
-                        onClick={() => setSelectedTimezone(TIMEZONES.find(tz => tz.label === 'IST (UTC+5:30)') || TIMEZONES[0])}
-                        isActive={selectedTimezone.label === 'IST (UTC+5:30)'}
-                      />
-                    </div>
-
-                    {/* All Timezones Dropdown */}
-                    <details className="group border-t border-slate-700/50 pt-3">
-                      <summary className="cursor-pointer text-xs text-slate-300 hover:text-cyan-400 transition-colors list-none flex items-center justify-between">
-                        <span>More Timezones</span>
-                        <span className="group-open:rotate-180 transition-transform">▼</span>
-                      </summary>
-                      <div className="mt-2 space-y-2">
-                        {/* Search Box */}
-                        <input
-                          type="text"
-                          placeholder="Search timezone..."
-                          value={timezoneSearchQuery}
-                          onChange={(e) => setTimezoneSearchQuery(e.target.value)}
-                          className="w-full px-2 py-1.5 text-xs bg-slate-800/50 border border-slate-600/50 rounded text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all"
-                        />
-                        {/* Filtered Timezone List */}
-                        <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
-                          {TIMEZONES.filter(tz =>
-                            tz.label.toLowerCase().includes(timezoneSearchQuery.toLowerCase())
-                          ).map((tz) => (
-                            <MenuButton
-                              key={tz.label}
-                              label={tz.label}
-                              onClick={() => {
-                                setSelectedTimezone(tz);
-                                setTimezoneSearchQuery(''); // Clear search after selection
-                              }}
-                              isActive={selectedTimezone.label === tz.label}
-                            />
-                          ))}
-                          {/* No results message */}
-                          {TIMEZONES.filter(tz =>
-                            tz.label.toLowerCase().includes(timezoneSearchQuery.toLowerCase())
-                          ).length === 0 && (
-                            <p className="text-xs text-slate-500 text-center py-4">
-                              No timezones found
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </details>
-                  </div>
-                </PopoverMenu>
-              </div>
-              <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-green-400 bg-clip-text text-transparent tracking-wider font-mono">
-                {timeFormatted}
-              </div>
-              <div className="text-[11px] text-slate-400 font-light mt-0.5">{selectedTimezone.label}</div>
-            </div>
-
-            {/* Live Sessions List */}
-            {activeSessions.length > 0 && (
-              <div className="space-y-1 border-t border-slate-700/30 pt-2.5 flex-1 overflow-y-auto">
-                {/* Active Sessions */}
-                {activeSessions.map(session => {
-                  let textStyle: React.CSSProperties = {};
-                  let indicatorStyle: React.CSSProperties = {};
-
-                  if (session.type === 'killzone') {
-                    const color = 'hsl(0, 100%, 65%)';
-                    textStyle = { color: 'hsl(0, 100%, 80%)', textShadow: `0 0 8px ${color}` };
-                    indicatorStyle = { backgroundColor: color, boxShadow: `0 0 8px ${color}`};
-                  } else if (session.type === 'overlap') {
-                    const color = 'hsl(30, 100%, 65%)';
-                    textStyle = { color: 'hsl(30, 100%, 80%)', textShadow: `0 0 8px ${color}` };
-                    indicatorStyle = { backgroundColor: color, boxShadow: `0 0 8px ${color}`};
-                  } else { // main session
-                    textStyle = { color: session.color };
-                    indicatorStyle = { backgroundColor: session.color, boxShadow: `0 0 6px ${session.color}`};
-                  }
-
-                  if (session.state === 'WARNING') {
-                    indicatorStyle.animation = 'pulse-glow 1.5s infinite';
-                  }
-
-                  return (
-                      <div key={session.name} className="bg-slate-800/20 rounded-lg overflow-hidden">
-                          {/* Row 1: Session Name + Start/End Time */}
-                          <div className="flex items-center justify-between gap-2 px-1.5 py-1">
-                              {/* Session Name with Indicator */}
-                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={indicatorStyle}></span>
-                                  <span className="text-xs font-medium truncate" style={textStyle}>{session.name}</span>
-                              </div>
-
-                              {/* Start - End Time */}
-                              <span className="text-xs font-light text-slate-400 flex-shrink-0">
-                                  {formatTimeInTimezone(session.startUTC)} – {formatTimeInTimezone(session.endUTC)}
-                              </span>
-                          </div>
-
-                          {/* Row 2: Elapsed & Remaining Time */}
-                          <div className="flex items-center justify-between gap-2 px-1.5 py-0.5 bg-slate-800/40 border-t border-slate-700/20">
-                              <span className="text-[10px] font-light text-slate-500">
-                                  ⏱ {formatSessionTime(session.elapsedSeconds)}
-                              </span>
-                              <span className="text-[10px] font-light text-slate-500">
-                                  ⏱ {formatSessionTime(session.remainingSeconds)}
-                              </span>
-                          </div>
-                      </div>
-                  );
-                })}
-              </div>
-            )}
-          </motion.div>
-
-          {/* RIGHT PANE: Main Content Area with 4 Tabs - Bento Grid Item */}
-          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-3 shadow-lg shadow-black/20 flex flex-col overflow-hidden h-[60vh] md:h-full">
-            {/* Header with Toggle Button and Tab Buttons */}
-            <div className="flex items-center gap-2 mb-2.5 flex-shrink-0">
-              {/* Collapse/Expand Toggle Button */}
-              <button
-                onClick={() => setLeftPaneOpen(!leftPaneOpen)}
-                className="p-2.5 rounded-lg transition-all duration-200 bg-slate-700/20 border border-slate-700/40 hover:bg-slate-700/40 hover:border-slate-600/60 text-slate-300 md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center"
-                title={leftPaneOpen ? "Close info panel" : "Open info panel"}
-              >
-                {leftPaneOpen ? <IconX className="w-5 h-5" /> : <IconMenu className="w-5 h-5" />}
-              </button>
-
+      <main className="w-full max-w-7xl mx-auto p-3 sm:p-4 flex flex-col items-center h-full pb-[120px] md:pb-4">
+        {/* LAYOUT: Single column - Full width content area */}
+        <div className="w-full mb-3 flex-1 md:h-[85vh] overflow-hidden">
+          {/* Main Content Area */}
+          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-3 shadow-lg shadow-black/20 flex flex-col overflow-hidden h-full">
+            {/* Header with Tab Navigation - Hidden on mobile */}
+            <div className="hidden md:flex items-center gap-2 mb-2.5 flex-shrink-0">
               {/* 4-Tab Navigation with Individual Colors & SVG Icons */}
               <div className="flex gap-2 flex-1 overflow-x-auto">
                 {/* Calendar Tab - Green */}
@@ -561,8 +354,23 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Conditional Render: Calendar, Clocks, Charts, or Guide */}
+            {/* Conditional Render: Overview, Calendar, Clocks, Charts, or Guide */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden">
+              {activeView === 'overview' && (
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading overview...</div>}>
+                  <OverviewPanel
+                    selectedTimezone={selectedTimezone}
+                    currentTime={currentTime}
+                    activeSessions={activeSessions}
+                    onTimezoneSettingsClick={() => setIsTimezoneMenuOpen(true)}
+                    installState={installState}
+                    onInstallClick={handleInstallClick}
+                    alertConfig={alertConfig}
+                    onToggleAlerts={toggleAlerts}
+                    onToggleSound={toggleSound}
+                  />
+                </Suspense>
+              )}
               {activeView === 'calendar' && (
                 <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading calendar...</div>}>
                   <CalendarErrorBoundary>
@@ -612,27 +420,22 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* FOOTER: Action Row with PWA + Social */}
-        <footer className="w-full mt-2 flex flex-col sm:flex-row items-center justify-between gap-2 px-3 py-2 text-slate-500 text-[10px] sm:text-xs font-light">
-          <p className="text-center sm:text-left">Data is illustrative. Always verify times with your broker. Not financial advice.</p>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-400/40 shadow-inner shadow-cyan-500/20">
-              <IconTradingFlow className="w-5 h-5 text-cyan-300" />
-            </div>
-            <AlertsToggleHeader
+        {/* Footer only shown on desktop (mobile has it in Overview) */}
+        {activeView !== 'overview' && (
+          <div className="hidden md:block">
+            <SwipeableFooter
+              installState={installState}
+              onInstallClick={handleInstallClick}
               alertConfig={alertConfig}
-              onToggle={toggleAlerts}
+              onToggleAlerts={toggleAlerts}
               onToggleSound={toggleSound}
             />
-            <InstallButton
-              onClick={handleInstallClick}
-              show={installState === 'available' || installState === 'dismissed'}
-              hasNativePrompt={installState === 'available'}
-            />
-            <SocialLinks />
           </div>
-        </footer>
+        )}
       </main>
+
+      {/* Bottom Navigation Bar for Mobile */}
+      <BottomNavBar activeView={activeView} onViewChange={setActiveView} />
 
       {/* PWA Installation Modal */}
       <InstallModal
@@ -645,3 +448,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

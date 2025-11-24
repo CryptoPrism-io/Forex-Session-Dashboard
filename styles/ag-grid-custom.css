@@ -1,0 +1,67 @@
+/* Custom AG Grid Dark Theme for Economic Calendar */
+
+.ag-theme-alpine-dark {
+  --ag-background-color: transparent;
+  --ag-header-background-color: rgba(15, 23, 42, 0.95);
+  --ag-odd-row-background-color: rgba(15, 23, 42, 0.3);
+  --ag-row-hover-color: rgba(51, 65, 85, 0.3);
+  --ag-border-color: rgba(51, 65, 85, 0.3);
+  --ag-header-foreground-color: #cbd5e1;
+  --ag-foreground-color: #e2e8f0;
+  --ag-font-size: 12px;
+  --ag-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.ag-theme-alpine-dark .ag-header {
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+.ag-theme-alpine-dark .ag-header-cell-label {
+  font-weight: 600;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.ag-theme-alpine-dark .ag-row {
+  border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+  transition: background-color 0.2s ease;
+}
+
+.ag-theme-alpine-dark .ag-row:hover {
+  background-color: rgba(51, 65, 85, 0.3) !important;
+}
+
+.ag-theme-alpine-dark .ag-cell {
+  padding: 8px 12px;
+  line-height: 1.5;
+  border-right: none;
+}
+
+/* Remove grid lines */
+.ag-theme-alpine-dark .ag-cell {
+  border-right: none !important;
+}
+
+/* Custom scrollbar for AG Grid */
+.ag-theme-alpine-dark .ag-body-viewport::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.ag-theme-alpine-dark .ag-body-viewport::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 4px;
+}
+
+.ag-theme-alpine-dark .ag-body-viewport::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.5);
+  border-radius: 4px;
+}
+
+.ag-theme-alpine-dark .ag-body-viewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7);
+}
