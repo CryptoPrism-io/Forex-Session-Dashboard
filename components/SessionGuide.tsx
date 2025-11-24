@@ -84,8 +84,82 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
           </button>
           <p className="text-xs text-slate-400 mb-3 ml-6">The primary trading blocks when each major market is actively trading. Each session has its own volatility profile and best trading pairs.</p>
           {!collapsedSections.mainSessions && (
-            <div className="overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-4">
-              <table className="w-full text-xs border-collapse">
+            <>
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-3">
+                {[guideSessions[0], guideSessions[1], guideSessions[2], guideSessions[3]].map((session) => {
+                  const hasOverlap = (session.overlapAsia || session.overlapLondon) ? 'Yes' : 'No';
+                  const overlapHours = (() => {
+                    let hours = 0;
+                    if (session.overlapAsia) hours += session.overlapAsia.range[1] - session.overlapAsia.range[0];
+                    if (session.overlapLondon) hours += session.overlapLondon.range[1] - session.overlapLondon.range[0];
+                    return hours > 0 ? `${hours}h` : '-';
+                  })();
+                  const hasKillzone = (session.killzone || session.killzoneAM || session.killzonePM) ? 'Yes' : 'No';
+                  const killzoneHours = (() => {
+                    let hours = 0;
+                    if (session.killzone) hours += session.killzone.range[1] - session.killzone.range[0];
+                    if (session.killzoneAM) hours += session.killzoneAM.range[1] - session.killzoneAM.range[0];
+                    if (session.killzonePM) hours += session.killzonePM.range[1] - session.killzonePM.range[0];
+                    return hours > 0 ? `${hours}h` : '-';
+                  })();
+
+                  return (
+                    <div key={session.name} className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-4 shadow-lg">
+                      {/* Header */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <span
+                          className="w-4 h-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: session.main.color, boxShadow: `0 0 8px ${session.main.color}` }}
+                        />
+                        <h5 className="font-semibold text-slate-100 text-sm">{session.name}</h5>
+                      </div>
+
+                      {/* Session Time Details */}
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs mb-3">
+                        <div>
+                          <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">Start</div>
+                          <div className="text-slate-300 font-medium font-mono">{formatTime(session.main.range[0], timezoneOffset)}</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">End</div>
+                          <div className="text-slate-300 font-medium font-mono">{formatTime(session.main.range[1], timezoneOffset)}</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">Duration</div>
+                          <div className="text-slate-300 font-medium">{session.main.range[1] - session.main.range[0]}h</div>
+                        </div>
+                      </div>
+
+                      {/* Overlap & Killzone Info */}
+                      <div className="pt-3 border-t border-slate-700/40">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                          <div>
+                            <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">Has Overlap</div>
+                            <div className={`font-medium ${hasOverlap === 'Yes' ? 'text-amber-400' : 'text-slate-400'}`}>{hasOverlap}</div>
+                          </div>
+                          <div>
+                            <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">OL Hours</div>
+                            <div className="text-slate-300 font-medium">{overlapHours}</div>
+                          </div>
+                          <div>
+                            <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">Has Killzone</div>
+                            <div className={`font-medium ${hasKillzone === 'Yes' ? 'text-red-400' : 'text-slate-400'}`}>{hasKillzone}</div>
+                          </div>
+                          <div>
+                            <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">KZ Hours</div>
+                            <div className="text-slate-300 font-medium">{killzoneHours}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-4">
+                <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-700/40">
                     <th className="text-left p-2 text-slate-300 font-semibold">Session</th>
@@ -136,7 +210,8 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                   })}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </div>
 
@@ -160,8 +235,51 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
           </button>
           <p className="text-xs text-slate-400 mb-3 ml-6">Times when two major sessions overlap, offering increased liquidity and volatility. Ideal for breakout strategies and trend-following.</p>
           {!collapsedSections.overlaps && (
-            <div className="overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-4">
-              <table className="w-full text-xs border-collapse">
+            <>
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-3">
+                {(() => {
+                  const overlaps = [];
+                  if (guideSessions[2].overlapAsia) {
+                    overlaps.push({ name: guideSessions[2].overlapAsia.name, range: guideSessions[2].overlapAsia.range, color: '#fb923c' });
+                  }
+                  if (guideSessions[3].overlapLondon) {
+                    overlaps.push({ name: guideSessions[3].overlapLondon.name, range: guideSessions[3].overlapLondon.range, color: '#fb923c' });
+                  }
+                  return overlaps.map((overlap) => (
+                    <div key={overlap.name} className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-4 shadow-lg">
+                      {/* Header */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <span
+                          className="w-4 h-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: overlap.color, boxShadow: `0 0 8px ${overlap.color}` }}
+                        />
+                        <h5 className="font-semibold text-slate-100 text-sm">{overlap.name}</h5>
+                      </div>
+
+                      {/* Overlap Time Details */}
+                      <div className="grid grid-cols-3 gap-x-4 gap-y-2.5 text-xs">
+                        <div>
+                          <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">Start</div>
+                          <div className="text-slate-300 font-medium font-mono">{formatTime(overlap.range[0], timezoneOffset)}</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">End</div>
+                          <div className="text-slate-300 font-medium font-mono">{formatTime(overlap.range[1], timezoneOffset)}</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">Duration</div>
+                          <div className="text-amber-400 font-semibold">{overlap.range[1] - overlap.range[0]}h</div>
+                        </div>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-4">
+                <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-700/40">
                     <th className="text-left p-2 text-slate-300 font-semibold">Overlap</th>
@@ -190,7 +308,8 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                   })()}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </div>
 
@@ -214,8 +333,54 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
           </button>
           <p className="text-xs text-slate-400 mb-3 ml-6">High-volatility institutional trading windows designed for liquidity manipulation. Prime time for ICT-style stop hunts and seek & destroy patterns.</p>
           {!collapsedSections.killzones && (
-            <div className="overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-4">
-              <table className="w-full text-xs border-collapse">
+            <>
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-3">
+                {(() => {
+                  const killzones = [];
+                  if (guideSessions[2].killzone) {
+                    killzones.push({ name: guideSessions[2].killzone.name, range: guideSessions[2].killzone.range, color: '#ef4444' });
+                  }
+                  if (guideSessions[3].killzoneAM) {
+                    killzones.push({ name: guideSessions[3].killzoneAM.name, range: guideSessions[3].killzoneAM.range, color: '#ef4444' });
+                  }
+                  if (guideSessions[3].killzonePM) {
+                    killzones.push({ name: guideSessions[3].killzonePM.name, range: guideSessions[3].killzonePM.range, color: '#ef4444' });
+                  }
+                  return killzones.map((kz) => (
+                    <div key={kz.name} className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-4 shadow-lg">
+                      {/* Header */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <span
+                          className="w-4 h-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: kz.color, boxShadow: `0 0 8px ${kz.color}` }}
+                        />
+                        <h5 className="font-semibold text-slate-100 text-sm">{kz.name}</h5>
+                      </div>
+
+                      {/* Killzone Time Details */}
+                      <div className="grid grid-cols-3 gap-x-4 gap-y-2.5 text-xs">
+                        <div>
+                          <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">Start</div>
+                          <div className="text-slate-300 font-medium font-mono">{formatTime(kz.range[0], timezoneOffset)}</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">End</div>
+                          <div className="text-slate-300 font-medium font-mono">{formatTime(kz.range[1], timezoneOffset)}</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">Duration</div>
+                          <div className="text-red-400 font-semibold">{kz.range[1] - kz.range[0]}h</div>
+                        </div>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-4">
+                <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-700/40">
                     <th className="text-left p-2 text-slate-300 font-semibold">Killzone</th>
@@ -247,7 +412,8 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                   })()}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </div>
 

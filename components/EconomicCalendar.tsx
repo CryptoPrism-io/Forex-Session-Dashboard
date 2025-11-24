@@ -1,5 +1,13 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { AgGridReact } from 'ag-grid-react';
+import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
+import '../styles/ag-grid-custom.css';
 import { useEconomicCalendar } from '../hooks/useEconomicCalendar';
+
+// Register AG Grid modules
+ModuleRegistry.registerModules([AllCommunityModule]);
 import { Timezone } from '../types';
 import { IconEyeOff, IconEye, IconRefreshCcw } from './icons';
 import { FilterChip, FilterChipGroup } from './FilterChip';
@@ -575,6 +583,139 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
     }
   }, [sortBy, selectedTimezone.offset]);
 
+  // Prepare row data for AG Grid
+  const gridRowData = useMemo(() => {
+    return Object.entries(eventsByDate)
+      .flatMap(([date, events]) =>
+        events.map((event, idx) => {
+          const rawTime = event.time_utc || '';
+          const isTentative = rawTime.toLowerCase() === 'tentative';
+          const convertedTime = isTentative ? '' : convertUTCToTimezone(event.time_utc, selectedTimezone.offset);
+          const displayTime = convertedTime || rawTime;
+          const timeLeft = getTimeLeft(event.date_utc, event.time_utc, selectedTimezone.offset);
+          const timeLeftMinutes = getTimeLeftMinutes(event.date_utc, event.time_utc, selectedTimezone.offset);
+
+          return {
+            id: `${date}-${event.id}-${idx}`,
+            date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            dateTime: new Date(date).getTime(),
+            displayTime,
+            timeLeft,
+            timeLeftMinutes,
+            currency: event.currency,
+            event: event.event,
+            impact: event.impact || 'low',
+            previous: event.previous || '--',
+            forecast: event.forecast || '--',
+            actual: event.actual || '--',
+            actualStatus: event.actual_status,
+          };
+        })
+      )
+      .sort((a, b) => {
+        if (sortBy === 'timeLeft') {
+          return a.timeLeftMinutes - b.timeLeftMinutes;
+        } else {
+          if (a.dateTime !== b.dateTime) return a.dateTime - b.dateTime;
+          return a.displayTime.localeCompare(b.displayTime);
+        }
+      });
+  }, [eventsByDate, selectedTimezone.offset, sortBy]);
+
+  // AG Grid column definitions
+  const columnDefs = useMemo(() => [
+    {
+      headerName: 'Date',
+      field: 'date',
+      width: 120,
+      cellStyle: { fontFamily: 'monospace', fontSize: '10px', color: '#94a3b8' },
+      cellRenderer: (params: any) => (
+        <div>
+          <div>{params.value}</div>
+          <div style={{ color: '#64748b' }}>{params.data.displayTime}</div>
+        </div>
+      ),
+    },
+    {
+      headerName: 'Time Left',
+      field: 'timeLeft',
+      width: 120,
+      cellStyle: (params: any) => {
+        const timeLeft = params.value;
+        let color = '#22d3ee'; // cyan-400
+        if (timeLeft === 'Passed') color = '#64748b'; // slate-500
+        else if (timeLeft === '--') color = '#64748b';
+        else if (timeLeft.includes('d')) color = '#94a3b8'; // slate-400
+        else if (parseInt(timeLeft) < 2) color = '#f87171'; // red-400
+        else if (parseInt(timeLeft) < 6) color = '#fbbf24'; // amber-400
+        return { fontFamily: 'monospace', color, fontWeight: parseInt(timeLeft) < 2 ? 'bold' : 'normal' };
+      },
+    },
+    {
+      headerName: 'Event',
+      field: 'event',
+      flex: 1,
+      minWidth: 200,
+      cellRenderer: (params: any) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '14px' }}>{getCurrencyFlag(params.data.currency)}</span>
+          <span style={{ color: '#e2e8f0', fontWeight: '500' }}>{params.value}</span>
+        </div>
+      ),
+    },
+    {
+      headerName: 'Impact',
+      field: 'impact',
+      width: 100,
+      cellStyle: { textAlign: 'center' },
+      cellRenderer: (params: any) => {
+        const impactColor = getImpactColor(params.value);
+        return (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <div
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: impactColor,
+                boxShadow: `0 0 6px ${impactColor}`,
+              }}
+              title={params.value}
+            />
+          </div>
+        );
+      },
+    },
+    {
+      headerName: 'Previous',
+      field: 'previous',
+      width: 100,
+      cellStyle: { fontFamily: 'monospace', color: '#cbd5e1', textAlign: 'right' },
+    },
+    {
+      headerName: 'Forecast',
+      field: 'forecast',
+      width: 100,
+      cellStyle: { fontFamily: 'monospace', color: '#cbd5e1', textAlign: 'right' },
+    },
+    {
+      headerName: 'Actual',
+      field: 'actual',
+      width: 100,
+      cellStyle: (params: any) => {
+        let color = '#64748b'; // slate-500
+        let fontWeight = 'normal';
+        if (params.value !== '--') {
+          fontWeight = 'bold';
+          if (params.data.actualStatus === 'better') color = '#4ade80'; // green-400
+          else if (params.data.actualStatus === 'worse') color = '#f87171'; // red-400
+          else color = '#67e8f9'; // cyan-300
+        }
+        return { fontFamily: 'monospace', color, fontWeight, textAlign: 'right' };
+      },
+    },
+  ], [selectedTimezone.offset]);
+
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header with Filters */}
@@ -925,107 +1066,31 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
           })}
       </div>
 
-      {/* Desktop Table View (hidden on mobile) */}
-      <div className="hidden md:block flex-1 overflow-auto">
-        <table className="w-full text-xs border-collapse">
-          <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-sm z-10">
-            <tr className="border-b border-slate-700/50">
-              <th className="px-3 py-2 text-left font-semibold text-slate-300 whitespace-nowrap">Date</th>
-              <th className="px-3 py-2 text-left font-semibold text-slate-300 whitespace-nowrap">Time Left</th>
-              <th className="px-3 py-2 text-left font-semibold text-slate-300">Event</th>
-              <th className="px-3 py-2 text-center font-semibold text-slate-300">Impact</th>
-              <th className="px-3 py-2 text-right font-semibold text-slate-300 whitespace-nowrap">Previous</th>
-              <th className="px-3 py-2 text-right font-semibold text-slate-300 whitespace-nowrap">Forecast</th>
-              <th className="px-3 py-2 text-right font-semibold text-slate-300 whitespace-nowrap">Actual</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(eventsByDate)
-              .flatMap(([date, events]) =>
-                events.map((event, idx) => ({ date, event, idx }))
-              )
-              .sort(sortEvents)
-              .map(({ date, event, idx }) => {
-                const impactColor = getImpactColor(event.impact || 'low');
-                const rawTime = event.time_utc || '';
-                const isTentative = rawTime.toLowerCase() === 'tentative';
-                const convertedTime = isTentative ? '' : convertUTCToTimezone(event.time_utc, selectedTimezone.offset);
-                const displayTime = convertedTime || rawTime;
-                const timeLeft = getTimeLeft(event.date_utc, event.time_utc, selectedTimezone.offset);
-
-                return (
-                  <tr
-                    key={`${date}-${event.id}-${idx}`}
-                    className="border-b border-slate-800/30 hover:bg-slate-800/30 transition-colors"
-                  >
-                    {/* Date */}
-                    <td className="px-3 py-2 text-slate-400 font-mono text-[10px] whitespace-nowrap">
-                      {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      <br />
-                      <span className="text-slate-500">{displayTime}</span>
-                    </td>
-
-                    {/* Time Left */}
-                    <td className="px-3 py-2 font-mono whitespace-nowrap">
-                      <span className={`${
-                        timeLeft === 'Passed' ? 'text-slate-500' :
-                        timeLeft.includes('d') ? 'text-slate-400' :
-                        parseInt(timeLeft) < 2 ? 'text-red-400 font-semibold' :
-                        parseInt(timeLeft) < 6 ? 'text-amber-400' :
-                        'text-cyan-400'
-                      }`}>
-                        {timeLeft}
-                      </span>
-                    </td>
-
-                    {/* Event */}
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">{getCurrencyFlag(event.currency)}</span>
-                        <span className="text-slate-200 font-medium">{event.event}</span>
-                      </div>
-                    </td>
-
-                    {/* Impact */}
-                    <td className="px-3 py-2 text-center">
-                      <div className="inline-flex items-center justify-center">
-                        <div
-                          className="w-2 h-2 rounded-full"
-                          style={{
-                            backgroundColor: impactColor,
-                            boxShadow: `0 0 6px ${impactColor}`,
-                          }}
-                          title={event.impact || 'low'}
-                        />
-                      </div>
-                    </td>
-
-                    {/* Previous */}
-                    <td className="px-3 py-2 text-right text-slate-300 font-mono whitespace-nowrap">
-                      {event.previous || '--'}
-                    </td>
-
-                    {/* Forecast */}
-                    <td className="px-3 py-2 text-right text-slate-300 font-mono whitespace-nowrap">
-                      {event.forecast || '--'}
-                    </td>
-
-                    {/* Actual */}
-                    <td className="px-3 py-2 text-right font-mono whitespace-nowrap">
-                      <span className={
-                        !event.actual ? 'text-slate-500' :
-                        event.actual_status === 'better' ? 'text-green-400 font-semibold' :
-                        event.actual_status === 'worse' ? 'text-red-400 font-semibold' :
-                        'text-cyan-300 font-semibold'
-                      }>
-                        {event.actual || '--'}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-          </tbody>
-        </table>
+      {/* Desktop AG Grid View (hidden on mobile) */}
+      <div className="hidden md:block flex-1 overflow-auto ag-theme-alpine-dark">
+        <AgGridReact
+          rowData={gridRowData}
+          columnDefs={columnDefs}
+          theme="legacy"
+          domLayout="autoHeight"
+          headerHeight={40}
+          rowHeight={50}
+          animateRows={true}
+          suppressCellFocus={true}
+          rowStyle={{
+            backgroundColor: 'transparent',
+            borderBottom: '1px solid rgba(51, 65, 85, 0.3)',
+          }}
+          getRowStyle={(params) => {
+            if (params.node.rowIndex! % 2 === 0) {
+              return { backgroundColor: 'rgba(15, 23, 42, 0.3)' };
+            }
+            return {};
+          }}
+          onRowClicked={(event) => {
+            // Optional: Add row click handler if needed
+          }}
+        />
       </div>
 
       {/* Mobile Filter Bottom Sheet */}
