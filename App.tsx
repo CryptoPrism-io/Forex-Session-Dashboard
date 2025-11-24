@@ -294,8 +294,22 @@ const App: React.FC = () => {
           <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-3 shadow-lg shadow-black/20 flex flex-col overflow-hidden h-full">
             {/* Header with Tab Navigation - Hidden on mobile */}
             <div className="hidden md:flex items-center gap-2 mb-2.5 flex-shrink-0">
-              {/* 4-Tab Navigation with Individual Colors & SVG Icons */}
+              {/* 5-Tab Navigation with Individual Colors & SVG Icons */}
               <div className="flex gap-2 flex-1 overflow-x-auto">
+                {/* Overview Tab - Blue */}
+                <button
+                  onClick={() => setActiveView('overview')}
+                  className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px] ${
+                    activeView === 'overview'
+                      ? 'bg-blue-500/20 border border-blue-400/40 text-blue-300 font-bold'
+                      : 'bg-slate-700/20 border border-slate-700/40 text-blue-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
+                  }`}
+                  title="Overview"
+                >
+                  <IconTarget className="w-5 h-5" />
+                  <span className="hidden sm:inline">Overview</span>
+                </button>
+
                 {/* Calendar Tab - Green */}
                 <button
                   onClick={() => setActiveView('calendar')}
@@ -352,6 +366,42 @@ const App: React.FC = () => {
                   <span className="hidden sm:inline">World Clock</span>
                 </button>
               </div>
+            </div>
+
+            {/* Global Header - Title, Action Buttons, Disclaimer */}
+            <div className="text-center space-y-1.5 px-3 py-2 border-b border-slate-700/30 flex-shrink-0">
+              <h1
+                className="text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
+                style={{
+                  textShadow: '0 0 15px rgba(34, 211, 238, 0.3), 0 0 30px rgba(59, 130, 246, 0.2)',
+                  filter: 'drop-shadow(0 0 4px rgba(34, 211, 238, 0.25))'
+                }}
+              >
+                FX_Saarthi
+              </h1>
+              <p className="text-[10px] text-slate-400 font-light">
+                Real-time session tracking with killzones and overlaps
+              </p>
+
+              {/* Action Buttons Row */}
+              <div className="flex items-center justify-center gap-2 pt-1">
+                <AlertsToggleHeader
+                  alertConfig={alertConfig}
+                  onToggle={toggleAlerts}
+                  onToggleSound={toggleSound}
+                />
+                <InstallButton
+                  onClick={handleInstallClick}
+                  show={installState === 'available' || installState === 'dismissed'}
+                  hasNativePrompt={installState === 'available'}
+                />
+                <SocialLinks />
+              </div>
+
+              {/* Disclaimer */}
+              <p className="text-center text-slate-500 text-[9px] font-light leading-tight pt-1">
+                Data is illustrative. Not financial advice.
+              </p>
             </div>
 
             {/* Conditional Render: Overview, Calendar, Clocks, Charts, or Guide */}
