@@ -287,7 +287,7 @@ const App: React.FC = () => {
       background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%)',
       backdropFilter: 'blur(10px)'
     }}>
-      <main className="w-full max-w-7xl mx-auto p-3 sm:p-4 flex flex-col items-center h-full pb-[120px] md:pb-4">
+      <main className="w-full max-w-7xl mx-auto p-3 sm:p-4 flex flex-col items-center h-full pb-20 md:pb-4">
         {/* LAYOUT: Single column - Full width content area */}
         <div className="w-full mb-3 flex-1 md:h-[85vh] overflow-hidden">
           {/* Main Content Area */}
@@ -368,41 +368,43 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Global Header - Title, Action Buttons, Disclaimer */}
-            <div className="text-center space-y-1.5 px-3 py-2 border-b border-slate-700/30 flex-shrink-0">
-              <h1
-                className="text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
-                style={{
-                  textShadow: '0 0 15px rgba(34, 211, 238, 0.3), 0 0 30px rgba(59, 130, 246, 0.2)',
-                  filter: 'drop-shadow(0 0 4px rgba(34, 211, 238, 0.25))'
-                }}
-              >
-                FX_Saarthi
-              </h1>
-              <p className="text-[10px] text-slate-400 font-light">
-                Real-time session tracking with killzones and overlaps
-              </p>
+            {/* Overview Header - Title, Action Buttons, Disclaimer (only shown on overview) */}
+            {activeView === 'overview' && (
+              <div className="text-center space-y-1.5 px-3 py-2 border-b border-slate-700/30 flex-shrink-0">
+                <h1
+                  className="text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
+                  style={{
+                    textShadow: '0 0 15px rgba(34, 211, 238, 0.3), 0 0 30px rgba(59, 130, 246, 0.2)',
+                    filter: 'drop-shadow(0 0 4px rgba(34, 211, 238, 0.25))'
+                  }}
+                >
+                  FX_Saarthi
+                </h1>
+                <p className="text-[10px] text-slate-400 font-light">
+                  Real-time session tracking with killzones and overlaps
+                </p>
 
-              {/* Action Buttons Row */}
-              <div className="flex items-center justify-center gap-2 pt-1">
-                <AlertsToggleHeader
-                  alertConfig={alertConfig}
-                  onToggle={toggleAlerts}
-                  onToggleSound={toggleSound}
-                />
-                <InstallButton
-                  onClick={handleInstallClick}
-                  show={installState === 'available' || installState === 'dismissed'}
-                  hasNativePrompt={installState === 'available'}
-                />
-                <SocialLinks />
+                {/* Action Buttons Row */}
+                <div className="flex items-center justify-center gap-2 pt-1">
+                  <AlertsToggleHeader
+                    alertConfig={alertConfig}
+                    onToggle={toggleAlerts}
+                    onToggleSound={toggleSound}
+                  />
+                  <InstallButton
+                    onClick={handleInstallClick}
+                    show={installState === 'available' || installState === 'dismissed'}
+                    hasNativePrompt={installState === 'available'}
+                  />
+                  <SocialLinks />
+                </div>
+
+                {/* Disclaimer */}
+                <p className="text-center text-slate-500 text-[9px] font-light leading-tight pt-1">
+                  Data is illustrative. Not financial advice.
+                </p>
               </div>
-
-              {/* Disclaimer */}
-              <p className="text-center text-slate-500 text-[9px] font-light leading-tight pt-1">
-                Data is illustrative. Not financial advice.
-              </p>
-            </div>
+            )}
 
             {/* Conditional Render: Overview, Calendar, Clocks, Charts, or Guide */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden">
