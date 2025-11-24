@@ -70,7 +70,7 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
   return (
     <div className="h-full overflow-y-auto">
       {/* Main Content */}
-      <div className="min-h-full flex flex-col p-3 space-y-3">
+      <div className="min-h-full flex flex-col px-3 pt-3 space-y-3">
         {/* Current Time Display */}
         <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4 shadow-lg">
           <div className="flex items-center gap-2 mb-2">
