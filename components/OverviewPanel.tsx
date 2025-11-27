@@ -70,9 +70,9 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
   return (
     <div className="h-full overflow-y-auto">
       {/* Main Content */}
-      <div className="min-h-full flex flex-col px-3 pt-3 space-y-3">
+      <div className="min-h-full flex flex-col space-y-4">
         {/* Current Time Display */}
-        <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4 shadow-lg">
+        <div className="glass-soft rounded-3xl p-4 md:p-5 shadow-2xl shadow-black/35">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg" style={{ filter: `drop-shadow(0 0 4px ${timeGlow})` }}>
               {timeIcon}
@@ -101,11 +101,11 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
 
         {/* Active Sessions */}
         {activeSessions.length > 0 && (
-          <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-xl p-3 shadow-lg">
+          <div className="glass-soft rounded-3xl p-4 shadow-2xl shadow-black/35 space-y-3">
             <h3 className="text-[10px] uppercase tracking-[0.3em] text-slate-500 mb-2">
               Active Sessions
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {activeSessions.map((session) => {
                 const totalSeconds = session.elapsedSeconds + session.remainingSeconds;
                 const progressPercent = (session.elapsedSeconds / totalSeconds) * 100;
@@ -113,7 +113,7 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
                 return (
                   <div
                     key={session.name}
-                    className="p-3 rounded-lg bg-slate-900/40 border border-slate-700/40"
+                    className="glass-soft rounded-2xl p-3 shadow-xl shadow-black/30"
                   >
                     {/* Header Row */}
                     <div className="flex items-center justify-between mb-2">
@@ -145,7 +145,7 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
 
                     {/* Progress Bar */}
                     <div className="mb-2">
-                      <div className="h-1.5 bg-slate-800/60 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-slate-900/60 rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-1000"
                           style={{
@@ -158,8 +158,8 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
                     </div>
 
                     {/* Time Info */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-slate-800/40 rounded-lg p-2 text-center">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="glass-soft rounded-xl p-2.5 text-center shadow-inner shadow-black/10">
                         <div className="text-[9px] uppercase tracking-wide text-slate-500 mb-0.5">
                           Elapsed
                         </div>
@@ -167,7 +167,7 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
                           {formatSessionTime(session.elapsedSeconds)}
                         </div>
                       </div>
-                      <div className="bg-slate-800/40 rounded-lg p-2 text-center">
+                      <div className="glass-soft rounded-xl p-2.5 text-center shadow-inner shadow-black/10">
                         <div className="text-[9px] uppercase tracking-wide text-slate-500 mb-0.5">
                           Remaining
                         </div>
@@ -184,15 +184,15 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
         )}
 
         {activeSessions.length === 0 && (
-          <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4 shadow-lg text-center">
+          <div className="glass-soft rounded-3xl p-4 shadow-2xl shadow-black/35 text-center">
             <p className="text-xs text-slate-400">No active trading sessions</p>
             <p className="text-[10px] text-slate-500 mt-0.5">Check back during market hours</p>
           </div>
         )}
 
         {/* Info Cards */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-400/30 rounded-lg p-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="glass-soft rounded-2xl p-3 shadow-xl shadow-black/30">
             <div className="flex items-center justify-between mb-1.5">
               <div className="text-xl">📊</div>
               <div className="text-[10px] uppercase tracking-wide font-semibold text-cyan-300/60">
@@ -207,7 +207,7 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
           </div>
           <button
             onClick={onTimezoneSettingsClick}
-            className="bg-gradient-to-br from-emerald-500/10 to-green-500/10 border border-emerald-400/30 rounded-lg p-3 hover:from-emerald-500/15 hover:to-green-500/15 hover:border-emerald-400/50 transition-all text-left w-full"
+            className="glass-soft rounded-2xl p-3 shadow-xl shadow-black/30 hover:border-emerald-400/40 transition-all text-left w-full"
           >
             <div className="flex items-center justify-between mb-1.5">
               <div className="text-xl">🌍</div>

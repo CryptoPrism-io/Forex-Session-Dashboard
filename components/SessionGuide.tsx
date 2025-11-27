@@ -17,7 +17,6 @@ const formatTime = (hour: number, offset: number): string => {
 const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timezoneOffset }) => {
   const [guideTab, setGuideTab] = useState<'standard' | 'daylight'>('standard');
   const [collapsedSections, setCollapsedSections] = useState({ mainSessions: false, overlaps: false, killzones: false });
-  const [chartsVisible, setChartsVisible] = useState(true);
 
   const guideSessions = guideTab === 'standard' ? SESSIONS_STANDARD : SESSIONS_DAYLIGHT;
 
@@ -26,10 +25,10 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
   };
 
   return (
-    <section className="w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-2xl border border-slate-700/30 rounded-2xl shadow-2xl shadow-black/30 overflow-hidden transition-all duration-300 hover:border-slate-600/50">
-      <div className="p-6 text-sm space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+    <section className="w-full glass-soft backdrop-blur-2xl rounded-2xl shadow-2xl shadow-black/35 overflow-hidden transition-all duration-300 hover:border-slate-600/50">
+      <div className="px-4 py-5 sm:px-6 text-sm space-y-6 md:space-y-7">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold text-slate-100">Trading Session Guide ({currentTimezoneLabel})</h3>
             {/* Tabs for Standard / Daylight Times */}
             <div className="flex items-center gap-1 bg-slate-800/40 backdrop-blur-md border border-slate-700/40 rounded-lg p-1">
@@ -41,7 +40,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                     : 'text-slate-400 hover:text-slate-300'
                 }`}
               >
-                ❄️ Winter
+                ?? Winter
               </button>
               <button
                 onClick={() => setGuideTab('daylight')}
@@ -51,17 +50,10 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                     : 'text-slate-400 hover:text-slate-300'
                 }`}
               >
-                🌞 Summer
+                ?? Summer
               </button>
             </div>
           </div>
-          <button
-            onClick={() => setChartsVisible(!chartsVisible)}
-            className="px-3 py-1 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 transition-all duration-300"
-            title={chartsVisible ? "Hide charts" : "Show charts"}
-          >
-            {chartsVisible ? '▼ Charts' : '▶ Charts'}
-          </button>
         </div>
 
         {/* Main Sessions Master Table */}
@@ -82,12 +74,12 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
               Main Sessions
             </h4>
           </button>
-          <p className="text-xs text-slate-400 mb-3 ml-6">The primary trading blocks when each major market is actively trading. Each session has its own volatility profile and best trading pairs.</p>
+          <p className="text-xs text-slate-400 mb-3 ml-5">The primary trading blocks when each major market is actively trading. Each session has its own volatility profile and best trading pairs.</p>
           {!collapsedSections.mainSessions && (
             <>
               {/* Mobile Card View */}
-              <div className="block md:hidden space-y-3">
-                {[guideSessions[0], guideSessions[1], guideSessions[2], guideSessions[3]].map((session) => {
+              <div className="block md:hidden space-y-0">
+                {[guideSessions[0], guideSessions[1], guideSessions[2], guideSessions[3]].map((session, idx) => {
                   const hasOverlap = (session.overlapAsia || session.overlapLondon) ? 'Yes' : 'No';
                   const overlapHours = (() => {
                     let hours = 0;
@@ -105,9 +97,13 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                   })();
 
                   return (
-                    <div key={session.name} className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-4 shadow-lg">
+                    <div
+                      key={session.name}
+                      className="relative glass-soft backdrop-blur-2xl rounded-2xl p-3 shadow-2xl stacked-card"
+                    >
+                      <div className="relative">
                       {/* Header */}
-                      <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center gap-2.5 mb-2.5">
                         <span
                           className="w-4 h-4 rounded-full flex-shrink-0"
                           style={{ backgroundColor: session.main.color, boxShadow: `0 0 8px ${session.main.color}` }}
@@ -116,7 +112,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                       </div>
 
                       {/* Session Time Details */}
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs mb-3">
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs mb-2.5">
                         <div>
                           <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">Start</div>
                           <div className="text-slate-300 font-medium font-mono">{formatTime(session.main.range[0], timezoneOffset)}</div>
@@ -132,8 +128,8 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                       </div>
 
                       {/* Overlap & Killzone Info */}
-                      <div className="pt-3 border-t border-slate-700/40">
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                      <div className="pt-2.5 border-t border-slate-700/40">
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                           <div>
                             <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">Has Overlap</div>
                             <div className={`font-medium ${hasOverlap === 'Yes' ? 'text-amber-400' : 'text-slate-400'}`}>{hasOverlap}</div>
@@ -152,13 +148,14 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                           </div>
                         </div>
                       </div>
+                      </div>
                     </div>
                   );
                 })}
               </div>
 
               {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-4">
+              <div className="hidden md:block overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-3">
                 <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-700/40">
@@ -233,11 +230,11 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
               Session Overlaps
             </h4>
           </button>
-          <p className="text-xs text-slate-400 mb-3 ml-6">Times when two major sessions overlap, offering increased liquidity and volatility. Ideal for breakout strategies and trend-following.</p>
+          <p className="text-xs text-slate-400 mb-3 ml-5">Times when two major sessions overlap, offering increased liquidity and volatility. Ideal for breakout strategies and trend-following.</p>
           {!collapsedSections.overlaps && (
             <>
               {/* Mobile Card View */}
-              <div className="block md:hidden space-y-3">
+              <div className="block md:hidden space-y-2.5">
                 {(() => {
                   const overlaps = [];
                   if (guideSessions[2].overlapAsia) {
@@ -247,9 +244,9 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                     overlaps.push({ name: guideSessions[3].overlapLondon.name, range: guideSessions[3].overlapLondon.range, color: '#fb923c' });
                   }
                   return overlaps.map((overlap) => (
-                    <div key={overlap.name} className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-4 shadow-lg">
+                    <div key={overlap.name} className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-3 shadow-lg">
                       {/* Header */}
-                      <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center gap-2.5 mb-2.5">
                         <span
                           className="w-4 h-4 rounded-full flex-shrink-0"
                           style={{ backgroundColor: overlap.color, boxShadow: `0 0 8px ${overlap.color}` }}
@@ -258,7 +255,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                       </div>
 
                       {/* Overlap Time Details */}
-                      <div className="grid grid-cols-3 gap-x-4 gap-y-2.5 text-xs">
+                      <div className="grid grid-cols-3 gap-x-3 gap-y-2 text-xs">
                         <div>
                           <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">Start</div>
                           <div className="text-slate-300 font-medium font-mono">{formatTime(overlap.range[0], timezoneOffset)}</div>
@@ -278,7 +275,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
               </div>
 
               {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-4">
+              <div className="hidden md:block overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-3">
                 <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-700/40">
@@ -331,11 +328,11 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
               Killzones
             </h4>
           </button>
-          <p className="text-xs text-slate-400 mb-3 ml-6">High-volatility institutional trading windows designed for liquidity manipulation. Prime time for ICT-style stop hunts and seek & destroy patterns.</p>
+          <p className="text-xs text-slate-400 mb-3 ml-5">High-volatility institutional trading windows designed for liquidity manipulation. Prime time for ICT-style stop hunts and seek & destroy patterns.</p>
           {!collapsedSections.killzones && (
             <>
               {/* Mobile Card View */}
-              <div className="block md:hidden space-y-3">
+              <div className="block md:hidden space-y-2.5">
                 {(() => {
                   const killzones = [];
                   if (guideSessions[2].killzone) {
@@ -348,9 +345,9 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                     killzones.push({ name: guideSessions[3].killzonePM.name, range: guideSessions[3].killzonePM.range, color: '#ef4444' });
                   }
                   return killzones.map((kz) => (
-                    <div key={kz.name} className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-4 shadow-lg">
+                    <div key={kz.name} className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-3 shadow-lg">
                       {/* Header */}
-                      <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center gap-2.5 mb-2.5">
                         <span
                           className="w-4 h-4 rounded-full flex-shrink-0"
                           style={{ backgroundColor: kz.color, boxShadow: `0 0 8px ${kz.color}` }}
@@ -359,7 +356,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                       </div>
 
                       {/* Killzone Time Details */}
-                      <div className="grid grid-cols-3 gap-x-4 gap-y-2.5 text-xs">
+                      <div className="grid grid-cols-3 gap-x-3 gap-y-2 text-xs">
                         <div>
                           <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">Start</div>
                           <div className="text-slate-300 font-medium font-mono">{formatTime(kz.range[0], timezoneOffset)}</div>
@@ -379,7 +376,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
               </div>
 
               {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-4">
+              <div className="hidden md:block overflow-x-auto rounded-xl bg-slate-800/20 backdrop-blur-md border border-slate-700/20 p-3">
                 <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-700/40">

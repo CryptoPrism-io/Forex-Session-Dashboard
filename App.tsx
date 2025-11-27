@@ -287,11 +287,11 @@ const App: React.FC = () => {
       background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%)',
       backdropFilter: 'blur(10px)'
     }}>
-      <main className="w-full max-w-7xl mx-auto p-3 sm:p-4 flex flex-col items-center h-full pb-20 md:pb-4">
+      <main className="w-full h-full flex flex-col items-stretch p-0">
         {/* LAYOUT: Single column - Full width content area */}
-        <div className="w-full mb-3 flex-1 md:h-[85vh] overflow-hidden">
+        <div className="w-full flex-1 h-full overflow-hidden">
           {/* Main Content Area */}
-          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/50 rounded-3xl p-3 shadow-lg shadow-black/20 flex flex-col overflow-hidden h-full">
+          <div className="glass-shell backdrop-blur-xl rounded-3xl p-3 sm:p-4 shadow-lg shadow-black/20 flex flex-col overflow-hidden h-full gap-3 sm:gap-4">
             {/* Header with Tab Navigation - Hidden on mobile */}
             <div className="hidden md:flex items-center gap-2 mb-2.5 flex-shrink-0">
               {/* 5-Tab Navigation with Individual Colors & SVG Icons */}
@@ -368,46 +368,47 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Overview Header - Title, Action Buttons, Disclaimer (only shown on overview) */}
+            {/* Overview Header - compact on mobile */}
             {activeView === 'overview' && (
-              <div className="text-center space-y-1.5 px-3 py-2 border-b border-slate-700/30 flex-shrink-0">
-                <h1
-                  className="text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
-                  style={{
-                    textShadow: '0 0 15px rgba(34, 211, 238, 0.3), 0 0 30px rgba(59, 130, 246, 0.2)',
-                    filter: 'drop-shadow(0 0 4px rgba(34, 211, 238, 0.25))'
-                  }}
-                >
-                  FX_Saarthi
-                </h1>
-                <p className="text-[10px] text-slate-400 font-light">
-                  Real-time session tracking with killzones and overlaps
-                </p>
-
-                {/* Action Buttons Row */}
-                <div className="flex items-center justify-center gap-2 pt-1">
-                  <AlertsToggleHeader
-                    alertConfig={alertConfig}
-                    onToggle={toggleAlerts}
-                    onToggleSound={toggleSound}
-                  />
-                  <InstallButton
-                    onClick={handleInstallClick}
-                    show={installState === 'available' || installState === 'dismissed'}
-                    hasNativePrompt={installState === 'available'}
-                  />
-                  <SocialLinks />
+              <div className="border-b border-slate-700/30 flex-shrink-0 px-2 py-2 md:px-3 md:py-3">
+                <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-center">
+                  <h1
+                    className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
+                    style={{
+                      textShadow: '0 0 10px rgba(34, 211, 238, 0.25), 0 0 16px rgba(59, 130, 246, 0.15)',
+                      filter: 'drop-shadow(0 0 3px rgba(34, 211, 238, 0.2))'
+                    }}
+                  >
+                    FX_Saarthi
+                  </h1>
+                  <p className="text-[10px] text-slate-400 font-light whitespace-nowrap">
+                    Real-time session tracking
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <AlertsToggleHeader
+                      alertConfig={alertConfig}
+                      onToggle={toggleAlerts}
+                      onToggleSound={toggleSound}
+                    />
+                    <InstallButton
+                      onClick={handleInstallClick}
+                      show={installState === 'available' || installState === 'dismissed'}
+                      hasNativePrompt={installState === 'available'}
+                    />
+                    <SocialLinks />
+                  </div>
                 </div>
-
-                {/* Disclaimer */}
-                <p className="text-center text-slate-500 text-[9px] font-light leading-tight pt-1">
+                <p className="text-center text-slate-500 text-[9px] font-light leading-tight mt-1">
                   Data is illustrative. Not financial advice.
                 </p>
               </div>
             )}
 
             {/* Conditional Render: Overview, Calendar, Clocks, Charts, or Guide */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div
+              className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-2 sm:py-3"
+              style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+            >
               {activeView === 'overview' && (
                 <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading overview...</div>}>
                   <OverviewPanel
