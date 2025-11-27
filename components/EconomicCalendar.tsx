@@ -11,35 +11,16 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 import { Timezone } from '../types';
 import { IconEyeOff, IconEye, IconRefreshCcw } from './icons';
 import { FilterChip, FilterChipGroup } from './FilterChip';
-import { FilterSummaryBar } from './FilterSummaryBar';
 import { BottomSheetDrawer, BottomSheetCTABar } from './BottomSheetDrawer';
-import { CompactFilterBar } from './CompactFilterBar';
-
-type DateRangeFilter = 'yesterday' | 'today' | 'tomorrow' | 'lastWeek' | 'thisWeek' | 'nextWeek' | 'lastMonth' | 'thisMonth' | 'nextMonth';
-type FilterCategory = 'daily' | 'weekly' | 'monthly';
+import { MultiSelectDropdown, DropdownOption } from './MultiSelectDropdown';
+import { DateFilterPills, DateRangeFilter } from './DateFilterPills';
+import { useEventTypes, eventMatchesTypes, categorizeEvent } from '../hooks/useEventTypes';
 
 const DATE_RANGE_LABELS: Record<DateRangeFilter, string> = {
-  yesterday: 'Yesterday',
   today: 'Today',
   tomorrow: 'Tomorrow',
-  lastWeek: 'Last Week',
   thisWeek: 'This Week',
   nextWeek: 'Next Week',
-  lastMonth: 'Last Month',
-  thisMonth: 'This Month',
-  nextMonth: 'Next Month',
-};
-
-const CATEGORY_LABELS: Record<FilterCategory, string> = {
-  daily: 'Daily',
-  weekly: 'Weekly',
-  monthly: 'Monthly',
-};
-
-const DATE_RANGE_GROUPS: Record<FilterCategory, DateRangeFilter[]> = {
-  daily: ['yesterday', 'today', 'tomorrow'],
-  weekly: ['lastWeek', 'thisWeek', 'nextWeek'],
-  monthly: ['lastMonth', 'thisMonth', 'nextMonth'],
 };
 
 // Convert UTC time to selected timezone
@@ -73,14 +54,12 @@ interface EconomicCalendarProps {
 
 const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone }) => {
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
-  const [selectedImpacts, setSelectedImpacts] = useState<Set<'high' | 'medium' | 'low'>>(new Set(['high']));
+  const [selectedImpacts, setSelectedImpacts] = useState<string[]>(['high']);
+  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([]);
   const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('today');
-  const [activeCategory, setActiveCategory] = useState<FilterCategory>('daily');
-  const [filtersCollapsed, setFiltersCollapsed] = useState(true);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [currencySearchQuery, setCurrencySearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'timeLeft' | 'date'>('timeLeft');
-  const quickRanges: DateRangeFilter[] = ['today', 'tomorrow', 'thisWeek', 'nextWeek'];
 
   // Calculate date ranges based on filter
   const dateRange = useMemo(() => {
@@ -91,12 +70,6 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
     let endDate: Date;
 
     switch (dateRangeFilter) {
-      case 'yesterday':
-        startDate = new Date(today);
-        startDate.setDate(today.getDate() - 1);
-        endDate = new Date(startDate);
-        break;
-
       case 'today':
         startDate = new Date(today);
         endDate = new Date(today);
@@ -106,16 +79,6 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
         startDate = new Date(today);
         startDate.setDate(today.getDate() + 1);
         endDate = new Date(startDate);
-        break;
-
-      case 'lastWeek':
-        const lastWeekStart = new Date(today);
-        const dayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
-        // Go back to last Sunday
-        lastWeekStart.setDate(today.getDate() - dayOfWeek - 7);
-        startDate = lastWeekStart;
-        endDate = new Date(lastWeekStart);
-        endDate.setDate(lastWeekStart.getDate() + 6); // Last Saturday
         break;
 
       case 'thisWeek':
@@ -138,29 +101,10 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
         endDate.setDate(nextWeekStart.getDate() + 6); // Next Saturday
         break;
 
-      case 'lastMonth':
-        startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        endDate = new Date(today.getFullYear(), today.getMonth(), 0);
-        break;
-
-      case 'thisMonth':
-        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        break;
-
-      case 'nextMonth':
-        startDate = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-        endDate = new Date(today.getFullYear(), today.getMonth() + 2, 0);
-        break;
-
       default:
-        // Default to this week (Sunday-Saturday)
-        const defaultStart = new Date(today);
-        const defaultDayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
-        defaultStart.setDate(today.getDate() - defaultDayOfWeek); // Go back to Sunday
-        startDate = defaultStart;
-        endDate = new Date(defaultStart);
-        endDate.setDate(defaultStart.getDate() + 6); // This Saturday
+        // Default to today
+        startDate = new Date(today);
+        endDate = new Date(today);
     }
 
     // Convert to ISO date strings (YYYY-MM-DD)
@@ -181,14 +125,18 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
     undefined // Don't filter by impact at API level, do it client-side for multi-select
   );
 
+  // Extract event types from data
+  const eventTypes = useEventTypes(data);
+
   // Client-side filtering to ensure UI filters even if API returns a superset
   const filteredData = useMemo(() => {
     return data.filter(ev => {
       const byCcy = selectedCurrencies.length === 0 || selectedCurrencies.includes(ev.currency);
-      const byImpact = selectedImpacts.size === 0 || selectedImpacts.has((ev.impact ?? '').toLowerCase() as 'high' | 'medium' | 'low');
-      return byCcy && byImpact;
+      const byImpact = selectedImpacts.length === 0 || selectedImpacts.includes((ev.impact ?? '').toLowerCase());
+      const byEventType = selectedEventTypes.length === 0 || eventMatchesTypes(ev, selectedEventTypes);
+      return byCcy && byImpact && byEventType;
     });
-  }, [data, selectedCurrencies, selectedImpacts]);
+  }, [data, selectedCurrencies, selectedImpacts, selectedEventTypes]);
 
   // Get unique currencies from full dataset so multi-select options stay available
   const currencies = useMemo(
@@ -196,7 +144,6 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
     [data]
   );
   const currencyTiles = useMemo(() => ['ALL', ...currencies], [currencies]);
-  const impactOptions = useMemo(() => ['all', 'high', 'medium', 'low'], []);
   const impactVisualStyles = useMemo(() => ({
     all: {
       selected: 'border-slate-400/70 bg-slate-600/40 text-slate-50',
@@ -228,31 +175,36 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
   }, [lastUpdated]);
 
   const filterSummary = useMemo(() => {
-    const impactLabel = selectedImpacts.size === 0
+    const impactLabel = selectedImpacts.length === 0
       ? 'All Impact Levels'
-      : Array.from(selectedImpacts).map(i => i.charAt(0).toUpperCase() + i.slice(1)).join(', ');
+      : selectedImpacts.map(i => i.charAt(0).toUpperCase() + i.slice(1)).join(', ');
     const currencyLabel = selectedCurrencies.length === 0 ? 'All Currencies' : selectedCurrencies.join(', ');
     const rangeLabel = DATE_RANGE_LABELS[dateRangeFilter];
-    const categoryLabel = CATEGORY_LABELS[activeCategory];
-    return `${categoryLabel} · ${rangeLabel} · ${currencyLabel} · ${impactLabel}`;
-  }, [activeCategory, dateRangeFilter, selectedCurrencies, selectedImpacts]);
+    const eventTypeLabel = selectedEventTypes.length === 0 ? 'All Event Types' : `${selectedEventTypes.length} types`;
+    return `${rangeLabel} · ${currencyLabel} · ${impactLabel} · ${eventTypeLabel}`;
+  }, [dateRangeFilter, selectedCurrencies, selectedImpacts, selectedEventTypes]);
 
   const handleResetFilters = useCallback(() => {
     setSelectedCurrencies([]);
-    setSelectedImpacts(new Set(['high']));
-    setActiveCategory('daily');
+    setSelectedImpacts(['high']);
+    setSelectedEventTypes([]);
     setDateRangeFilter('today');
   }, []);
 
-  const handleCategoryChange = useCallback((category: FilterCategory) => {
-    setActiveCategory(category);
-    if (category === 'daily') {
-      setDateRangeFilter('today');
-    } else if (category === 'weekly') {
-      setDateRangeFilter('thisWeek');
-    } else {
-      setDateRangeFilter('thisMonth');
-    }
+  const toggleImpact = useCallback((impact: string) => {
+    setSelectedImpacts(prev =>
+      prev.includes(impact)
+        ? prev.filter(i => i !== impact)
+        : [...prev, impact]
+    );
+  }, []);
+
+  const toggleEventType = useCallback((type: string) => {
+    setSelectedEventTypes(prev =>
+      prev.includes(type)
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
   }, []);
 
   // Toggle currency selection
@@ -263,53 +215,6 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
         : [...prev, currency]
     );
   }, []);
-
-  // Toggle impact selection (multi-select)
-  const toggleImpact = useCallback((impact: 'high' | 'medium' | 'low') => {
-    setSelectedImpacts(prev => {
-      const next = new Set(prev);
-      if (next.has(impact)) {
-        next.delete(impact);
-      } else {
-        next.add(impact);
-      }
-      return next;
-    });
-  }, []);
-
-  // Navigate to previous date range
-  const handlePrevious = useCallback(() => {
-    if (activeCategory === 'daily') {
-      if (dateRangeFilter === 'today') setDateRangeFilter('yesterday');
-      else if (dateRangeFilter === 'tomorrow') setDateRangeFilter('today');
-      else if (dateRangeFilter === 'yesterday') setDateRangeFilter('yesterday'); // Stay at yesterday
-    } else if (activeCategory === 'weekly') {
-      if (dateRangeFilter === 'thisWeek') setDateRangeFilter('lastWeek');
-      else if (dateRangeFilter === 'nextWeek') setDateRangeFilter('thisWeek');
-      else if (dateRangeFilter === 'lastWeek') setDateRangeFilter('lastWeek'); // Stay at last week
-    } else {
-      if (dateRangeFilter === 'thisMonth') setDateRangeFilter('lastMonth');
-      else if (dateRangeFilter === 'nextMonth') setDateRangeFilter('thisMonth');
-      else if (dateRangeFilter === 'lastMonth') setDateRangeFilter('lastMonth'); // Stay at last month
-    }
-  }, [activeCategory, dateRangeFilter]);
-
-  // Navigate to next date range
-  const handleNext = useCallback(() => {
-    if (activeCategory === 'daily') {
-      if (dateRangeFilter === 'yesterday') setDateRangeFilter('today');
-      else if (dateRangeFilter === 'today') setDateRangeFilter('tomorrow');
-      else if (dateRangeFilter === 'tomorrow') setDateRangeFilter('tomorrow'); // Stay at tomorrow
-    } else if (activeCategory === 'weekly') {
-      if (dateRangeFilter === 'lastWeek') setDateRangeFilter('thisWeek');
-      else if (dateRangeFilter === 'thisWeek') setDateRangeFilter('nextWeek');
-      else if (dateRangeFilter === 'nextWeek') setDateRangeFilter('nextWeek'); // Stay at next week
-    } else {
-      if (dateRangeFilter === 'lastMonth') setDateRangeFilter('thisMonth');
-      else if (dateRangeFilter === 'thisMonth') setDateRangeFilter('nextMonth');
-      else if (dateRangeFilter === 'nextMonth') setDateRangeFilter('nextMonth'); // Stay at next month
-    }
-  }, [activeCategory, dateRangeFilter]);
 
   // Select all currencies
   const selectAllCurrencies = useCallback(() => {
@@ -380,11 +285,11 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
   // Calculate time left until event
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Update current time every second for countdown
+  // Update current time every 10 seconds for countdown (reduced frequency to prevent flickering)
   React.useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 1000);
+    }, 10000);
     return () => clearInterval(timer);
   }, []);
 
@@ -621,7 +526,20 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
           return a.displayTime.localeCompare(b.displayTime);
         }
       });
-  }, [eventsByDate, selectedTimezone.offset, sortBy]);
+  }, [eventsByDate, selectedTimezone.offset, sortBy, currentTime]);
+
+  // Stable AG Grid row style objects
+  const defaultRowStyle = useMemo(() => ({
+    backgroundColor: 'transparent',
+    borderBottom: '1px solid rgba(51, 65, 85, 0.3)',
+  }), []);
+
+  const getRowStyle = useCallback((params: any) => {
+    if (params.node.rowIndex! % 2 === 0) {
+      return { backgroundColor: 'rgba(15, 23, 42, 0.3)' };
+    }
+    return {};
+  }, []);
 
   // AG Grid column definitions
   const columnDefs = useMemo(() => [
@@ -717,6 +635,64 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
     },
   ], [selectedTimezone.offset]);
 
+  // Prepare dropdown options
+  const impactOptions: DropdownOption[] = useMemo(() => [
+    {
+      value: 'high',
+      label: 'High',
+      count: impactCounts.high,
+      icon: <span className="w-2 h-2 rounded-full bg-red-500" />
+    },
+    {
+      value: 'medium',
+      label: 'Medium',
+      count: impactCounts.medium,
+      icon: <span className="w-2 h-2 rounded-full bg-amber-500" />
+    },
+    {
+      value: 'low',
+      label: 'Low',
+      count: impactCounts.low,
+      icon: <span className="w-2 h-2 rounded-full bg-emerald-500" />
+    },
+  ], [impactCounts]);
+
+  const currencyOptions: DropdownOption[] = useMemo(() => {
+    return currencies.map(currency => ({
+      value: currency,
+      label: currency,
+      icon: <span className="text-sm">{getCurrencyFlag(currency)}</span>,
+    }));
+  }, [currencies]);
+
+  const eventTypeOptions: DropdownOption[] = useMemo(() => {
+    // Count events for each type (single pass through data)
+    const typeCounts: Record<string, number> = {};
+
+    // Initialize counts
+    eventTypes.forEach(type => {
+      typeCounts[type] = 0;
+    });
+
+    // Single pass through data to count all types
+    data.forEach(ev => {
+      if (ev.event) {
+        const categories = categorizeEvent(ev.event);
+        categories.forEach(cat => {
+          if (typeCounts[cat] !== undefined) {
+            typeCounts[cat]++;
+          }
+        });
+      }
+    });
+
+    return eventTypes.map(type => ({
+      value: type,
+      label: type,
+      count: typeCounts[type],
+    }));
+  }, [eventTypes, data]);
+
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header with Filters */}
@@ -771,208 +747,73 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-3">
-        {quickRanges.map(option => (
-          <button
-            key={option}
-            onClick={() => setDateRangeFilter(option)}
-            className={`px-3.5 py-2 rounded-full text-sm font-semibold transition-all shadow-inner shadow-black/20 border ${
-              dateRangeFilter === option
-                ? 'bg-emerald-500/80 text-emerald-50 border-emerald-300/70'
-                : 'bg-slate-900/60 text-slate-100 border-slate-700/60 hover:border-emerald-400/50 hover:text-emerald-100'
-            }`}
-          >
-            {DATE_RANGE_LABELS[option]}
-          </button>
-        ))}
-      </div>
-
-      {/* Compact Filter Bar - Desktop & Mobile */}
-      <CompactFilterBar
-        currentRange={dateRangeFilter}
-        currentCategory={activeCategory}
-        onPrevious={handlePrevious}
-        onNext={handleNext}
-        rangeLabel={DATE_RANGE_LABELS[dateRangeFilter]}
-        selectedImpacts={selectedImpacts}
-        onToggleImpact={toggleImpact}
-        impactCounts={impactCounts}
-        isExpanded={!filtersCollapsed}
-        onToggleExpand={() => setFiltersCollapsed(prev => !prev)}
+      {/* Date Filter Pills */}
+      <DateFilterPills
+        selected={dateRangeFilter}
+        onChange={setDateRangeFilter}
+        showDatePicker={false}
       />
 
-      {/* Mobile Currency Filter Button */}
+      {/* Multi-Select Filter Dropdowns - Desktop Only */}
+      <div className="hidden sm:flex flex-wrap items-center gap-3 mb-3">
+        <MultiSelectDropdown
+          label="Importance"
+          icon={
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          }
+          options={impactOptions}
+          selectedValues={selectedImpacts}
+          onChange={setSelectedImpacts}
+          placeholder="All"
+        />
+
+        <MultiSelectDropdown
+          label="Currency"
+          icon={
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+          options={currencyOptions}
+          selectedValues={selectedCurrencies}
+          onChange={setSelectedCurrencies}
+          placeholder="All"
+          searchable
+        />
+
+        <MultiSelectDropdown
+          label="Event Type"
+          icon={
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+          }
+          options={eventTypeOptions}
+          selectedValues={selectedEventTypes}
+          onChange={setSelectedEventTypes}
+          placeholder="All"
+          searchable
+        />
+      </div>
+
+      {/* Mobile Filter Button */}
       <div className="sm:hidden mb-3">
         <button
           onClick={() => setIsMobileFilterOpen(true)}
           className="w-full px-4 py-2.5 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-cyan-400/30 text-xs text-cyan-100 shadow-lg shadow-cyan-500/20 flex items-center justify-between active:scale-95 transition-transform"
         >
           <span className="font-medium">
-            {selectedCurrencies.length === 0 ? 'All Currencies' : `${selectedCurrencies.length} currencies selected`}
+            {(() => {
+              const totalFilters = selectedImpacts.length + selectedCurrencies.length + selectedEventTypes.length;
+              if (totalFilters === 0) return 'All Filters';
+              return `Filters (${totalFilters})`;
+            })()}
           </span>
           <span className="text-cyan-400">Edit</span>
         </button>
       </div>
-
-      {!filtersCollapsed && (
-        <div className="mb-3 rounded-[28px] border border-slate-700/50 bg-slate-950/50 backdrop-blur-2xl p-3 shadow-2xl shadow-black/30">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
-          {/* Currency Filter (Left) */}
-          <div className="lg:w-44 xl:w-56 rounded-2xl border border-slate-700/50 bg-slate-900/40 p-3 backdrop-blur-md shadow-inner shadow-black/25">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-[9px] uppercase text-slate-500 tracking-wide">Currencies</div>
-              <button
-                onClick={selectAllCurrencies}
-                className="text-[9px] text-cyan-400 hover:text-cyan-300 font-medium"
-              >
-                {selectedCurrencies.length === 0 ? 'All Selected' : 'Select All'}
-              </button>
-            </div>
-
-            {/* Search Input */}
-            <input
-              type="text"
-              placeholder="Search..."
-              value={currencySearchQuery}
-              onChange={(e) => setCurrencySearchQuery(e.target.value)}
-              className="w-full px-2 py-1.5 mb-2 text-[10px] rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-400/50"
-            />
-
-            {/* Currency Chips */}
-            <div className="max-h-40 overflow-y-auto pr-1">
-              <FilterChipGroup columns={2} gap={1}>
-                {filteredCurrencies.map((currency) => (
-                  <FilterChip
-                    key={currency}
-                    label={currency}
-                    value={currency}
-                    isSelected={selectedCurrencies.length === 0 || selectedCurrencies.includes(currency)}
-                    onClick={() => toggleCurrency(currency)}
-                    variant="currency"
-                    size="sm"
-                    icon={
-                      <span className="text-xs">{getCurrencyFlag(currency)}</span>
-                    }
-                  />
-                ))}
-              </FilterChipGroup>
-            </div>
-          </div>
-
-          {/* Central Tabs */}
-          <div className="flex-1 flex flex-col gap-2">
-            <div className="rounded-2xl border border-slate-700/60 bg-slate-900/45 backdrop-blur-md p-2.5 shadow-inner shadow-black/20">
-              <div className="flex flex-col gap-2.5">
-                <div>
-                  <div className="text-[9px] uppercase tracking-[0.35em] text-slate-500 mb-1">View</div>
-                  <div className="grid grid-cols-3 gap-1">
-                    {(['daily', 'weekly', 'monthly'] as FilterCategory[]).map(category => (
-                      <button
-                        key={category}
-                        onClick={() => handleCategoryChange(category)}
-                        className={`px-2 py-1.5 text-[10px] font-semibold rounded-lg border focus:outline-none transition-all ${
-                          activeCategory === category
-                            ? 'bg-cyan-500/20 border-cyan-400/70 text-cyan-50 shadow-cyan-500/30 shadow'
-                            : 'bg-slate-800/30 border-slate-700/70 text-slate-400 hover:border-slate-500 hover:text-slate-200'
-                        }`}
-                      >
-                        {CATEGORY_LABELS[category]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-800/60 pt-2">
-                  <div className="text-[9px] uppercase tracking-[0.35em] text-slate-500 mb-1">Range</div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1">
-                    {DATE_RANGE_GROUPS[activeCategory].map(option => (
-                      <button
-                        key={option}
-                        onClick={() => setDateRangeFilter(option)}
-                        className={`px-2 py-1.5 text-[10px] rounded-lg border transition-all ${
-                          dateRangeFilter === option
-                            ? 'border-amber-400/60 bg-amber-400/15 text-amber-50 shadow-inner shadow-amber-500/40'
-                            : 'border-slate-700/70 bg-slate-800/30 text-slate-300 hover:text-amber-200 hover:border-amber-400/40'
-                        }`}
-                      >
-                        {DATE_RANGE_LABELS[option]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-800/60 pt-2">
-                  <div className="text-[9px] uppercase tracking-[0.35em] text-slate-500 mb-1">Controls</div>
-                  <div className="flex flex-col gap-1.5">
-                    <button
-                      type="button"
-                      onClick={handleResetFilters}
-                      className="w-full px-3 py-1.5 rounded-lg border border-cyan-400/60 text-[10px] font-semibold text-cyan-100 bg-cyan-500/10 hover:bg-cyan-500/20 transition-colors"
-                    >
-                      Reset Filters
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Impact Filter (Right) */}
-          <div className="lg:w-48 xl:w-60 flex flex-col gap-2">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[9px] uppercase tracking-[0.35em] text-slate-500">Impact</span>
-              <div className="flex gap-1.5">
-                {[
-                  { label: 'High', value: impactCounts.high, color: 'bg-red-500/20 text-red-50 border border-red-500/40' },
-                  { label: 'Med', value: impactCounts.medium, color: 'bg-amber-400/20 text-amber-50 border border-amber-400/40' },
-                  { label: 'Low', value: impactCounts.low, color: 'bg-teal-400/20 text-teal-50 border border-teal-400/40' },
-                ].map((badge) => (
-                  <span
-                    key={badge.label}
-                    className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${badge.color}`}
-                  >
-                    {badge.label}: {badge.value}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-3 backdrop-blur-md shadow-inner shadow-black/20">
-              <div className="text-[10px] text-slate-400 mb-2">Multi-select (visible in compact bar above)</div>
-              <FilterChipGroup columns={3} gap={1}>
-                <FilterChip
-                  label="High"
-                  value="high"
-                  isSelected={selectedImpacts.has('high')}
-                  onClick={() => toggleImpact('high')}
-                  variant="impact"
-                  size="sm"
-                  count={impactCounts.high}
-                />
-                <FilterChip
-                  label="Medium"
-                  value="medium"
-                  isSelected={selectedImpacts.has('medium')}
-                  onClick={() => toggleImpact('medium')}
-                  variant="impact"
-                  size="sm"
-                  count={impactCounts.medium}
-                />
-                <FilterChip
-                  label="Low"
-                  value="low"
-                  isSelected={selectedImpacts.has('low')}
-                  onClick={() => toggleImpact('low')}
-                  variant="impact"
-                  size="sm"
-                  count={impactCounts.low}
-                />
-              </FilterChipGroup>
-            </div>
-          </div>
-          </div>
-        </div>
-      )}
 
       {/* Loading State */}
       {loading && data.length === 0 && (
@@ -1091,21 +932,11 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
           domLayout="autoHeight"
           headerHeight={40}
           rowHeight={50}
-          animateRows={true}
+          animateRows={false}
           suppressCellFocus={true}
-          rowStyle={{
-            backgroundColor: 'transparent',
-            borderBottom: '1px solid rgba(51, 65, 85, 0.3)',
-          }}
-          getRowStyle={(params) => {
-            if (params.node.rowIndex! % 2 === 0) {
-              return { backgroundColor: 'rgba(15, 23, 42, 0.3)' };
-            }
-            return {};
-          }}
-          onRowClicked={(event) => {
-            // Optional: Add row click handler if needed
-          }}
+          suppressAnimationFrame={true}
+          rowStyle={defaultRowStyle}
+          getRowStyle={getRowStyle}
         />
       </div>
 
@@ -1164,7 +995,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
               <FilterChip
                 label="High"
                 value="high"
-                isSelected={selectedImpacts.has('high')}
+                isSelected={selectedImpacts.includes('high')}
                 onClick={() => toggleImpact('high')}
                 variant="impact"
                 size="md"
@@ -1173,7 +1004,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
               <FilterChip
                 label="Medium"
                 value="medium"
-                isSelected={selectedImpacts.has('medium')}
+                isSelected={selectedImpacts.includes('medium')}
                 onClick={() => toggleImpact('medium')}
                 variant="impact"
                 size="md"
@@ -1182,7 +1013,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
               <FilterChip
                 label="Low"
                 value="low"
-                isSelected={selectedImpacts.has('low')}
+                isSelected={selectedImpacts.includes('low')}
                 onClick={() => toggleImpact('low')}
                 variant="impact"
                 size="md"
@@ -1191,34 +1022,17 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
             </FilterChipGroup>
           </div>
 
-          {/* Date Range Filter */}
+          {/* Event Type Filter */}
           <div>
-            <div className="text-xs uppercase text-slate-400 tracking-wide font-semibold mb-2">View</div>
-            <FilterChipGroup columns={3} gap={2}>
-              {(['daily', 'weekly', 'monthly'] as FilterCategory[]).map(category => (
+            <div className="text-xs uppercase text-slate-400 tracking-wide font-semibold mb-2">Event Type (Multi-Select)</div>
+            <FilterChipGroup columns={2} gap={2}>
+              {eventTypes.map(type => (
                 <FilterChip
-                  key={category}
-                  label={CATEGORY_LABELS[category]}
-                  value={category}
-                  isSelected={activeCategory === category}
-                  onClick={() => handleCategoryChange(category)}
-                  variant="range"
-                  size="md"
-                />
-              ))}
-            </FilterChipGroup>
-          </div>
-
-          <div>
-            <div className="text-xs uppercase text-slate-400 tracking-wide font-semibold mb-2">Range</div>
-            <FilterChipGroup columns={3} gap={2}>
-              {DATE_RANGE_GROUPS[activeCategory].map(option => (
-                <FilterChip
-                  key={option}
-                  label={DATE_RANGE_LABELS[option]}
-                  value={option}
-                  isSelected={dateRangeFilter === option}
-                  onClick={() => setDateRangeFilter(option)}
+                  key={type}
+                  label={type}
+                  value={type}
+                  isSelected={selectedEventTypes.includes(type)}
+                  onClick={() => toggleEventType(type)}
                   variant="range"
                   size="md"
                 />

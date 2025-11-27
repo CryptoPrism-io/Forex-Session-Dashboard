@@ -6,7 +6,7 @@ const SocialLinks: React.FC = () => {
     {
       name: 'LinkedIn',
       icon: IconLinkedIn,
-      url: 'https://linkedin.com/company/cryptoprism',
+      url: 'https://linkedin.com/in/yogeshsahu',
       label: 'Visit our LinkedIn'
     },
     {
@@ -24,7 +24,7 @@ const SocialLinks: React.FC = () => {
     {
       name: 'Website',
       icon: IconWebsite,
-      url: 'https://cryptoprism.io',
+      url: 'https://forex-dashboard-963362833537.us-central1.run.app',
       label: 'Visit our website'
     }
   ];
