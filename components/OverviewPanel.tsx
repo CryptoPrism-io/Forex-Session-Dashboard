@@ -1,6 +1,7 @@
 import React from 'react';
 import { Timezone } from '../types';
 import { IconSettings } from './icons';
+import SocialLinks from './SocialLinks';
 
 interface ActiveSessionData {
   name: string;
@@ -223,6 +224,18 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
               {selectedTimezone.label}
             </div>
           </button>
+        </div>
+
+        {/* Social Links - Mobile Only */}
+        <div className="md:hidden mt-4 pt-4 border-t border-slate-700/30">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
+              Connect
+            </div>
+          </div>
+          <div className="flex items-center justify-center">
+            <SocialLinks />
+          </div>
         </div>
       </div>
     </div>
