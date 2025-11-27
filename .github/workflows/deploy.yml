@@ -46,10 +46,11 @@ jobs:
 
       - run: npm ci
 
-      # Build frontend (includes VITE_API_BASE_URL baked into dist/)
+      # Build frontend (includes VITE_API_BASE_URL and VITE_BASE_PATH baked into dist/)
       - name: Build project
         env:
           VITE_API_BASE_URL: https://forex-dashboard-963362833537.us-central1.run.app
+          VITE_BASE_PATH: /
         run: npm run build
 
       # Deploy to Cloud Run using gcloud with env.yaml

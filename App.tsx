@@ -368,12 +368,52 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Overview Header - compact on mobile */}
+            {/* Overview Header - Modern Compact Mobile Design */}
             {activeView === 'overview' && (
-              <div className="border-b border-slate-700/30 flex-shrink-0 px-2 py-2 md:px-3 md:py-3">
-                <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-center">
+              <div className="border-b border-slate-700/30 flex-shrink-0 px-3 py-2.5 md:px-4 md:py-3">
+                {/* Mobile: Compact Single Row Layout */}
+                <div className="flex md:hidden items-center justify-between gap-2 mb-1.5">
+                  {/* Title Pill - Floating Card Style */}
+                  <div
+                    className="flex-1 flex items-center justify-center px-4 py-2 rounded-full backdrop-blur-xl border border-cyan-400/30 shadow-lg shadow-cyan-500/20"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)',
+                    }}
+                  >
+                    <h1
+                      className="text-base font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
+                      style={{
+                        textShadow: '0 0 10px rgba(34, 211, 238, 0.3)',
+                        filter: 'drop-shadow(0 0 3px rgba(34, 211, 238, 0.25))'
+                      }}
+                    >
+                      FX_Saarthi
+                    </h1>
+                  </div>
+
+                  {/* Essential Action Pills */}
+                  <div className="flex items-center gap-1.5">
+                    <div className="scale-90">
+                      <AlertsToggleHeader
+                        alertConfig={alertConfig}
+                        onToggle={toggleAlerts}
+                        onToggleSound={toggleSound}
+                      />
+                    </div>
+                    <div className="scale-90">
+                      <InstallButton
+                        onClick={handleInstallClick}
+                        show={installState === 'available' || installState === 'dismissed'}
+                        hasNativePrompt={installState === 'available'}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop: Original Layout (unchanged for consistency) */}
+                <div className="hidden md:flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-center mb-1">
                   <h1
-                    className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
+                    className="text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
                     style={{
                       textShadow: '0 0 10px rgba(34, 211, 238, 0.25), 0 0 16px rgba(59, 130, 246, 0.15)',
                       filter: 'drop-shadow(0 0 3px rgba(34, 211, 238, 0.2))'
@@ -398,7 +438,9 @@ const App: React.FC = () => {
                     <SocialLinks />
                   </div>
                 </div>
-                <p className="text-center text-slate-500 text-[9px] font-light leading-tight mt-1">
+
+                {/* Disclaimer - Desktop Only */}
+                <p className="hidden md:block text-center text-slate-500 text-[9px] font-light leading-tight">
                   Data is illustrative. Not financial advice.
                 </p>
               </div>

@@ -145,8 +145,8 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
       {/* BOTTOM 2/3: Split into Left (60%) and Right (40%) */}
       <div className="flex-1 flex gap-3 overflow-hidden">
         {/* LEFT SIDE (60%): Currently OPEN Session */}
-        <div className="w-3/5 flex flex-col rounded-2xl bg-slate-800/30 backdrop-blur-xl border border-slate-700/30 p-4 overflow-y-auto">
-          <h3 className="text-sm font-semibold text-slate-200 mb-3">Current Session</h3>
+        <div className="w-3/5 flex flex-col rounded-3xl glass-soft p-4 shadow-2xl shadow-black/30 overflow-y-auto">
+          <h3 className="text-sm font-semibold text-slate-100 mb-3">Current Session</h3>
 
           {openSession ? (
             <div className="space-y-1.5">
@@ -169,10 +169,10 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
                   </span>
                 </div>
 
-                <div className="text-xs text-slate-300 font-mono flex gap-2">
-                  <span className="text-slate-400">{formatTimeInTimezone(openSession.startUTC, selectedTimezone.offset)}</span>
-                  <span className="text-slate-400">–</span>
-                  <span className="text-slate-400">{formatTimeInTimezone(openSession.endUTC, selectedTimezone.offset)}</span>
+                <div className="text-xs text-slate-200 font-mono flex gap-2">
+                  <span className="text-slate-300">{formatTimeInTimezone(openSession.startUTC, selectedTimezone.offset)}</span>
+                  <span className="text-slate-500">–</span>
+                  <span className="text-slate-300">{formatTimeInTimezone(openSession.endUTC, selectedTimezone.offset)}</span>
                 </div>
               </div>
 
@@ -201,7 +201,7 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
         </div>
 
         {/* RIGHT SIDE (40%): Today's Economic Calendar Events */}
-        <div className="w-2/5 flex flex-col rounded-2xl bg-slate-800/30 backdrop-blur-xl border border-slate-700/30 p-3 overflow-hidden">
+        <div className="w-2/5 flex flex-col rounded-3xl glass-soft p-3 shadow-2xl shadow-black/30 overflow-hidden">
           <h3 className="text-sm font-semibold text-slate-200 mb-2">Today's Events</h3>
 
           <div className="flex-1 overflow-y-auto space-y-1.5">
@@ -220,7 +220,7 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
                 return (
                   <div
                     key={event.id || `event-${idx}-${event.time_utc}-${event.currency}`}
-                    className="rounded-lg p-2 transition-colors border border-slate-800/40 bg-slate-800/30 hover:bg-slate-800/50"
+                    className="rounded-xl p-3 transition-colors border border-slate-700/40 bg-slate-900/40 hover:bg-slate-800/60 shadow-inner shadow-black/15 glass-soft"
                   >
                     <div className="flex items-start gap-2">
                       {/* Time */}

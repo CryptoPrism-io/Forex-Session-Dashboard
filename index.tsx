@@ -3,6 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { reportWebVitals } from './utils/reportWebVitals';
+import { registerSW } from 'virtual:pwa-register';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -19,18 +20,14 @@ root.render(
 // Start tracking Core Web Vitals
 reportWebVitals();
 
-// Register service worker for PWA support with correct base path on GitHub Pages
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    try {
-      const rawBase = (import.meta as any).env?.BASE_URL ?? '/';
-      const normalizedBase = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
-      const swUrl = `${normalizedBase}sw.js`;
-      navigator.serviceWorker.register(swUrl).catch((err) => {
-        console.log('Service Worker registration failed:', err);
-      });
-    } catch (err) {
-      console.log('Service Worker registration error:', err);
-    }
-  });
-}
+// Register service worker for PWA support using vite-plugin-pwa
+// This will automatically handle updates and proper registration
+registerSW({
+  immediate: true,
+  onRegistered(r) {
+    console.log('PWA Service Worker registered:', r);
+  },
+  onRegisterError(error) {
+    console.log('PWA registration error:', error);
+  }
+});
