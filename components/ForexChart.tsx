@@ -362,7 +362,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
   return (
     <div
       ref={chartContainerRef}
-      className="relative w-full bg-gradient-to-br from-slate-800/40 to-slate-900/40 border border-slate-700/30 p-6 rounded-2xl shadow-lg shadow-black/20 hover:border-slate-600/50 transition-all duration-300 sm:backdrop-blur-2xl backdrop-blur-none sm:shadow-2xl"
+      className="relative w-full glass-soft rounded-2xl p-6 shadow-2xl shadow-black/35 hover:border-slate-500/50 transition-all duration-300 sm:backdrop-blur-2xl backdrop-blur-none"
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
@@ -550,7 +550,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
         {cityBadges.map((city) => (
           <div
             key={city.label}
-            className="flex items-center gap-2 px-2.5 py-1 rounded-2xl border border-slate-700/60 bg-slate-800/30 backdrop-blur"
+            className="flex items-center gap-2 px-2.5 py-1 rounded-2xl border border-slate-600/50 bg-slate-800/40 backdrop-blur-xl shadow-inner shadow-black/10 glass-soft"
           >
             <span
               className="w-2.5 h-2.5 rounded-full shadow"
@@ -1000,9 +1000,10 @@ const VolumeHistogramCanvas = React.memo(
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const gradient = ctx.createLinearGradient(0, 0, 0, histogram.chartHeight);
-      gradient.addColorStop(0, 'rgba(16, 185, 129, 0.75)');
-      gradient.addColorStop(0.5, 'rgba(234, 88, 12, 0.75)');
-      gradient.addColorStop(1, 'rgba(239, 68, 68, 0.6)');
+      // Slightly reduce opacity to 0.66 so background volume bars stay subtle
+      gradient.addColorStop(0, 'rgba(16, 185, 129, 0.66)');
+      gradient.addColorStop(0.5, 'rgba(234, 88, 12, 0.66)');
+      gradient.addColorStop(1, 'rgba(239, 68, 68, 0.66)');
       ctx.fillStyle = gradient;
 
       histogram.interpolatedVolume.forEach((volume, idx) => {

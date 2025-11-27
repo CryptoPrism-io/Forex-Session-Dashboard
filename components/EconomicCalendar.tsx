@@ -80,6 +80,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [currencySearchQuery, setCurrencySearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'timeLeft' | 'date'>('timeLeft');
+  const quickRanges: DateRangeFilter[] = ['today', 'tomorrow', 'thisWeek', 'nextWeek'];
 
   // Calculate date ranges based on filter
   const dateRange = useMemo(() => {
@@ -719,15 +720,14 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header with Filters */}
-      <div className="relative flex flex-wrap items-center justify-between gap-3 mb-2 pb-3 border-b border-slate-700/30">
-        <span className="absolute inset-x-0 -top-[6px] h-px bg-red-500/20 pointer-events-none" />
+      <div className="relative flex flex-wrap items-center justify-between gap-3 mb-3 p-3 rounded-3xl glass-soft shadow-2xl shadow-black/35">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-sm font-semibold text-cyan-400">Economic Calendar</h2>
-          <span className="text-xs text-slate-400">
+          <h2 className="text-sm font-semibold text-cyan-200">Economic Calendar</h2>
+          <span className="text-xs text-slate-300/90">
             ({filteredData.length} events)
           </span>
           {lastUpdatedStamp && (
-            <span className="text-xs text-slate-500 flex items-center gap-1">
+            <span className="text-xs text-slate-400 flex items-center gap-1">
               <span aria-hidden="true">•</span>
               Updated {lastUpdatedStamp}
             </span>
@@ -736,7 +736,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
 
         <div className="flex flex-wrap items-center gap-2 justify-end">
           {/* Timezone Indicator */}
-          <div className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-500/20 border border-yellow-400/40 text-yellow-200">
+          <div className="px-3 py-1.5 text-xs font-semibold rounded-full bg-yellow-500/20 border border-yellow-400/40 text-yellow-100 shadow-inner shadow-yellow-500/30">
             Times: {timezoneLabel}
           </div>
 
@@ -745,15 +745,15 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'timeLeft' | 'date')}
-              className="h-8 px-3 pr-8 text-xs font-medium rounded-full border border-slate-700/50 bg-slate-800/40 hover:border-cyan-400/40 hover:bg-cyan-500/10 text-slate-200 transition-all appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+              className="h-9 px-4 pr-9 text-xs font-semibold rounded-full border border-slate-600/50 bg-slate-800/40 hover:border-cyan-400/50 hover:bg-cyan-500/10 text-slate-100 transition-all appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400/50 shadow-inner shadow-black/20"
               title="Sort by"
               aria-label="Sort events by"
             >
               <option value="timeLeft">⏱ Time Left</option>
               <option value="date">📅 Date</option>
             </select>
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </div>
@@ -761,7 +761,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
 
           <button
             onClick={refetch}
-            className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-700/50 bg-slate-800/40 hover:border-cyan-400/40 hover:bg-cyan-500/10 text-slate-200 transition-all disabled:opacity-50 disabled:pointer-events-none"
+            className="w-9 h-9 flex items-center justify-center rounded-full border border-slate-600/50 bg-slate-800/40 hover:border-cyan-400/40 hover:bg-cyan-500/10 text-slate-100 transition-all disabled:opacity-50 disabled:pointer-events-none shadow-inner shadow-black/25"
             title="Refresh feed"
             aria-label="Refresh feed"
             disabled={loading}
@@ -769,6 +769,22 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
             <IconRefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-3">
+        {quickRanges.map(option => (
+          <button
+            key={option}
+            onClick={() => setDateRangeFilter(option)}
+            className={`px-3.5 py-2 rounded-full text-sm font-semibold transition-all shadow-inner shadow-black/20 border ${
+              dateRangeFilter === option
+                ? 'bg-emerald-500/80 text-emerald-50 border-emerald-300/70'
+                : 'bg-slate-900/60 text-slate-100 border-slate-700/60 hover:border-emerald-400/50 hover:text-emerald-100'
+            }`}
+          >
+            {DATE_RANGE_LABELS[option]}
+          </button>
+        ))}
       </div>
 
       {/* Compact Filter Bar - Desktop & Mobile */}
@@ -799,10 +815,10 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
       </div>
 
       {!filtersCollapsed && (
-        <div className="mb-2 rounded-[28px] border border-slate-800/60 bg-slate-950/40 backdrop-blur-2xl p-3 shadow-inner shadow-black/30">
-          <div className="flex flex-col gap-2 lg:flex-row lg:items-stretch">
+        <div className="mb-3 rounded-[28px] border border-slate-700/50 bg-slate-950/50 backdrop-blur-2xl p-3 shadow-2xl shadow-black/30">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
           {/* Currency Filter (Left) */}
-          <div className="lg:w-44 xl:w-56 rounded-2xl border border-slate-800/50 bg-slate-900/35 p-3 backdrop-blur-md shadow-inner shadow-black/20">
+          <div className="lg:w-44 xl:w-56 rounded-2xl border border-slate-700/50 bg-slate-900/40 p-3 backdrop-blur-md shadow-inner shadow-black/25">
             <div className="flex items-center justify-between mb-2">
               <div className="text-[9px] uppercase text-slate-500 tracking-wide">Currencies</div>
               <button
@@ -845,7 +861,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
 
           {/* Central Tabs */}
           <div className="flex-1 flex flex-col gap-2">
-            <div className="rounded-2xl border border-slate-800/60 bg-slate-900/40 backdrop-blur-md p-2.5 shadow-inner shadow-black/15">
+            <div className="rounded-2xl border border-slate-700/60 bg-slate-900/45 backdrop-blur-md p-2.5 shadow-inner shadow-black/20">
               <div className="flex flex-col gap-2.5">
                 <div>
                   <div className="text-[9px] uppercase tracking-[0.35em] text-slate-500 mb-1">View</div>
@@ -1003,7 +1019,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
             return (
               <div
                 key={`${date}-${event.id}-${idx}-mobile`}
-                className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-4 shadow-lg hover:border-slate-600/60 transition-all"
+                className="glass-soft rounded-2xl p-4 shadow-xl shadow-black/35 hover:border-slate-500/50 transition-all"
               >
                 {/* Header Row: Flag + Event Name + Impact */}
                 <div className="flex items-start gap-3 mb-3">
