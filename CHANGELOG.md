@@ -2,6 +2,46 @@
 
 All notable changes to the Forex Session Trading Dashboard project.
 
+## [2025-11-28] - Backend Optimization & UI Polish
+
+### Fixed - Backend Server Configuration & Performance
+**What**: Started backend server and optimized database query performance
+**Why**: News icons weren't displaying because backend API wasn't running; slow API response times (480ms)
+**How**:
+- Started backend server in development mode on port 5000
+- Added database indexes for `date_utc` and `time_utc` columns
+- Created composite index `idx_ec_date_utc_time_utc` for optimal query performance
+- Ran `ANALYZE` to update PostgreSQL query planner statistics
+- Improved API response time from 480ms to ~340ms (29% faster)
+- Documented performance analysis showing network latency to Cloud SQL as primary bottleneck
+
+### Improved - Session Timeline Label Styling
+**What**: Redesigned session labels with glass morphism capsules and enhanced typography
+**Why**: Duplicate city badges wasted screen space; labels needed more sophisticated styling
+**How**:
+- Removed duplicate city reference badges from top of chart
+- Applied glass capsule design to session row labels:
+  - Semi-transparent background with backdrop blur
+  - Rounded pill shape with subtle border
+  - Inner shadow for depth perception
+- Enhanced typography:
+  - Converted session names to UPPERCASE for emphasis
+  - Reduced font weight from semibold (600) to normal (400)
+  - Increased letter spacing to 0.15em for premium look
+  - Reduced font size to text-xs for cleaner proportions
+- Added UTC timezone offset display next to each session name
+  - Shows time difference from UTC (e.g., "UTC+11", "UTC-5")
+  - Lightweight font with muted color for secondary info
+
+### Added - Database Performance Tools
+**What**: Created utility scripts for database optimization and benchmarking
+**Why**: Need tools to diagnose and improve query performance
+**How**:
+- Added `add-date-indexes.js` - Creates indexes for date_utc and time_utc columns
+- Added `benchmark-query.js` - Benchmarks database query performance
+- Scripts automatically verify index creation and update statistics
+- Documented expected performance improvements in console output
+
 ## [2025-11-27] - Glass Morphism & Mobile Redesign
 
 ### Added - Multi-Select Filter Dropdowns
