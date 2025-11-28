@@ -5,6 +5,7 @@ import { IconChevronDown } from './icons';
 interface SessionGuideProps {
   currentTimezoneLabel: string;
   timezoneOffset: number;
+  fullscreenButton?: React.ReactNode;
 }
 
 const formatTime = (hour: number, offset: number): string => {
@@ -14,7 +15,7 @@ const formatTime = (hour: number, offset: number): string => {
   return `${String(finalHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 };
 
-const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timezoneOffset }) => {
+const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timezoneOffset, fullscreenButton }) => {
   const [guideTab, setGuideTab] = useState<'standard' | 'daylight'>('standard');
   const [collapsedSections, setCollapsedSections] = useState({ mainSessions: false, overlaps: false, killzones: false });
 
@@ -25,11 +26,12 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
   };
 
   return (
-    <section className="w-full glass-soft backdrop-blur-2xl rounded-2xl shadow-2xl shadow-black/35 overflow-hidden transition-all duration-300 hover:border-slate-600/50">
-      <div className="px-4 py-5 sm:px-6 text-sm space-y-6 md:space-y-7">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
+    <section className="w-full h-full glass-soft backdrop-blur-2xl rounded-2xl shadow-2xl shadow-black/35 overflow-hidden transition-all duration-300 hover:border-slate-600/50 flex flex-col">
+      <div className="px-3 py-3 text-sm space-y-3 overflow-y-auto flex-1 min-h-0">
+        <div className="flex items-center justify-between gap-2 flex-wrap flex-shrink-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold text-slate-100">Trading Session Guide ({currentTimezoneLabel})</h3>
+            <h3 className="text-sm font-semibold text-slate-100">Session Guide ({currentTimezoneLabel})</h3>
+            {fullscreenButton}
             {/* Tabs for Standard / Daylight Times */}
             <div className="flex items-center gap-1 bg-slate-800/40 backdrop-blur-md border border-slate-700/40 rounded-lg p-1">
               <button
@@ -74,7 +76,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
               Main Sessions
             </h4>
           </button>
-          <p className="text-xs text-slate-400 mb-3 ml-5">The primary trading blocks when each major market is actively trading. Each session has its own volatility profile and best trading pairs.</p>
+          <p className="text-[10px] text-slate-400 mb-2 ml-5">Primary trading blocks when each major market is active.</p>
           {!collapsedSections.mainSessions && (
             <>
               {/* Mobile Card View */}
@@ -230,7 +232,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
               Session Overlaps
             </h4>
           </button>
-          <p className="text-xs text-slate-400 mb-3 ml-5">Times when two major sessions overlap, offering increased liquidity and volatility. Ideal for breakout strategies and trend-following.</p>
+          <p className="text-[10px] text-slate-400 mb-2 ml-5">Session overlaps offer increased liquidity and volatility.</p>
           {!collapsedSections.overlaps && (
             <>
               {/* Mobile Card View */}
@@ -328,7 +330,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
               Killzones
             </h4>
           </button>
-          <p className="text-xs text-slate-400 mb-3 ml-5">High-volatility institutional trading windows designed for liquidity manipulation. Prime time for ICT-style stop hunts and seek & destroy patterns.</p>
+          <p className="text-[10px] text-slate-400 mb-2 ml-5">High-volatility institutional trading windows for liquidity zones.</p>
           {!collapsedSections.killzones && (
             <>
               {/* Mobile Card View */}

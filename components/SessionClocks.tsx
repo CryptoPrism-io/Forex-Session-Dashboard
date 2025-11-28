@@ -94,19 +94,19 @@ const ClockCard: React.FC<ClockCardProps> = ({ label, timezone, accent, compact,
   // Responsive clock sizes: mobile (< 640px) uses smaller, desktop uses larger
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   const clockSize = compact ?
-    (isMobile ? 96 : 128) :
+    (isMobile ? 80 : 100) :
     (isMobile ? 140 : 184);
   const tickLength = compact ?
-    (isMobile ? 36 : 48) :
+    (isMobile ? 30 : 38) :
     (isMobile ? 52 : 68);
   const hourHandLength = compact ?
-    (isMobile ? 30 : 40) :
+    (isMobile ? 24 : 32) :
     (isMobile ? 45 : 60);
   const minuteHandLength = compact ?
-    (isMobile ? 38 : 50) :
+    (isMobile ? 30 : 40) :
     (isMobile ? 57 : 76);
   const secondHandLength = compact ?
-    (isMobile ? 42 : 56) :
+    (isMobile ? 34 : 44) :
     (isMobile ? 63 : 84);
 
   const status: SessionStatusValue = sessionStatus?.[sessionKey];
@@ -135,7 +135,7 @@ const ClockCard: React.FC<ClockCardProps> = ({ label, timezone, accent, compact,
 
   return (
     <div
-      className={`flex items-center gap-2 rounded-2xl bg-slate-900/50 border border-slate-800/60 backdrop-blur-xl shadow-md shadow-black/15 transition-all duration-300 ${compact ? 'p-2 gap-1.5' : 'p-3 sm:gap-3 sm:p-3 md:flex-col md:items-start md:gap-2'}`}
+      className={`flex items-center rounded-2xl bg-slate-900/50 border border-slate-800/60 backdrop-blur-xl shadow-md shadow-black/15 transition-all duration-300 ${compact ? 'p-1.5 gap-1.5 flex-col' : 'p-3 gap-2 sm:gap-3 sm:p-3 md:flex-col md:items-start md:gap-2'}`}
       style={cardStyle}
     >
       <div className="relative" style={{ width: clockSize, height: clockSize }}>
@@ -202,7 +202,7 @@ const SessionClocks: React.FC<{
   sessionStatus?: Record<string, SessionStatusValue>;
 }> = ({ compact = false, sessionStatus }) => {
   return (
-    <div className={`grid ${compact ? 'grid-cols-1 sm:grid-cols-2 gap-2' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3'}`}>
+    <div className={`grid ${compact ? 'grid-cols-4 gap-2' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3'}`}>
       {CLOCKS.map((config) => (
         <ClockCard key={config.label} {...config} compact={compact} sessionStatus={sessionStatus} />
       ))}

@@ -365,3 +365,18 @@ export const SESSIONS_DAYLIGHT: SessionData[] = [
 
 // Default to standard time (will be overridden by App based on DST status)
 export const SESSIONS: SessionData[] = SESSIONS_STANDARD;
+
+// Session-to-Pairs Mapping for "Pairs to Trade" component
+export const SESSION_PAIRS_MAP: Record<string, string[]> = {
+  'Sydney': ['AUD/USD', 'AUD/JPY', 'NZD/USD', 'AUD/NZD'],
+  'Asia': ['USD/JPY', 'GBP/JPY', 'AUD/JPY', 'EUR/JPY', 'USD/CNH'],
+  'London': ['EUR/USD', 'GBP/USD', 'EUR/GBP', 'GBP/JPY', 'EUR/JPY'],
+  'New York': ['EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CAD', 'US30', 'NAS100'],
+  'New York Session': ['EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CAD', 'US30', 'NAS100'],
+  'London-NY Overlap': ['EUR/USD', 'GBP/USD', 'USD/JPY'],
+  'London Killzone': ['EUR/USD', 'GBP/USD'],
+  'NY AM Killzone': ['EUR/USD', 'GBP/USD', 'US30', 'NAS100'],
+  'NY PM Killzone': ['USD/JPY', 'EUR/USD'],
+  'Asia-London Overlap': ['EUR/JPY', 'GBP/JPY', 'EUR/GBP'],
+  'Sydney-Asia Overlap': ['AUD/JPY', 'NZD/JPY', 'USD/JPY'],
+};

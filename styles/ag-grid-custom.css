@@ -1,23 +1,28 @@
-/* Custom AG Grid Dark Theme for Economic Calendar */
+/* Custom AG Grid Dark Theme for Economic Calendar - Glassmorphism Style */
 
 .ag-theme-alpine-dark {
-  --ag-background-color: transparent;
-  --ag-header-background-color: rgba(15, 23, 42, 0.95);
-  --ag-odd-row-background-color: rgba(15, 23, 42, 0.3);
-  --ag-row-hover-color: rgba(51, 65, 85, 0.3);
-  --ag-border-color: rgba(51, 65, 85, 0.3);
-  --ag-header-foreground-color: #cbd5e1;
+  --ag-background-color: rgba(15, 23, 42, 0.4);
+  --ag-header-background-color: rgba(30, 41, 59, 0.6);
+  --ag-odd-row-background-color: rgba(15, 23, 42, 0.2);
+  --ag-row-hover-color: rgba(51, 65, 85, 0.4);
+  --ag-border-color: rgba(71, 85, 105, 0.3);
+  --ag-header-foreground-color: #e2e8f0;
   --ag-foreground-color: #e2e8f0;
-  --ag-font-size: 12px;
+  --ag-font-size: 11px;
   --ag-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  overflow: hidden;
 }
 
 .ag-theme-alpine-dark .ag-header {
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(16px);
   position: sticky;
   top: 0;
   z-index: 10;
-  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+  border-bottom: 1px solid rgba(71, 85, 105, 0.4);
+  background: rgba(30, 41, 59, 0.7);
 }
 
 .ag-theme-alpine-dark .ag-header-cell-label {
