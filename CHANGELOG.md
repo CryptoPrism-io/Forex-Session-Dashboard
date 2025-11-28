@@ -2,9 +2,152 @@
 
 All notable changes to the Forex Session Trading Dashboard project.
 
-## [Unreleased] - 2025-11-18
+## [2025-11-27] - Glass Morphism & Mobile Redesign
 
-### Added - Economic Calendar Table Redesign
+### Added - Multi-Select Filter Dropdowns
+**What**: Complete redesign of Economic Calendar filter UI with multi-select functionality
+**Why**: Users needed ability to filter multiple currencies and impact levels simultaneously
+**How**:
+- Implemented React Aria Components for accessible dropdowns
+- Multi-select dropdowns for currencies (USD, EUR, GBP, etc.) and impact levels (High, Medium, Low)
+- Persistent selection state with visual checkmarks
+- Collapsible filter sections with smooth animations
+- Impact counts displayed in real-time regardless of active filters
+
+### Improved - Desktop Header Layout
+**What**: Reorganized desktop header with horizontal layout for better space utilization
+**Why**: Previous vertical layout wasted screen space on wide monitors
+**How**:
+- Switched from stacked to horizontal layout for timezone selector and controls
+- Aligned elements in single row for compact presentation
+- Maintained mobile-responsive design with breakpoints
+- Reduced vertical spacing while preserving visual hierarchy
+
+### Fixed - PWA Installation Support
+**What**: Implemented proper Progressive Web App installation with vite-plugin-pwa
+**Why**: Previous manual service worker registration was unreliable across browsers
+**How**:
+- Migrated to `vite-plugin-pwa` with automatic workbox configuration
+- Removed manual service worker registration code
+- Added install prompt UI with browser detection (Chrome, Firefox, Safari, Edge)
+- Configured precaching for static assets and runtime caching for API calls
+- Generated manifest.json with proper icons and theme colors
+
+### Added - Glass Morphism UI
+**What**: Enhanced UI with glass morphism design and improved mobile responsiveness
+**Why**: Modern aesthetic with better visual hierarchy and depth
+**How**:
+- Applied backdrop blur and semi-transparent backgrounds to cards
+- Implemented subtle shadows and borders for depth perception
+- Enhanced mobile navigation with bottom tab bar
+- Redesigned Overview page with card-based layout
+- Added smooth transitions and hover states throughout
+
+### Improved - Mobile Navigation
+**What**: Redesigned mobile navigation and Overview page for touch-friendly interaction
+**Why**: Previous desktop-first design was difficult to use on mobile devices
+**How**:
+- Added fixed bottom navigation bar with 4 tabs (Overview, Calendar, Charts, Guide)
+- Implemented Overview page as mobile home screen with quick access cards
+- Touch-optimized button sizes (minimum 44px tap targets)
+- Swipe gestures for left pane toggle (drag left to close)
+- Reduced header height on mobile for more content space
+
+## [2025-11-23] - Performance Optimization & React 18 Migration
+
+### Fixed - React Version Compatibility
+**What**: Downgraded React from 19.2.0 to 18.3.1 for react-aria-components compatibility
+**Why**: react-aria-components not yet compatible with React 19
+**How**:
+- Updated package.json to use React 18.3.1 and React DOM 18.3.1
+- Removed CDN importmap forcing React 19.2.0
+- Verified all components work with React 18 API
+- Tested Framer Motion and React Aria integration
+
+### Improved - Build Performance
+**What**: Comprehensive performance optimization reducing bundle size and render time
+**Why**: Initial load time was >3 seconds on 3G; bundle size was >500KB
+**How**:
+- Removed manual chunk splitting from Vite config (let Vite auto-optimize)
+- Simplified Vite configuration to reduce build complexity
+- Optimized GPU usage by using transform properties over layout properties
+- Reduced main-thread blocking with useMemo and useCallback
+- Added web vitals tracking with reportWebVitals.ts
+- Lighthouse testing scripts for CI/CD performance monitoring
+
+### Added - Sort Options for Economic Calendar
+**What**: Multi-column sorting for economic calendar events
+**Why**: Traders need to sort by date, impact, currency, or event name
+**How**:
+- Added sort dropdown with 5 options: Date (ascending/descending), Impact, Currency, Event
+- Persistent sort state via localStorage
+- Visual sort indicator (↑↓) in column headers
+- Maintains sort order when applying filters
+
+### Fixed - Impact Count Display
+**What**: Show correct impact counts regardless of selected filters
+**Why**: Users were confused by counts changing based on currency filters
+**How**:
+- Decoupled impact counts from active filters
+- Counts now show total events in date range, not filtered subset
+- Updated UI to clarify counts represent all events
+
+## [2025-11-22] - Animation System & Accessibility
+
+### Added - Framer Motion Integration
+**What**: Professional animation system with accessibility support
+**Why**: Enhance UX with smooth transitions while respecting user preferences
+**How**:
+- Integrated Framer Motion 11.18.2 for declarative animations
+- Integrated React Aria Components 1.13.0 for accessibility
+- Created comprehensive animation inventory in ANIMATIONS.md
+- Implemented `useReducedMotion` hook for accessibility
+- All animations respect `prefers-reduced-motion` OS setting
+
+### Added - Gesture Handling
+**What**: Touch gesture support for mobile interactions
+**Why**: Modern mobile UX requires swipe and drag gestures
+**How**:
+- Left pane swipe-to-close: Drag left 100px or 500px/s velocity
+- 20% elastic drag for natural feel
+- Spring animations with stiffness 300, damping 30
+- Momentum-based gesture detection
+
+### Documented - Animation Architecture
+**What**: Comprehensive animation documentation in ANIMATIONS.md
+**Why**: Ensure consistency and maintainability of animation system
+**How**:
+- Documented all 5 core animations with specs and timing
+- Usage patterns and code examples
+- Best practices and anti-patterns
+- Debugging guide and performance profiling
+- Future enhancement suggestions
+- Updated CLAUDE.md with animation system overview
+
+## [2025-11-19] - UTC Migration & Database Updates
+
+### Added - UTC-Based Timezone Handling
+**What**: Migrated from timezone-specific storage to UTC-based event handling
+**Why**: Previous system stored events in 'Asia/Kolkata' timezone causing conversion errors
+**How**:
+- Added `date_utc` column to economic_calendar_ff table
+- Updated backend to store all events in UTC
+- Modified frontend to convert from UTC to user's selected timezone
+- Eliminated timezone conversion bugs and DST issues
+- Improved query performance with UTC-indexed columns
+
+### Fixed - Date Range Query
+**What**: Correct date range query to exclude tomorrow's events in Today filter
+**Why**: "Today" filter was showing events from tomorrow due to timezone overlap
+**How**:
+- Updated SQL query to use strict date equality for "Today" filter
+- Changed from `date >= today AND date <= today` to `date = today`
+- Added timezone-aware date parsing in frontend
+- Verified edge cases around midnight UTC
+
+## [2025-11-18] - Economic Calendar Table Redesign
+
+### Added - Economic Calendar Table Layout
 **What**: Complete redesign of Economic Calendar from card-based layout to table format
 **Why**: Improved data density and easier comparison of economic events across multiple data points
 **How**:
@@ -30,15 +173,6 @@ All notable changes to the Forex Session Trading Dashboard project.
 - Frontend now passes user's local date in YYYY-MM-DD format
 - Backend changed timezone filtering from 'Asia/Kolkata' to 'UTC' for consistency
 - Added date format validation (YYYY-MM-DD regex check)
-
-### Improved - Alert Icon Animation
-**What**: Simplified alert bell icon from complex multi-layer animations to simple glow border
-**Why**: Previous design was too visually distracting with 3 pulsing/rotating glow layers
-**How**:
-- Removed: 3 glow divs (outer, middle, inner), conic gradients, pulse animations, drop shadows
-- Added: Simple border glow - Green when alerts ON, Red when alerts OFF
-- Reduced notification badge from 3px pulsing gradient to 2px solid green dot
-- Cleaner, less CPU-intensive animation
 
 ## [2025-11-17] - Unified Filter System
 
