@@ -8,7 +8,8 @@
   --ag-border-color: rgba(71, 85, 105, 0.3);
   --ag-header-foreground-color: #e2e8f0;
   --ag-foreground-color: #e2e8f0;
-  --ag-font-size: 11px;
+  --ag-font-size: 12px;
+  --ag-header-font-size: 12px;
   --ag-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   backdrop-filter: blur(12px);
   border-radius: 12px;
@@ -27,7 +28,7 @@
 
 .ag-theme-alpine-dark .ag-header-cell-label {
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--ag-header-font-size);
   color: #cbd5e1;
 }
 
@@ -41,8 +42,8 @@
 }
 
 .ag-theme-alpine-dark .ag-cell {
-  padding: 8px 12px;
-  line-height: 1.5;
+  padding: 6px 12px;
+  line-height: 1.35;
   border-right: none;
 }
 

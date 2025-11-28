@@ -105,17 +105,17 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
         onInstallClick={onInstallClick}
       />
 
-      {/* 3-Column Grid Layout: 20% | 40% | 40% */}
+      {/* 2-Column Grid Layout: Left (20%) full height | Right nested grid */}
       <div
         className="flex-1 grid gap-3 p-3 overflow-auto"
         style={{
-          gridTemplateColumns: '20% 40% 40%',
-          gridTemplateRows: '1fr auto',
+          gridTemplateColumns: '20% 80%',
+          gridTemplateRows: '1fr',
           height: 'calc(100% - 52px)', // Subtract navbar height
         }}
       >
         {/* LEFT SIDEBAR - 20% width, full height */}
-        <div className="row-start-1 row-end-3 flex flex-col gap-3 h-full min-h-0 overflow-hidden">
+        <div className="flex flex-col gap-3 h-full min-h-0 overflow-auto">
           {/* Current Time Card */}
           <div className="glass-soft rounded-2xl p-3 shadow-xl shadow-black/30 flex-shrink-0">
             <div className="flex items-center gap-2 mb-2">
@@ -227,45 +227,45 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
           </div>
         </div>
 
-        {/* MIDDLE CHART - 40% width, row 1 */}
-        <div className="overflow-hidden">
-          <Suspense fallback={
-            <div className="h-full glass-soft rounded-2xl flex items-center justify-center">
-              <div className="text-xs text-slate-400">Loading chart...</div>
-            </div>
-          }>
-            <ForexChart
-              nowLine={nowLine}
-              currentTimezoneLabel={selectedTimezone.label}
-              timezoneOffset={selectedTimezone.offset}
-              sessionStatus={sessionStatus}
-              currentTime={currentTime}
-              isDSTActive={currentDSTStatus}
-              activeSessions={activeSessions_config}
-              isAutoDetectDST={isAutoDetectDST}
-              manualDSTOverride={manualDSTOverride}
-              onToggleDSTOverride={onToggleDSTOverride}
-              onAutoDetectToggle={onAutoDetectToggle}
-            />
-          </Suspense>
-        </div>
+        {/* RIGHT SIDE nested grid */}
+        <div className="grid gap-3 overflow-hidden" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr auto' }}>
+          <div className="overflow-hidden">
+            <Suspense fallback={
+              <div className="h-full glass-soft rounded-2xl flex items-center justify-center">
+                <div className="text-xs text-slate-400">Loading chart...</div>
+              </div>
+            }>
+              <ForexChart
+                nowLine={nowLine}
+                currentTimezoneLabel={selectedTimezone.label}
+                timezoneOffset={selectedTimezone.offset}
+                sessionStatus={sessionStatus}
+                currentTime={currentTime}
+                isDSTActive={currentDSTStatus}
+                activeSessions={activeSessions_config}
+                isAutoDetectDST={isAutoDetectDST}
+                manualDSTOverride={manualDSTOverride}
+                onToggleDSTOverride={onToggleDSTOverride}
+                onAutoDetectToggle={onAutoDetectToggle}
+              />
+            </Suspense>
+          </div>
 
-        {/* RIGHT CALENDAR - 40% width, row-span-2 (full height) */}
-        <div className="row-span-2 overflow-hidden">
-          <Suspense fallback={
-            <div className="h-full glass-soft rounded-2xl flex items-center justify-center">
-              <div className="text-xs text-slate-400">Loading calendar...</div>
-            </div>
-          }>
-            <EconomicCalendar selectedTimezone={selectedTimezone} />
-          </Suspense>
-        </div>
+          <div className="row-span-2 overflow-hidden">
+            <Suspense fallback={
+              <div className="h-full glass-soft rounded-2xl flex items-center justify-center">
+                <div className="text-xs text-slate-400">Loading calendar...</div>
+              </div>
+            }>
+              <EconomicCalendar selectedTimezone={selectedTimezone} />
+            </Suspense>
+          </div>
 
-        {/* WORLD CLOCKS - Spans columns 2-3 (middle + right), row 2 */}
-        <div className="col-span-2 col-start-2 overflow-hidden">
-          <div className="h-full glass-soft rounded-2xl p-3 shadow-xl shadow-black/30">
-            <h3 className="text-[10px] uppercase tracking-widest text-slate-500 mb-2">World Clocks</h3>
-            <SessionClocks compact sessionStatus={sessionStatus} />
+          <div className="col-span-2 overflow-hidden">
+            <div className="h-full glass-soft rounded-2xl p-3 shadow-xl shadow-black/30">
+              <h3 className="text-[10px] uppercase tracking-widest text-slate-500 mb-2">World Clocks</h3>
+              <SessionClocks compact sessionStatus={sessionStatus} />
+            </div>
           </div>
         </div>
       </div>
