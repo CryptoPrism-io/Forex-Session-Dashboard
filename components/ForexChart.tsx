@@ -546,21 +546,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2 text-[11px] text-slate-300">
-        {cityBadges.map((city) => (
-          <div
-            key={city.label}
-            className="flex items-center gap-2 px-2.5 py-1 rounded-2xl border border-slate-600/50 bg-slate-800/40 backdrop-blur-xl shadow-inner shadow-black/10 glass-soft"
-          >
-            <span
-              className="w-2.5 h-2.5 rounded-full shadow"
-              style={{ backgroundColor: city.accent, boxShadow: `0 0 10px ${city.accent}60` }}
-            />
-            <span className="font-semibold text-slate-100">{city.label}</span>
-            <span className="text-[10px] text-slate-400">{city.offsetLabel}</span>
-          </div>
-        ))}
-      </div>
+      {/* City badges removed - session names now displayed in glass capsules on each row */}
 
       {viewMode === 'separate' ? (
         // Separate view - individual rows per session
@@ -572,7 +558,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
           return (
             <div key={session.name} className="mb-5 last:mb-0">
               <div className="flex items-center gap-3 mb-1.5">
-                <div className="w-24 flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/40 backdrop-blur-xl border border-slate-600/40 shadow-inner shadow-black/10 glass-soft">
                   <div
                     className="w-2.5 h-2.5 rounded-full"
                     style={{
@@ -581,7 +567,10 @@ const ForexChart: React.FC<ForexChartProps> = ({
                       animation: status === 'WARNING' ? 'pulse-glow 1.5s infinite' : 'none',
                     }}
                   />
-                  <span className="text-sm font-semibold text-slate-300">{session.name}</span>
+                  <span className="text-xs font-normal text-slate-100 uppercase" style={{ letterSpacing: '0.15em' }}>{session.name}</span>
+                  <span className="text-[10px] font-light text-slate-400 ml-1">
+                    {getTimezoneOffsetLabel(SESSION_CITY_REFERENCES.find(c => c.label === session.name)?.timezone || 'UTC')}
+                  </span>
                 </div>
               </div>
 
