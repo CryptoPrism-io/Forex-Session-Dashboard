@@ -100,7 +100,9 @@ const ForexChart: React.FC<ForexChartProps> = ({
   isDSTActive = false, activeSessions, isAutoDetectDST = true, manualDSTOverride,
   onToggleDSTOverride, onAutoDetectToggle, fullscreenButton
 }) => {
-  const [viewMode, setViewMode] = useState<'separate' | 'volume'>('separate');
+  const [viewMode, setViewMode] = useState<
+    'timeline' | 'volume' | 'volatility' | 'position' | 'correlation' | 'ai'
+  >('timeline');
   const [chartsVisible, setChartsVisible] = useState(true);
   const [showDSTMenu, setShowDSTMenu] = useState(false);
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
@@ -385,37 +387,210 @@ const cityBadges = useMemo(
       ref={chartContainerRef}
       className="relative w-full h-full glass-soft rounded-2xl p-3 shadow-2xl shadow-black/35 hover:border-slate-500/50 transition-all duration-300 sm:backdrop-blur-2xl backdrop-blur-none overflow-hidden flex flex-col"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-slate-100">Session Timeline</h3>
-          {fullscreenButton}
+      {/* Tools header row 1 */}
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-[10px] uppercase tracking-widest text-slate-500">TOOLS</h3>
+        {fullscreenButton}
+      </div>
+
+      {/* Tools row 2: modes + filters (timeline/volume only) */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            { key: 'timeline', label: 'Session Timeline' },
+            { key: 'volume', label: 'Session Volume' },
+            { key: 'volatility', label: 'Volatility' },
+            { key: 'position', label: 'Position Size' },
+            { key: 'correlation', label: 'Correlation Matrix' },
+            { key: 'ai', label: 'AI Suggestions' },
+          ].map((mode) => (
+            <button
+              key={mode.key}
+              onClick={() => setViewMode(mode.key as any)}
+              className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
+                viewMode === mode.key
+                  ? 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
+                  : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
+              }`}
+            >
+              {mode.label}
+            </button>
+          ))}
+        </div>
+
+        {(viewMode === 'timeline' || viewMode === 'volume') && (
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setViewMode('separate')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
-                viewMode === 'separate'
-                  ? 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
-                  : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
+            <PopoverMenu
+              trigger={
+                <>
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                  </svg>
+                  <span>Filters</span>
+                </>
+              }
+              triggerClassName={`px-2.5 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md border flex items-center gap-1 transition-all duration-200 ${
+                showEventFilterMenu
+                  ? 'bg-cyan-500/30 border-cyan-400/60 text-cyan-100 shadow-lg shadow-cyan-500/25'
+                  : 'bg-slate-700/20 border-slate-600/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-500/60 hover:text-slate-200 hover:shadow-md active:bg-slate-700/60'
               }`}
+              menuClassName="w-48"
+              isOpen={showEventFilterMenu}
+              onOpenChange={setShowEventFilterMenu}
             >
-              Individual
-            </button>
-            <button
-              onClick={() => setViewMode('volume')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
-                viewMode === 'volume'
-                  ? 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
-                  : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
-              }`}
+              <div className="p-3">
+                <MenuSection title="Layers">
+                  <CheckboxMenuItem
+                    label="Sessions"
+                    checked={visibleLayers.sessions}
+                    onChange={(checked) => setVisibleLayers({ ...visibleLayers, sessions: checked })}
+                  />
+                  <CheckboxMenuItem
+                    label="Overlaps"
+                    checked={visibleLayers.overlaps}
+                    onChange={(checked) => setVisibleLayers({ ...visibleLayers, overlaps: checked })}
+                  />
+                  <CheckboxMenuItem
+                    label="Killzones"
+                    checked={visibleLayers.killzones}
+                    onChange={(checked) => setVisibleLayers({ ...visibleLayers, killzones: checked })}
+                  />
+                  <CheckboxMenuItem
+                    label="Volume"
+                    checked={visibleLayers.volume}
+                    onChange={(checked) => setVisibleLayers({ ...visibleLayers, volume: checked })}
+                  />
+                  <CheckboxMenuItem
+                    label="News"
+                    checked={visibleLayers.news}
+                    onChange={(checked) => setVisibleLayers({ ...visibleLayers, news: checked })}
+                  />
+                </MenuSection>
+
+                {visibleLayers.news && (
+                  <MenuSection title="Impact Levels" showDivider>
+                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={selectedImpactLevels.includes('high')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedImpactLevels([...selectedImpactLevels, 'high']);
+                          } else {
+                            setSelectedImpactLevels(selectedImpactLevels.filter(l => l !== 'high'));
+                          }
+                        }}
+                        className="cursor-pointer"
+                      />
+                      <span className="text-xs text-red-300 font-medium">High</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={selectedImpactLevels.includes('medium')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedImpactLevels([...selectedImpactLevels, 'medium']);
+                          } else {
+                            setSelectedImpactLevels(selectedImpactLevels.filter(l => l !== 'medium'));
+                          }
+                        }}
+                        className="cursor-pointer"
+                      />
+                      <span className="text-xs text-amber-300 font-medium">Medium</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={selectedImpactLevels.includes('low')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedImpactLevels([...selectedImpactLevels, 'low']);
+                          } else {
+                            setSelectedImpactLevels(selectedImpactLevels.filter(l => l !== 'low'));
+                          }
+                        }}
+                        className="cursor-pointer"
+                      />
+                      <span className="text-xs text-emerald-300 font-medium">Low</span>
+                    </label>
+                  </MenuSection>
+                )}
+              </div>
+            </PopoverMenu>
+
+            <PopoverMenu
+              trigger={isDSTActive ? '☀ DST' : '🌙 ST'}
+              triggerClassName="px-2.5 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-700/20 border border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300 transition-all duration-300"
+              menuClassName="w-56"
+              isOpen={showDSTMenu}
+              onOpenChange={setShowDSTMenu}
             >
-              Volume
-            </button>
+              <div className="p-3 space-y-2">
+                <CheckboxMenuItem
+                  label="Auto-detect DST"
+                  checked={isAutoDetectDST ?? false}
+                  onChange={(checked) => onAutoDetectToggle?.(checked)}
+                />
+
+                <MenuSection title="Manual Override" showDivider>
+                  <div className="space-y-1">
+                    <MenuButton
+                      label="☀ Summer (DST)"
+                      onClick={() => {
+                        onToggleDSTOverride?.(true);
+                        setShowDSTMenu(false);
+                      }}
+                      isActive={manualDSTOverride === true}
+                      className={manualDSTOverride === true ? 'bg-amber-500/30 border-amber-400/50 text-amber-100' : ''}
+                    />
+                    <MenuButton
+                      label="🌙 Winter (Standard)"
+                      onClick={() => {
+                        onToggleDSTOverride?.(false);
+                        setShowDSTMenu(false);
+                      }}
+                      isActive={manualDSTOverride === false}
+                      className={manualDSTOverride === false ? 'bg-blue-500/30 border-blue-400/50 text-blue-100' : ''}
+                    />
+                  </div>
+                </MenuSection>
+              </div>
+            </PopoverMenu>
+          </div>
+        )}
+      </div>
+      <div className="hidden">
+        <div className="flex items-center gap-3">
+          <h3 className="text-[10px] uppercase tracking-widest text-slate-500">Tools</h3>
+          {fullscreenButton}
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { key: 'timeline', label: 'Session Timeline' },
+              { key: 'volume', label: 'Session Volume' },
+              { key: 'volatility', label: 'Volatility' },
+              { key: 'position', label: 'Position Size' },
+              { key: 'correlation', label: 'Correlation Matrix' },
+              { key: 'ai', label: 'AI Suggestions' },
+            ].map((mode) => (
+              <button
+                key={mode.key}
+                onClick={() => setViewMode(mode.key as any)}
+                className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
+                  viewMode === mode.key
+                    ? 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
+                    : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
+                }`}
+              >
+                {mode.label}
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Timeline Filter Menu */}
-          {viewMode === 'separate' && (
+          {viewMode === 'timeline' && (
             <PopoverMenu
               trigger={
                 <>
@@ -560,7 +735,7 @@ const cityBadges = useMemo(
 
       {/* City badges removed - session names now displayed in glass capsules on each row */}
 
-      {viewMode === 'separate' ? (
+      {viewMode === 'timeline' ? (
         // Separate view - individual rows per session
         <div className="flex-1 overflow-y-auto min-h-0">
         {[sessions[3], sessions[2], sessions[0], sessions[1]].map(session => {
