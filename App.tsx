@@ -297,7 +297,7 @@ const App: React.FC = () => {
   });
 
   return (
-    <div className="h-screen font-sans text-slate-200 overflow-hidden" style={{
+    <div className="h-screen font-sans text-slate-200 overflow-x-hidden overflow-y-auto" style={{
       background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%)',
       backdropFilter: 'blur(10px)'
     }}>

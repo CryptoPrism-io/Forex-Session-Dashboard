@@ -100,7 +100,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
   isDSTActive = false, activeSessions, isAutoDetectDST = true, manualDSTOverride,
   onToggleDSTOverride, onAutoDetectToggle, fullscreenButton
 }) => {
-  const [viewMode, setViewMode] = useState<'unified' | 'separate' | 'volume'>('unified');
+  const [viewMode, setViewMode] = useState<'separate' | 'volume'>('separate');
   const [chartsVisible, setChartsVisible] = useState(true);
   const [showDSTMenu, setShowDSTMenu] = useState(false);
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
@@ -296,6 +296,17 @@ const ForexChart: React.FC<ForexChartProps> = ({
   const stackedEvents = workerData?.stackedEvents ?? {};
   const volumeHistogram = workerData?.volumeHistogram ?? null;
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log('ForexChart Debug:', {
+      viewMode,
+      timeBlocksCount: timeBlocks.length,
+      visibleLayers,
+      workerDataExists: !!workerData,
+      sessionsCount: sessions.length
+    });
+  }, [viewMode, timeBlocks.length, visibleLayers, workerData, sessions.length]);
+
   const virtualizedEvents = useMemo(() => {
     const MAX_EVENTS = 160;
     if (processedEvents.length <= MAX_EVENTS) return processedEvents;
@@ -321,17 +332,26 @@ const ForexChart: React.FC<ForexChartProps> = ({
   }), [nowLine]);
 
 
-  const getStatusColor = (status: SessionStatus) => {
-    const statusConfig = {
-      OPEN: { color: 'hsl(120, 70%, 55%)', glow: 'hsl(120, 70%, 55%)' },
+const getStatusColor = (status: SessionStatus) => {
+  const statusConfig = {
+    OPEN: { color: 'hsl(120, 70%, 55%)', glow: 'hsl(120, 70%, 55%)' },
       CLOSED: { color: 'hsl(0, 60%, 45%)', glow: 'transparent' },
       WARNING: { color: 'hsl(35, 100%, 60%)', glow: 'hsl(35, 100%, 60%)' },
-    };
-    return statusConfig[status];
   };
+  return statusConfig[status];
+};
 
-  const cityBadges = useMemo(
-    () =>
+// Convert base HSL colors to HSLA with the provided opacity (fallback to raw color)
+const withOpacity = (color: string, alpha: number) => {
+  if (!color) return color;
+  if (color.startsWith('hsl(')) {
+    return color.replace('hsl', 'hsla').replace(')', `, ${alpha})`);
+  }
+  return color;
+};
+
+const cityBadges = useMemo(
+  () =>
       SESSION_CITY_REFERENCES.map((city) => ({
         ...city,
         offsetLabel: getTimezoneOffsetLabel(city.timezone),
@@ -381,16 +401,6 @@ const ForexChart: React.FC<ForexChartProps> = ({
               Individual
             </button>
             <button
-              onClick={() => setViewMode('unified')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
-                viewMode === 'unified'
-                  ? 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
-                  : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
-              }`}
-            >
-              Unified
-            </button>
-            <button
               onClick={() => setViewMode('volume')}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
                 viewMode === 'volume'
@@ -404,8 +414,8 @@ const ForexChart: React.FC<ForexChartProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Unified Filter Menu */}
-          {(viewMode === 'separate' || viewMode === 'unified') && (
+          {/* Timeline Filter Menu */}
+          {viewMode === 'separate' && (
             <PopoverMenu
               trigger={
                 <>
@@ -629,40 +639,73 @@ const ForexChart: React.FC<ForexChartProps> = ({
         <p className="mt-3 text-[11px] text-slate-500 text-right italic">{timezoneAxisNote}</p>
         </div>
       ) : viewMode === 'unified' ? (
-        // Unified view - all sessions on one timeline
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <div className="relative w-full h-full min-h-[180px] bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
-            {/* Volume Histogram Background */}
-            {volumeHistogram && <VolumeHistogramCanvas histogram={volumeHistogram} />}
+        // Unified view - clean timeline with elegant overlaps
+        <div className="flex-1 overflow-y-auto min-h-0 px-1">
+          {/* Time Ruler - Bold GMT markers */}
+          <div className="relative h-8 mb-2 px-2">
+            <div className="flex justify-between items-end border-b border-slate-700/40 pb-1">
+              {[0, 4, 8, 12, 16, 20].map(hour => (
+                <div key={hour} className="flex flex-col items-center">
+                  <span className="text-sm font-bold text-slate-300 tabular-nums">
+                    {String(hour).padStart(2, '0')}
+                  </span>
+                  <span className="text-[9px] text-slate-600 font-medium">GMT</span>
+                </div>
+              ))}
+              <div className="flex flex-col items-center">
+                <span className="text-sm font-bold text-slate-300 tabular-nums">00</span>
+                <span className="text-[9px] text-slate-600 font-medium">GMT</span>
+              </div>
+            </div>
+          </div>
 
-            {/* Vertical hour grid lines */}
-            {ticks.map(hour => (
+          {/* Main Timeline Container */}
+          <div className="relative w-full h-full min-h-[200px] bg-slate-900/40 backdrop-blur-sm border border-slate-700/20 rounded-lg overflow-hidden">
+            {/* Subtle vertical grid lines at major hours */}
+            {[0, 4, 8, 12, 16, 20].map(hour => (
               <div
                 key={`grid-${hour}`}
-                className="absolute top-0 bottom-0 border-l border-slate-700/30"
+                className="absolute top-0 bottom-0 w-px bg-slate-700/15"
                 style={{ left: `${(hour / 24) * 100}%` }}
               />
             ))}
 
-            {/* All session blocks - Filtered by visibility */}
-            {timeBlocks
-              .filter(block => {
-                // Filter based on visibility settings
-                if (block.yLevel === 0 && !visibleLayers.sessions) return false; // Main sessions
-                if (block.yLevel === 1 && !visibleLayers.overlaps) return false; // Overlaps
-                if (block.yLevel === 2 && !visibleLayers.killzones) return false; // Killzones
-                return true;
-              })
-              .map(block => {
-                const yPositions = ['75%', '50%', '25%'];
-                const heights = ['35%', '25%', '20%'];
+            {/* Session blocks with improved rendering */}
+            {timeBlocks.length > 0 ? (
+              timeBlocks
+                .filter(block => {
+                  if (block.yLevel === 0 && !visibleLayers.sessions) return false;
+                  if (block.yLevel === 1 && !visibleLayers.overlaps) return false;
+                  if (block.yLevel === 2 && !visibleLayers.killzones) return false;
+                  return true;
+                })
+                .map(block => {
+                // Improved vertical positioning - more space, clearer hierarchy
+                const yPositions = ['70%', '45%', '20%'];
+                const heights = ['28%', '28%', '28%'];
+
+                // Determine if this is overlap or killzone
+                const isOverlap = block.yLevel === 1;
+                const isKillzone = block.yLevel === 2;
+                const isMainSession = block.yLevel === 0;
+
+                // Enhanced styling based on block type
+                const baseColor = block.details.color;
                 const style: React.CSSProperties = {
                   left: `${block.left}%`,
                   width: `${block.width}%`,
                   top: yPositions[block.yLevel],
                   height: heights[block.yLevel],
-                  backgroundColor: block.details.color,
-                  opacity: block.details.opacity,
+                  backgroundColor: isOverlap
+                    ? withOpacity(baseColor, 0.35) // Overlap: lighter tint
+                    : isKillzone
+                    ? withOpacity(baseColor, 0.2) // Killzone: subtle background
+                    : withOpacity(baseColor, 0.4), // Main session: medium opacity
+                  border: isKillzone
+                    ? `1.5px dashed ${withOpacity(baseColor, 0.9)}` // Killzone: dashed outline
+                    : `1px solid ${withOpacity(baseColor, 0.6)}`,
+                  opacity: isOverlap ? 0.85 : 1,
+                  borderRadius: isKillzone ? '3px' : '4px',
                   mixBlendMode: 'normal',
                 };
 
@@ -670,20 +713,25 @@ const ForexChart: React.FC<ForexChartProps> = ({
                 const startTimeLocal = formatTime(startUTC, timezoneOffset);
                 const endTimeLocal = formatTime(endUTC, timezoneOffset);
 
+                // Custom tooltip content based on block type
+                const tooltipName = isOverlap
+                  ? block.details.name.replace('-', ' × ') // "London-NY" → "London × NY"
+                  : block.details.name;
+
                 return (
                   <AccessibleTooltip
                     key={block.key}
                     content={{
                       type: 'session',
-                      name: block.details.name,
+                      name: tooltipName,
                       timeRange: `${startTimeLocal} - ${endTimeLocal}`,
                       timezoneLabel: currentTimezoneLabel,
                       tooltipInfo: block.tooltip,
                     }}
-                    delay={300}
+                    delay={200}
                   >
                     <motion.div
-                      className="absolute rounded cursor-pointer"
+                      className="absolute cursor-pointer"
                       style={style}
                       variants={sessionBarVariants}
                       initial="hidden"
@@ -693,16 +741,20 @@ const ForexChart: React.FC<ForexChartProps> = ({
                     />
                   </AccessibleTooltip>
                 );
-              })}
+              })
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-sm">
+                Loading sessions...
+              </div>
+            )}
 
-            {/* Economic Event Indicators */}
+            {/* Economic Event Indicators - cleaner positioning */}
             <AnimatePresence>
-              {visibleLayers.news && processedEvents.map((event: any, idx: number) => {
-                // Calculate vertical stack position for overlapping events
+              {visibleLayers.news && virtualizedEvents.map((event: any, idx: number) => {
                 const posKey = Math.floor(event.position * 10).toString();
-                const stackGroup = stackedEvents[posKey] || [];
+                const stackGroup = virtualizedStackedEvents[posKey] || [];
                 const stackIndex = stackGroup.findIndex((e: any) => e.id === event.id);
-                const stackOffset = stackIndex * 18; // 18px vertical spacing between stacked icons
+                const stackOffset = stackIndex * 14;
 
                 return (
                   <AccessibleTooltip
@@ -718,13 +770,13 @@ const ForexChart: React.FC<ForexChartProps> = ({
                       previous: event.previous,
                       actual: event.actual,
                     }}
-                    delay={300}
+                    delay={200}
                   >
                     <motion.div
                       className="absolute cursor-pointer"
                       style={{
                         left: `${event.position}%`,
-                        bottom: `${8 + stackOffset}px`,
+                        bottom: `${6 + stackOffset}px`,
                         transform: 'translateX(-50%)',
                         zIndex: 10 + stackIndex,
                       }}
@@ -735,71 +787,68 @@ const ForexChart: React.FC<ForexChartProps> = ({
                       whileHover="hover"
                       custom={idx}
                     >
-                    <div
-                      className="w-4.5 h-4.5 rounded-full flex items-center justify-center"
-                      style={{
-                        backgroundColor: event.color,
-                        border: `1.5px solid ${event.borderColor}`,
-                        boxShadow: `
-                          0 0 10px ${event.color}80,
-                          0 2px 4px rgba(0, 0, 0, 0.4),
-                          inset 0 1px 2px rgba(255, 255, 255, 0.3),
-                          inset 0 -1px 2px rgba(0, 0, 0, 0.3)
-                        `,
-                      }}
-                    >
-                      <IconCalendarTab
-                        className="w-2.5 h-2.5"
-                        style={{ color: 'white', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.4))' }}
-                      />
-                    </div>
-                  </motion.div>
-                </AccessibleTooltip>
-              );
-            })}
+                      <div
+                        className="w-3 h-3 rounded-full flex items-center justify-center"
+                        style={{
+                          backgroundColor: event.color,
+                          border: `1px solid ${event.borderColor}`,
+                          boxShadow: `0 0 6px ${event.color}70, inset 0 1px 1px rgba(255,255,255,0.3)`,
+                        }}
+                      >
+                        <IconCalendarTab
+                          className="w-1.5 h-1.5"
+                          style={{ color: 'white', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.3))' }}
+                        />
+                      </div>
+                    </motion.div>
+                  </AccessibleTooltip>
+                );
+              })}
             </AnimatePresence>
 
+            {/* Strong "NOW" vertical line - spans entire height */}
             <motion.div
-              className="absolute top-0 bottom-0 w-0.5 bg-yellow-400"
+              className="absolute top-0 bottom-0 w-1 bg-gradient-to-b from-amber-400 via-amber-500 to-amber-400 z-20 pointer-events-none"
               style={nowLinePosition}
               animate={{
-                opacity: nowBlinkVisible ? 1 : 0.15,
+                opacity: nowBlinkVisible ? 1 : 0.7,
                 boxShadow: nowBlinkVisible
-                  ? '0 0 14px rgba(250, 204, 21, 0.8)'
-                  : '0 0 0px rgba(250, 204, 21, 0)',
+                  ? '0 0 20px rgba(251, 191, 36, 0.6), 0 0 40px rgba(251, 191, 36, 0.3)'
+                  : '0 0 10px rgba(251, 191, 36, 0.4)',
               }}
               transition={
                 prefersReducedMotion
                   ? { duration: 0 }
-                  : { opacity: { duration: 0.2 }, boxShadow: { duration: 0.2 } }
+                  : { duration: 0.8, ease: 'easeInOut' }
               }
             >
-              <div className="absolute -top-5 -translate-x-1/2 text-xs text-yellow-300 font-bold whitespace-nowrap">
-                Now
+              {/* NOW label at top */}
+              <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-amber-500/90 px-2 py-0.5 rounded text-[10px] font-bold text-slate-900 whitespace-nowrap shadow-lg">
+                NOW
               </div>
+              {/* Triangle pointer */}
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-amber-500/90" />
             </motion.div>
           </div>
 
-          {/* Legend for unified view */}
-          <div className="mt-3 flex flex-wrap gap-3 text-xs">
+          {/* Compact legend - no status badges, just session identification */}
+          <div className="mt-2 flex flex-wrap gap-3 text-xs px-2">
             {[sessions[3], sessions[2], sessions[0], sessions[1]].map(session => {
-              const status = sessionStatus[session.name];
-              const statusColors = getStatusColor(status);
               return (
-                <div key={session.name} className="flex items-center gap-2">
+                <div key={session.name} className="flex items-center gap-1.5">
                   <div
-                    className="w-3 h-3 rounded"
+                    className="w-2.5 h-2.5 rounded-sm"
                     style={{
-                      backgroundColor: statusColors.color,
-                      boxShadow: `0 0 4px ${statusColors.glow}`,
+                      backgroundColor: session.main.color,
+                      opacity: 0.7,
                     }}
                   />
-                  <span className="text-slate-300">{session.name}</span>
+                  <span className="text-slate-400 font-medium">{session.name}</span>
                 </div>
               );
             })}
           </div>
-          <p className="mt-3 text-[11px] text-slate-500 text-right italic">{timezoneAxisNote}</p>
+          <p className="mt-2 text-[10px] text-slate-500 text-right italic px-2">{timezoneAxisNote}</p>
         </div>
       ) : (
         // Volume view - Trading Volume Chart

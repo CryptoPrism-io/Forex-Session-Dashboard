@@ -107,7 +107,7 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
 
       {/* 3-Column Grid Layout: 20% | 40% | 40% */}
       <div
-        className="flex-1 grid gap-3 p-3 overflow-hidden"
+        className="flex-1 grid gap-3 p-3 overflow-auto"
         style={{
           gridTemplateColumns: '20% 40% 40%',
           gridTemplateRows: '1fr auto',
@@ -115,7 +115,7 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
         }}
       >
         {/* LEFT SIDEBAR - 20% width, full height */}
-        <div className="row-start-1 row-end-3 flex flex-col gap-3 overflow-y-auto">
+        <div className="row-start-1 row-end-3 flex flex-col gap-3 h-full min-h-0 overflow-hidden">
           {/* Current Time Card */}
           <div className="glass-soft rounded-2xl p-3 shadow-xl shadow-black/30 flex-shrink-0">
             <div className="flex items-center gap-2 mb-2">
