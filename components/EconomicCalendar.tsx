@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
+import { ModuleRegistry, AllCommunityModule, type GridApi } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import '../styles/ag-grid-custom.css';
@@ -61,6 +61,8 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [currencySearchQuery, setCurrencySearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'timeLeft' | 'date'>('timeLeft');
+  const [gridApi, setGridApi] = useState<GridApi | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
   // Calculate date ranges based on filter
   const dateRange = useMemo(() => {
@@ -138,6 +140,8 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
       return byCcy && byImpact && byEventType;
     });
   }, [data, selectedCurrencies, selectedImpacts, selectedEventTypes]);
+
+  // NOTE: we no longer push chip filters into AG Grid filter model; chips remain external visual presets.
 
   // Get unique currencies from full dataset so multi-select options stay available
   const currencies = useMemo(
@@ -293,6 +297,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
     }, 10000);
     return () => clearInterval(timer);
   }, []);
+
 
   // Helper to get time left in minutes for sorting
   // Note: times are in UTC (time_utc column from database)
@@ -491,8 +496,8 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
   }, [sortBy, selectedTimezone.offset]);
 
   // Prepare row data for AG Grid
-  const gridRowData = useMemo(() => {
-    return Object.entries(eventsByDate)
+  const baseGridRowData = useMemo(() => {
+    const rows = Object.entries(eventsByDate)
       .flatMap(([date, events]) =>
         events.map((event, idx) => {
           const rawTime = event.time_utc || '';
@@ -501,6 +506,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
           const displayTime = convertedTime || rawTime;
           const timeLeft = getTimeLeft(event.date_utc, event.time_utc, selectedTimezone.offset);
           const timeLeftMinutes = getTimeLeftMinutes(event.date_utc, event.time_utc, selectedTimezone.offset);
+          const categories = categorizeEvent(event.event || '');
 
           return {
             id: `${date}-${event.id}-${idx}`,
@@ -516,6 +522,9 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
             forecast: event.forecast || '--',
             actual: event.actual || '--',
             actualStatus: event.actual_status,
+            rawEvent: event,
+            categories,
+            description: event.source || event.event,
           };
         })
       )
@@ -524,10 +533,39 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
           return a.timeLeftMinutes - b.timeLeftMinutes;
         } else {
           if (a.dateTime !== b.dateTime) return a.dateTime - b.dateTime;
-          return a.displayTime.localeCompare(b.displayTime);
+          const timeCompare = a.displayTime.localeCompare(b.displayTime);
+          if (timeCompare !== 0) return timeCompare;
+          return a.event.localeCompare(b.event);
         }
       });
+
+    return rows.map((row, index) => ({
+      ...row,
+      stripeIndex: index,
+    }));
   }, [eventsByDate, selectedTimezone.offset, sortBy, currentTime]);
+
+  const gridRowData = useMemo(() => {
+    if (!expandedRowId) return baseGridRowData;
+    const idx = baseGridRowData.findIndex((row) => row.id === expandedRowId);
+    if (idx === -1) return baseGridRowData;
+    const detailRow = {
+      ...baseGridRowData[idx],
+      id: `${expandedRowId}-detail`,
+      isDetailRow: true,
+    };
+    return [
+      ...baseGridRowData.slice(0, idx + 1),
+      detailRow,
+      ...baseGridRowData.slice(idx + 1),
+    ];
+  }, [baseGridRowData, expandedRowId]);
+
+  React.useEffect(() => {
+    if (expandedRowId && !baseGridRowData.some((row) => row.id === expandedRowId)) {
+      setExpandedRowId(null);
+    }
+  }, [baseGridRowData, expandedRowId]);
 
   // Stable AG Grid row style objects
   const defaultRowStyle = useMemo(() => ({
@@ -536,31 +574,185 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
   }), []);
 
   const getRowStyle = useCallback((params: any) => {
-    if (params.node.rowIndex! % 2 === 0) {
+    if (params.data?.isDetailRow) {
+      return { backgroundColor: 'transparent' };
+    }
+    const stripeIndex = params.data?.stripeIndex ?? params.node.rowIndex ?? 0;
+    if (stripeIndex % 2 === 0) {
       return { backgroundColor: 'rgba(15, 23, 42, 0.3)' };
     }
     return {};
   }, []);
 
+  const getRowHeight = useCallback((params: any) => {
+    if (params.data?.isDetailRow) {
+      return 160;
+    }
+    return 50;
+  }, []);
+
+  const defaultColDef = useMemo(
+    () => ({
+      sortable: true,
+      resizable: true,
+      sortingOrder: ['asc', 'desc', null],
+    }),
+    []
+  );
+
+  const renderDetailRow = useCallback((row: any) => {
+    if (!row) return null;
+    const categories = row.categories || [];
+    return (
+      <div className="w-full pl-8 pr-4">
+        <div className="rounded-2xl bg-slate-900/50 border border-slate-700/40 p-4 shadow-inner shadow-black/30 transition-all duration-300 ease-out">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">Event Summary</p>
+              <p className="text-sm text-slate-100 font-semibold">{row.event}</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {row.displayTime} · {row.timeLeft === 'Passed' ? 'Released' : `Starts in ${row.timeLeft}`}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {categories.length > 0 ? categories.map((cat: string) => (
+                <span
+                  key={`${row.id}-${cat}`}
+                  className="px-2 py-1 text-[10px] rounded-full bg-slate-800/70 border border-slate-700/70 text-slate-200 uppercase tracking-wide"
+                >
+                  {cat}
+                </span>
+              )) : (
+                <span className="px-2 py-1 text-[10px] rounded-full bg-slate-800/70 border border-slate-700/70 text-slate-400 uppercase tracking-wide">
+                  General
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-center">
+            {[
+              { label: 'Previous', value: row.previous },
+              { label: 'Forecast', value: row.forecast },
+              { label: 'Actual', value: row.actual, status: row.actualStatus },
+            ].map((item) => (
+              <div key={item.label} className="rounded-xl bg-slate-900/60 border border-slate-800/50 p-2 shadow-inner shadow-black/20">
+                <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">{item.label}</div>
+                <div
+                  className={`text-sm font-mono ${
+                    item.label === 'Actual'
+                      ? item.value === '--'
+                        ? 'text-slate-500'
+                        : item.status === 'better'
+                        ? 'text-emerald-400'
+                        : item.status === 'worse'
+                        ? 'text-rose-400'
+                        : 'text-cyan-300'
+                      : 'text-slate-200'
+                  }`}
+                >
+                  {item.value}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4">
+            <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">Reaction Sparkline</div>
+            <div className="relative h-12 rounded-xl bg-slate-900/70 overflow-hidden border border-slate-800/60">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full h-px bg-slate-700/50" />
+              </div>
+              <div
+                className="absolute inset-2 rounded-lg bg-gradient-to-r from-cyan-500/20 via-emerald-400/20 to-transparent"
+                style={{ clipPath: 'polygon(0% 70%, 20% 40%, 40% 60%, 60% 30%, 80% 55%, 100% 20%, 100% 100%, 0% 100%)' }}
+              />
+              <div className="absolute inset-0 animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }, []);
+
+  const handleRowToggle = useCallback((rowId: string) => {
+    setExpandedRowId((prev) => (prev === rowId ? null : rowId));
+  }, []);
+
+  const handleGridRowClick = useCallback(
+    (event: any) => {
+      if (!event.data || event.data.isDetailRow) return;
+      handleRowToggle(event.data.id);
+    },
+    [handleRowToggle]
+  );
+
+  const getRowId = useCallback((params: any) => params?.data?.id, []);
+
   // AG Grid column definitions
   const columnDefs = useMemo(() => [
+    {
+      headerName: '',
+      field: 'expander',
+      width: 46,
+      suppressHeaderMenuButton: true,
+      suppressHeaderContextMenu: true,
+      resizable: false,
+      lockPosition: true,
+      cellRenderer: (params: any) => {
+        if (params.data?.isDetailRow) return null;
+        const isExpanded = expandedRowId === params.data?.id;
+        return (
+          <button
+            aria-label="Toggle details"
+            className="w-7 h-7 rounded-full bg-slate-900/60 border border-slate-700/60 flex items-center justify-center text-slate-300 hover:text-cyan-300 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRowToggle(params.data.id);
+            }}
+          >
+            <svg
+              className="w-3 h-3 transition-transform duration-200"
+              style={{ transform: `rotate(${isExpanded ? 90 : 0}deg)` }}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        );
+      },
+      cellClass: (params: any) =>
+        params.data?.isDetailRow ? 'ag-cell-detail' : 'ag-cell-expander',
+    },
     {
       headerName: 'Date',
       field: 'date',
       width: 120,
       cellStyle: { fontFamily: 'monospace', fontSize: '10px', color: '#94a3b8' },
-      cellRenderer: (params: any) => (
-        <div>
-          <div>{params.value}</div>
-          <div style={{ color: '#64748b' }}>{params.data.displayTime}</div>
-        </div>
-      ),
+      cellRenderer: (params: any) => {
+        if (params.data?.isDetailRow) return null;
+        return (
+          <div>
+            <div>{params.value}</div>
+            <div style={{ color: '#64748b' }}>{params.data.displayTime}</div>
+          </div>
+        );
+      },
     },
     {
       headerName: 'Time Left',
       field: 'timeLeft',
       width: 120,
+      comparator: (_valueA: any, _valueB: any, nodeA: any, nodeB: any) => {
+        const a = nodeA.data?.timeLeftMinutes ?? Infinity;
+        const b = nodeB.data?.timeLeftMinutes ?? Infinity;
+        return a - b;
+      },
       cellStyle: (params: any) => {
+        if (params.data?.isDetailRow) return { display: 'none' };
         const timeLeft = params.value;
         let color = '#22d3ee'; // cyan-400
         if (timeLeft === 'Passed') color = '#64748b'; // slate-500
@@ -576,12 +768,15 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
       field: 'event',
       flex: 1,
       minWidth: 200,
-      cellRenderer: (params: any) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '14px' }}>{getCurrencyFlag(params.data.currency)}</span>
-          <span style={{ color: '#e2e8f0', fontWeight: '500' }}>{params.value}</span>
-        </div>
-      ),
+      cellRenderer: (params: any) => {
+        if (params.data?.isDetailRow) return null;
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '14px' }}>{getCurrencyFlag(params.data.currency)}</span>
+            <span style={{ color: '#e2e8f0', fontWeight: '500' }}>{params.value}</span>
+          </div>
+        );
+      },
     },
     {
       headerName: 'Impact',
@@ -589,6 +784,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
       width: 100,
       cellStyle: { textAlign: 'center' },
       cellRenderer: (params: any) => {
+        if (params.data?.isDetailRow) return null;
         const impactColor = getImpactColor(params.value);
         return (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -606,35 +802,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
         );
       },
     },
-    {
-      headerName: 'Previous',
-      field: 'previous',
-      width: 100,
-      cellStyle: { fontFamily: 'monospace', color: '#cbd5e1', textAlign: 'right' },
-    },
-    {
-      headerName: 'Forecast',
-      field: 'forecast',
-      width: 100,
-      cellStyle: { fontFamily: 'monospace', color: '#cbd5e1', textAlign: 'right' },
-    },
-    {
-      headerName: 'Actual',
-      field: 'actual',
-      width: 100,
-      cellStyle: (params: any) => {
-        let color = '#64748b'; // slate-500
-        let fontWeight = 'normal';
-        if (params.value !== '--') {
-          fontWeight = 'bold';
-          if (params.data.actualStatus === 'better') color = '#4ade80'; // green-400
-          else if (params.data.actualStatus === 'worse') color = '#f87171'; // red-400
-          else color = '#67e8f9'; // cyan-300
-        }
-        return { fontFamily: 'monospace', color, fontWeight, textAlign: 'right' };
-      },
-    },
-  ], [selectedTimezone.offset]);
+  ], [currencies, expandedRowId, handleRowToggle, renderDetailRow, selectedTimezone.offset]);
 
   // Prepare dropdown options
   const impactOptions: DropdownOption[] = useMemo(() => [
@@ -695,9 +863,9 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
   }, [eventTypes, data]);
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden glass-soft rounded-2xl p-3 shadow-2xl shadow-black/35">
+    <div className="w-full h-full flex flex-col overflow-hidden glass-soft rounded-2xl p-3 shadow-2xl shadow-black/35 text-[11px] font-normal">
       {/* Header with Filters */}
-      <div className="relative flex flex-wrap items-center justify-between gap-2 mb-2 flex-shrink-0">
+      <div className="relative flex flex-wrap items-center justify-between gap-2 mb-2 flex-shrink-0 text-[11px] font-normal">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-xs font-semibold text-slate-100">Economic Calendar</h2>
           {fullscreenButton}
@@ -712,29 +880,10 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 justify-end">
+        <div className="flex flex-wrap items-center gap-2 justify-end text-[10px] sm:text-[11px]">
           {/* Timezone Indicator */}
           <div className="px-3 py-1.5 text-xs font-semibold rounded-full bg-yellow-500/20 border border-yellow-400/40 text-yellow-100 shadow-inner shadow-yellow-500/30">
             Times: {timezoneLabel}
-          </div>
-
-          {/* Sort Dropdown */}
-          <div className="relative">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'timeLeft' | 'date')}
-              className="h-9 px-4 pr-9 text-xs font-semibold rounded-full border border-slate-600/50 bg-slate-800/40 hover:border-cyan-400/50 hover:bg-cyan-500/10 text-slate-100 transition-all appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400/50 shadow-inner shadow-black/20"
-              title="Sort by"
-              aria-label="Sort events by"
-            >
-              <option value="timeLeft">⏱ Time Left</option>
-              <option value="date">📅 Date</option>
-            </select>
-            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
           </div>
 
           <button
@@ -750,14 +899,16 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
       </div>
 
       {/* Date Filter Pills */}
-      <DateFilterPills
-        selected={dateRangeFilter}
-        onChange={setDateRangeFilter}
-        showDatePicker={false}
-      />
+      <div className="text-[8px] font-normal">
+        <DateFilterPills
+          selected={dateRangeFilter}
+          onChange={setDateRangeFilter}
+          showDatePicker={false}
+        />
+      </div>
 
       {/* Multi-Select Filter Dropdowns - Desktop Only */}
-      <div className="hidden sm:flex flex-wrap items-center gap-3 mb-3">
+      <div className="hidden sm:flex flex-wrap items-center gap-3 mb-3 text-[8px] font-normal">
         <MultiSelectDropdown
           label="Importance"
           icon={
@@ -801,7 +952,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
       </div>
 
       {/* Mobile Filter Button */}
-      <div className="sm:hidden mb-3">
+      <div className="sm:hidden mb-3 text-[8px] font-normal">
         <button
           onClick={() => setIsMobileFilterOpen(true)}
           className="w-full px-4 py-2.5 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-cyan-400/30 text-xs text-cyan-100 shadow-lg shadow-cyan-500/20 flex items-center justify-between active:scale-95 transition-transform"
@@ -933,17 +1084,27 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
         <AgGridReact
           rowData={gridRowData}
           columnDefs={columnDefs}
+          defaultColDef={defaultColDef}
           theme="legacy"
           domLayout="normal"
           headerHeight={40}
-          rowHeight={50}
           animateRows={false}
           suppressCellFocus={true}
           suppressAnimationFrame={true}
-          rowStyle={defaultRowStyle}
-          getRowStyle={getRowStyle}
-        />
-      </div>
+      rowStyle={defaultRowStyle}
+      getRowStyle={getRowStyle}
+      getRowHeight={getRowHeight}
+      onRowClicked={handleGridRowClick}
+      multiSortKey="ctrl"
+      onGridReady={(params) => {
+        setGridApi(params.api);
+      }}
+      isFullWidthRow={(params) => !!params?.rowNode?.data?.isDetailRow}
+      fullWidthCellRenderer={(params) => renderDetailRow(params.data)}
+      deltaRowDataMode={true}
+      getRowId={getRowId}
+    />
+  </div>
 
       {/* Mobile Filter Bottom Sheet */}
       <BottomSheetDrawer
