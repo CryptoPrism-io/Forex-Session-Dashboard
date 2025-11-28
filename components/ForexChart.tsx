@@ -85,6 +85,7 @@ interface ForexChartProps {
   manualDSTOverride?: boolean | null;
   onToggleDSTOverride?: (override: boolean | null) => void;
   onAutoDetectToggle?: (enabled: boolean) => void;
+  fullscreenButton?: React.ReactNode;
 }
 
 const formatTime = (hour: number, offset: number): string => {
@@ -97,7 +98,7 @@ const formatTime = (hour: number, offset: number): string => {
 const ForexChart: React.FC<ForexChartProps> = ({
   nowLine, currentTimezoneLabel, timezoneOffset, sessionStatus, currentTime = new Date(),
   isDSTActive = false, activeSessions, isAutoDetectDST = true, manualDSTOverride,
-  onToggleDSTOverride, onAutoDetectToggle
+  onToggleDSTOverride, onAutoDetectToggle, fullscreenButton
 }) => {
   const [viewMode, setViewMode] = useState<'unified' | 'separate' | 'volume'>('unified');
   const [chartsVisible, setChartsVisible] = useState(true);
@@ -362,11 +363,12 @@ const ForexChart: React.FC<ForexChartProps> = ({
   return (
     <div
       ref={chartContainerRef}
-      className="relative w-full glass-soft rounded-2xl p-6 shadow-2xl shadow-black/35 hover:border-slate-500/50 transition-all duration-300 sm:backdrop-blur-2xl backdrop-blur-none"
+      className="relative w-full h-full glass-soft rounded-2xl p-3 shadow-2xl shadow-black/35 hover:border-slate-500/50 transition-all duration-300 sm:backdrop-blur-2xl backdrop-blur-none overflow-hidden flex flex-col"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold text-slate-100">Session Timeline</h3>
+          <h3 className="text-sm font-semibold text-slate-100">Session Timeline</h3>
+          {fullscreenButton}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode('separate')}
@@ -550,7 +552,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
 
       {viewMode === 'separate' ? (
         // Separate view - individual rows per session
-        <div>
+        <div className="flex-1 overflow-y-auto min-h-0">
         {[sessions[3], sessions[2], sessions[0], sessions[1]].map(session => {
           const status = sessionStatus[session.name];
           const statusColors = getStatusColor(status);
@@ -574,7 +576,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
                 </div>
               </div>
 
-              <div className="relative w-full h-16 bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
+              <div className="relative w-full h-12 bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
                 {/* Vertical hour grid lines */}
                 {ticks.map(hour => (
                   <div
@@ -628,8 +630,8 @@ const ForexChart: React.FC<ForexChartProps> = ({
         </div>
       ) : viewMode === 'unified' ? (
         // Unified view - all sessions on one timeline
-        <div className="mb-5">
-          <div className="relative w-full h-48 sm:h-40 md:h-32 bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="relative w-full h-full min-h-[180px] bg-gradient-to-br from-slate-700/30 to-slate-800/40 backdrop-blur-xl border border-slate-700/30 rounded-xl overflow-hidden shadow-lg shadow-black/20">
             {/* Volume Histogram Background */}
             {volumeHistogram && <VolumeHistogramCanvas histogram={volumeHistogram} />}
 
@@ -801,7 +803,7 @@ const ForexChart: React.FC<ForexChartProps> = ({
         </div>
       ) : (
         // Volume view - Trading Volume Chart
-        <div>
+        <div className="flex-1 overflow-y-auto min-h-0">
           <VolumeChart
             nowLine={nowLine}
             currentTimezoneLabel={currentTimezoneLabel}

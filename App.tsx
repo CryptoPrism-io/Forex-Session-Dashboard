@@ -9,6 +9,9 @@ import AlertsToggleHeader from './components/AlertsToggleHeader';
 import BottomNavBar from './components/BottomNavBar';
 import SwipeableFooter from './components/SwipeableFooter';
 import OverviewPanel from './components/OverviewPanel';
+import BentoDesktopLayout from './components/BentoDesktopLayout';
+import TimezoneModal from './components/TimezoneModal';
+import HelpGuideModal from './components/HelpGuideModal';
 import { usePWAInstall } from './hooks/usePWAInstall';
 import { useSessionAlerts } from './hooks/useSessionAlerts';
 import { useReducedMotion } from './hooks/useReducedMotion';
@@ -40,6 +43,8 @@ const App: React.FC = () => {
   const [manualDSTOverride, setManualDSTOverride] = useState<boolean | null>(null);
   const [activeView, setActiveView] = useState<'overview' | 'clocks' | 'calendar' | 'charts' | 'guide'>('overview');
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   // Initialize left pane state from localStorage, default to closed on mobile
   const [leftPaneOpen, setLeftPaneOpen] = useState(() => {
@@ -107,6 +112,15 @@ const App: React.FC = () => {
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000); // Update every 1 second for real-time countdown
     return () => clearInterval(timer);
+  }, []);
+
+  // Detect desktop/mobile on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Auto-detect timezone based on browser's native timezone
@@ -287,7 +301,39 @@ const App: React.FC = () => {
       background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%)',
       backdropFilter: 'blur(10px)'
     }}>
-      <main className="w-full h-full flex flex-col items-stretch p-0">
+      {/* Desktop Bento Grid Layout (>= 1024px) */}
+      {isDesktop ? (
+        <div className="w-full h-screen">
+          {/* Bento Grid Content */}
+          <div className="h-full overflow-hidden">
+            <BentoDesktopLayout
+              selectedTimezone={selectedTimezone}
+              currentTime={currentTime}
+              nowLine={nowLine}
+              sessionStatus={sessionStatus}
+              activeSessions={activeSessions}
+              currentDSTStatus={currentDSTStatus}
+              activeSessions_config={activeSessions_config}
+              isAutoDetectDST={isAutoDetectDST}
+              manualDSTOverride={manualDSTOverride}
+              onToggleDSTOverride={(override) => setManualDSTOverride(override)}
+              onAutoDetectToggle={(enabled) => {
+                setIsAutoDetectDST(enabled);
+                if (enabled) setManualDSTOverride(null);
+              }}
+              onTimezoneSettingsClick={() => setIsTimezoneMenuOpen(true)}
+              onHelpClick={() => setShowHelpModal(true)}
+              alertConfig={alertConfig}
+              onToggleAlerts={toggleAlerts}
+              onToggleSound={toggleSound}
+              installState={installState}
+              onInstallClick={handleInstallClick}
+            />
+          </div>
+        </div>
+      ) : (
+        /* Mobile Layout (< 1024px) - Existing tab-based layout */
+        <main className="w-full h-full flex flex-col items-stretch p-0">
         {/* LAYOUT: Single column - Full width content area */}
         <div className="w-full flex-1 h-full overflow-hidden">
           {/* Main Content Area */}
@@ -521,16 +567,33 @@ const App: React.FC = () => {
             />
           </div>
         )}
-      </main>
 
-      {/* Bottom Navigation Bar for Mobile */}
-      <BottomNavBar activeView={activeView} onViewChange={setActiveView} />
+        {/* Bottom Navigation Bar for Mobile */}
+        <BottomNavBar activeView={activeView} onViewChange={setActiveView} />
+      </main>
+      )}
 
       {/* PWA Installation Modal */}
       <InstallModal
         isOpen={showInstallModal}
         onClose={handleDismissModal}
         browserInfo={browserInfo}
+      />
+
+      {/* Timezone Selection Modal */}
+      <TimezoneModal
+        isOpen={isTimezoneMenuOpen}
+        onClose={() => setIsTimezoneMenuOpen(false)}
+        selectedTimezone={selectedTimezone}
+        onTimezoneChange={handleTimezoneChange}
+      />
+
+      {/* Help Guide Modal */}
+      <HelpGuideModal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+        currentTimezoneLabel={selectedTimezone.label}
+        timezoneOffset={selectedTimezone.offset}
       />
     </div>
   );

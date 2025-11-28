@@ -50,9 +50,10 @@ const toLocalISO = (d: Date, offsetHours: number): string => {
 
 interface EconomicCalendarProps {
   selectedTimezone: Timezone;
+  fullscreenButton?: React.ReactNode;
 }
 
-const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone }) => {
+const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, fullscreenButton }) => {
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
   const [selectedImpacts, setSelectedImpacts] = useState<string[]>(['high']);
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([]);
@@ -694,11 +695,12 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
   }, [eventTypes, data]);
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full h-full flex flex-col overflow-hidden glass-soft rounded-2xl p-3 shadow-2xl shadow-black/35">
       {/* Header with Filters */}
-      <div className="relative flex flex-wrap items-center justify-between gap-3 mb-3 p-3 rounded-3xl glass-soft shadow-2xl shadow-black/35">
+      <div className="relative flex flex-wrap items-center justify-between gap-2 mb-2 flex-shrink-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-sm font-semibold text-cyan-200">Economic Calendar</h2>
+          <h2 className="text-xs font-semibold text-slate-100">Economic Calendar</h2>
+          {fullscreenButton}
           <span className="text-xs text-slate-300/90">
             ({filteredData.length} events)
           </span>
@@ -924,12 +926,15 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone })
       </div>
 
       {/* Desktop AG Grid View (hidden on mobile) */}
-      <div className="hidden md:block flex-1 overflow-auto ag-theme-alpine-dark">
+      <div
+        className="hidden md:flex-1 md:block min-h-0 ag-theme-alpine-dark overflow-hidden"
+        style={{ height: '100%' }}
+      >
         <AgGridReact
           rowData={gridRowData}
           columnDefs={columnDefs}
           theme="legacy"
-          domLayout="autoHeight"
+          domLayout="normal"
           headerHeight={40}
           rowHeight={50}
           animateRows={false}
