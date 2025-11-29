@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import calendarRoutes from './routes/calendar.js';
+import fxRoutes from './routes/fx.js';
 import pool from './db.js';
 
 dotenv.config();
@@ -52,6 +53,7 @@ app.get('/health', async (req, res) => {
 
 // API routes
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/fx', fxRoutes);
 
 // Serve React app for all other routes (SPA routing)
 app.get('*', (req, res) => {
@@ -77,11 +79,21 @@ app.listen(PORT, () => {
   console.log(`🗄️  Database: ${process.env.POSTGRES_DB}@${process.env.POSTGRES_HOST}`);
   console.log(`🌐 CORS enabled for: http://localhost:3000`);
   console.log('\nAvailable endpoints:');
-  console.log(`  GET  /health                    - Health check`);
-  console.log(`  GET  /api/calendar/events       - Get calendar events`);
-  console.log(`  GET  /api/calendar/today        - Get today's events`);
-  console.log(`  GET  /api/calendar/stats        - Get statistics`);
-  console.log(`  GET  /api/calendar/currencies   - Get currency list`);
+  console.log(`  GET  /health                              - Health check`);
+  console.log(`\n📅 Calendar API:`);
+  console.log(`  GET  /api/calendar/events                 - Get calendar events`);
+  console.log(`  GET  /api/calendar/today                  - Get today's events`);
+  console.log(`  GET  /api/calendar/stats                  - Get statistics`);
+  console.log(`  GET  /api/calendar/currencies             - Get currency list`);
+  console.log(`\n💱 FX Data API:`);
+  console.log(`  GET  /api/fx/prices/current?instrument=X  - Get current price`);
+  console.log(`  GET  /api/fx/prices/all                   - Get all prices`);
+  console.log(`  GET  /api/fx/volatility/:instrument       - Get volatility metrics`);
+  console.log(`  GET  /api/fx/volatility                   - Get all volatility`);
+  console.log(`  GET  /api/fx/candles/:instrument          - Get OHLC candles`);
+  console.log(`  GET  /api/fx/correlation/matrix           - Get correlation matrix`);
+  console.log(`  GET  /api/fx/correlation/pairs            - Get correlation pairs`);
+  console.log(`  GET  /api/fx/best-pairs                   - Get best pair recommendations`);
   console.log('='.repeat(60) + '\n');
 });
 
