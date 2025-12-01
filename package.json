@@ -11,6 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@nivo/core": "^0.99.0",
+    "@nivo/heatmap": "^0.99.0",
     "@use-gesture/react": "^10.3.1",
     "ag-grid-community": "^34.3.1",
     "ag-grid-react": "^34.3.1",

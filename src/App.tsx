@@ -25,6 +25,7 @@ const ForexChart = lazy(() => import('./components/ForexChart'));
 const EconomicCalendar = lazy(() => import('./components/EconomicCalendar'));
 const SessionGuide = lazy(() => import('./components/SessionGuide'));
 const WorldClockPanel = lazy(() => import('./components/WorldClockPanel'));
+const FXToolsPanel = lazy(() => import('./components/FXToolsPanel').then(m => ({ default: m.FXToolsPanel })));
 
 export type SessionStatus = 'OPEN' | 'CLOSED' | 'WARNING';
 
@@ -41,7 +42,7 @@ const App: React.FC = () => {
   const [timezoneSearchQuery, setTimezoneSearchQuery] = useState('');
   const [isTimezoneMenuOpen, setIsTimezoneMenuOpen] = useState(false);
   const [manualDSTOverride, setManualDSTOverride] = useState<boolean | null>(null);
-  const [activeView, setActiveView] = useState<'overview' | 'clocks' | 'calendar' | 'charts' | 'guide'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'clocks' | 'calendar' | 'charts' | 'guide' | 'fxtools'>('overview');
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -439,6 +440,20 @@ const App: React.FC = () => {
                   <IconWorldClockTab className="w-5 h-5" />
                   <span className="hidden lg:inline">World Clock</span>
                 </button>
+
+                {/* FX Tools Tab - Cyan */}
+                <button
+                  onClick={() => setActiveView('fxtools')}
+                  className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px] ${
+                    activeView === 'fxtools'
+                      ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-bold'
+                      : 'bg-slate-700/20 border border-slate-700/40 text-cyan-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
+                  }`}
+                  title="FX Tools"
+                >
+                  <IconTarget className="w-5 h-5" />
+                  <span className="hidden lg:inline">FX Tools</span>
+                </button>
               </div>
             </div>
 
@@ -548,6 +563,17 @@ const App: React.FC = () => {
                   <SessionGuide
                     currentTimezoneLabel={selectedTimezone.label}
                     timezoneOffset={selectedTimezone.offset}
+                  />
+                </Suspense>
+              )}
+              {activeView === 'fxtools' && (
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading FX Tools...</div>}>
+                  <FXToolsPanel
+                    selectedTimezone={selectedTimezone}
+                    currentTime={currentTime}
+                    nowLine={nowLine}
+                    sessionStatus={sessionStatus}
+                    currentDSTStatus={currentDSTStatus}
                   />
                 </Suspense>
               )}
