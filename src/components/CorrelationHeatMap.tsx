@@ -67,14 +67,18 @@ export function CorrelationHeatMap() {
   const data: HeatMapSeries[] = useMemo(() => {
     if (!matrix || matrix.length === 0) return [];
 
-    // Group by instrument1
+    // Group by instrument_1 (API uses this field name)
     const grouped = matrix.reduce((acc, pair) => {
-      if (!acc[pair.instrument1]) {
-        acc[pair.instrument1] = [];
+      const inst1 = (pair as any).pair1 || (pair as any).instrument_1 || (pair as any).instrument1;
+      const inst2 = (pair as any).pair2 || (pair as any).instrument_2 || (pair as any).instrument2;
+      const corr = typeof pair.correlation === 'string' ? parseFloat(pair.correlation) : pair.correlation;
+
+      if (!acc[inst1]) {
+        acc[inst1] = [];
       }
-      acc[pair.instrument1].push({
-        x: pair.instrument2,
-        y: pair.correlation
+      acc[inst1].push({
+        x: inst2,
+        y: corr
       });
       return acc;
     }, {} as Record<string, HeatMapDataPoint[]>);
@@ -93,8 +97,10 @@ export function CorrelationHeatMap() {
     if (!matrix || matrix.length === 0) return [];
     const uniqueInstruments = new Set<string>();
     matrix.forEach(pair => {
-      uniqueInstruments.add(pair.instrument1);
-      uniqueInstruments.add(pair.instrument2);
+      const inst1 = (pair as any).pair1 || (pair as any).instrument_1 || (pair as any).instrument1;
+      const inst2 = (pair as any).pair2 || (pair as any).instrument_2 || (pair as any).instrument2;
+      uniqueInstruments.add(inst1);
+      uniqueInstruments.add(inst2);
     });
     return Array.from(uniqueInstruments).sort();
   }, [matrix]);
@@ -345,7 +351,7 @@ export function CorrelationHeatMap() {
           <div className="text-gray-400 text-sm mb-1">Last Updated</div>
           <div className="text-sm font-mono text-white">
             {matrix && matrix[0]
-              ? new Date(matrix[0].updated_at).toLocaleString()
+              ? new Date((matrix[0] as any).time || (matrix[0] as any).updated_at || (matrix[0] as any).date).toLocaleString()
               : 'N/A'}
           </div>
         </div>
