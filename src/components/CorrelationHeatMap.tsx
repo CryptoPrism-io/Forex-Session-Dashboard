@@ -153,11 +153,11 @@ export function CorrelationHeatMap() {
       {/* HeatMap */}
       <div
         className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-hidden"
-        style={{ height: '700px' }}
+        style={{ height: 'calc(100vh - 300px)' }}
       >
         <ResponsiveHeatMapCanvas
           data={data}
-          margin={{ top: 120, right: 90, bottom: 20, left: 120 }}
+          margin={{ top: 80, right: 90, bottom: 20, left: 90 }}
 
           // Color scale for correlations (-1 to +1)
           colors={{
@@ -193,7 +193,7 @@ export function CorrelationHeatMap() {
 
           // Cell configuration
           cellOpacity={1}
-          cellBorderWidth={1}
+          cellBorderWidth={0.5}
           cellBorderColor={{
             from: 'color',
             modifiers: [['darker', 0.4]]
@@ -203,8 +203,8 @@ export function CorrelationHeatMap() {
           isInteractive={true}
           tooltip={CustomCorrelationTooltip}
 
-          // Labels
-          enableLabels={true}
+          // Labels (disabled to save space - values visible in tooltips)
+          enableLabels={false}
           labelTextColor={{
             from: 'color',
             modifiers: [['darker', 1.8]]
@@ -221,7 +221,7 @@ export function CorrelationHeatMap() {
           theme={{
             background: 'transparent',
             text: {
-              fontSize: 11,
+              fontSize: 9,
               fill: '#e5e7eb',
               outlineWidth: 0,
               outlineColor: 'transparent'
@@ -235,7 +235,7 @@ export function CorrelationHeatMap() {
               },
               legend: {
                 text: {
-                  fontSize: 12,
+                  fontSize: 10,
                   fill: '#9ca3af'
                 }
               },
@@ -245,7 +245,7 @@ export function CorrelationHeatMap() {
                   strokeWidth: 1
                 },
                 text: {
-                  fontSize: 11,
+                  fontSize: 9,
                   fill: '#e5e7eb'
                 }
               }
