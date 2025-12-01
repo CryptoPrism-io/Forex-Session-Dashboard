@@ -150,41 +150,6 @@ export function CorrelationHeatMap() {
 
   return (
     <div className="w-full">
-      {/* Info Panel */}
-      <div className="mb-4 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <div className="text-blue-400 text-2xl">ℹ️</div>
-          <div className="flex-1">
-            <h4 className="text-blue-400 font-semibold mb-1">How to Read This HeatMap</h4>
-            <p className="text-gray-300 text-sm mb-2">
-              Each cell shows the correlation between two currency pairs. Hover over cells for details.
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-blue-600 rounded"></div>
-                <span className="text-gray-300">Strong +ve (&gt;0.7)</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-green-500 rounded"></div>
-                <span className="text-gray-300">Moderate +ve</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-                <span className="text-gray-300">Neutral (0)</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-orange-500 rounded"></div>
-                <span className="text-gray-300">Moderate -ve</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-red-600 rounded"></div>
-                <span className="text-gray-300">Strong -ve (&lt;-0.7)</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* HeatMap */}
       <div
         className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-hidden"
@@ -192,7 +157,7 @@ export function CorrelationHeatMap() {
       >
         <ResponsiveHeatMapCanvas
           data={data}
-          margin={{ top: 120, right: 90, bottom: 60, left: 120 }}
+          margin={{ top: 120, right: 90, bottom: 20, left: 120 }}
 
           // Color scale for correlations (-1 to +1)
           colors={{
@@ -203,26 +168,20 @@ export function CorrelationHeatMap() {
             maxValue: 1
           }}
 
-          // Value formatting
-          valueFormat=">-.2f"
+          // Value formatting (1 decimal place)
+          valueFormat=">-.1f"
 
-          // Axis configuration
+          // Axis configuration (vertical labels - 90 degrees)
           axisTop={{
             tickSize: 5,
             tickPadding: 5,
-            tickRotation: -45,
+            tickRotation: -90,
             legend: '',
             legendOffset: 46,
             ticksPosition: 'after'
           }}
           axisRight={null}
-          axisBottom={{
-            tickSize: 5,
-            tickPadding: 5,
-            tickRotation: -45,
-            legend: '',
-            legendOffset: 46
-          }}
+          axisBottom={null}
           axisLeft={{
             tickSize: 5,
             tickPadding: 5,
@@ -251,24 +210,8 @@ export function CorrelationHeatMap() {
             modifiers: [['darker', 1.8]]
           }}
 
-          // Legend
-          legends={[
-            {
-              anchor: 'bottom',
-              translateX: 0,
-              translateY: 50,
-              length: 400,
-              thickness: 10,
-              direction: 'row',
-              tickPosition: 'after',
-              tickSize: 3,
-              tickSpacing: 4,
-              tickOverlap: false,
-              title: 'Correlation Coefficient →',
-              titleAlign: 'start',
-              titleOffset: 4
-            }
-          ]}
+          // Legend - Disabled (moved to info panel at bottom)
+          legends={[]}
 
           // Animations
           animate={true}
@@ -335,6 +278,41 @@ export function CorrelationHeatMap() {
             }
           }}
         />
+      </div>
+
+      {/* Info Panel - Moved to Bottom */}
+      <div className="mt-4 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="text-blue-400 text-2xl">ℹ️</div>
+          <div className="flex-1">
+            <h4 className="text-blue-400 font-semibold mb-1">How to Read This HeatMap</h4>
+            <p className="text-gray-300 text-sm mb-2">
+              Each cell shows the correlation between two currency pairs. Hover over cells for details.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-blue-600 rounded"></div>
+                <span className="text-gray-300">Strong +ve (&gt;0.7)</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-green-500 rounded"></div>
+                <span className="text-gray-300">Moderate +ve</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-yellow-500 rounded"></div>
+                <span className="text-gray-300">Neutral (0)</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-orange-500 rounded"></div>
+                <span className="text-gray-300">Moderate -ve</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-red-600 rounded"></div>
+                <span className="text-gray-300">Strong -ve (&lt;-0.7)</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Stats Panel */}

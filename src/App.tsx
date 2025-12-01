@@ -19,6 +19,7 @@ import { TIMEZONES, SESSIONS_STANDARD, SESSIONS_DAYLIGHT } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
 import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconCalendarTab, IconChartsTab, IconGuideTab, IconWorldClockTab } from './components/icons';
 import { PopoverMenu, MenuButton } from './components/Menu';
+import { BestPairsWidget } from './components/BestPairsWidget';
 import { isDSTActive } from './utils/dstUtils';
 
 const ForexChart = lazy(() => import('./components/ForexChart'));
@@ -42,7 +43,9 @@ const App: React.FC = () => {
   const [timezoneSearchQuery, setTimezoneSearchQuery] = useState('');
   const [isTimezoneMenuOpen, setIsTimezoneMenuOpen] = useState(false);
   const [manualDSTOverride, setManualDSTOverride] = useState<boolean | null>(null);
-  const [activeView, setActiveView] = useState<'overview' | 'clocks' | 'calendar' | 'charts' | 'guide' | 'fxtools'>('overview');
+  const [activeView, setActiveView] = useState<
+    'overview' | 'clocks' | 'calendar' | 'charts' | 'guide' | 'fxdata' | 'screener' | 'aiChat'
+  >('overview');
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -341,8 +344,8 @@ const App: React.FC = () => {
           <div className="glass-shell backdrop-blur-xl rounded-3xl p-3 sm:p-4 shadow-lg shadow-black/20 flex flex-col overflow-hidden h-full gap-3 sm:gap-4">
             {/* Desktop Header: Title + Icons (Left) | Navigation Tabs (Right) */}
             <div className="hidden md:flex items-center justify-between gap-4 mb-2.5 flex-shrink-0 border-b border-slate-700/30 pb-3">
-              {/* Left: Title + Essential Action Icons */}
-              <div className="flex items-center gap-3">
+              {/* Left: Title + Screener/AI quick tabs + essential icons */}
+              <div className="flex items-center gap-2">
                 {/* Title */}
                 <h1
                   className="text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent whitespace-nowrap"
@@ -353,6 +356,30 @@ const App: React.FC = () => {
                 >
                   FX_Saarthi
                 </h1>
+
+                {/* Quick Access Pills */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setActiveView('screener')}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all border ${
+                      activeView === 'screener'
+                        ? 'bg-pink-500/20 border-pink-400/40 text-pink-200'
+                        : 'bg-slate-800/50 border-slate-700/40 text-slate-300 hover:bg-slate-700/50 hover:border-slate-600/60'
+                    }`}
+                  >
+                    Screener
+                  </button>
+                  <button
+                    onClick={() => setActiveView('aiChat')}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all border ${
+                      activeView === 'aiChat'
+                        ? 'bg-purple-500/20 border-purple-400/40 text-purple-200'
+                        : 'bg-slate-800/50 border-slate-700/40 text-slate-300 hover:bg-slate-700/50 hover:border-slate-600/60'
+                    }`}
+                  >
+                    AI Chat
+                  </button>
+                </div>
 
                 {/* Essential Action Icons (no social links - they're in footer) */}
                 <div className="flex items-center gap-2">
@@ -443,9 +470,9 @@ const App: React.FC = () => {
 
                 {/* FX Tools Tab - Cyan */}
                 <button
-                  onClick={() => setActiveView('fxtools')}
+                  onClick={() => setActiveView('fxdata')}
                   className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px] ${
-                    activeView === 'fxtools'
+                    activeView === 'fxdata'
                       ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-bold'
                       : 'bg-slate-700/20 border border-slate-700/40 text-cyan-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
                   }`}
@@ -566,7 +593,30 @@ const App: React.FC = () => {
                   />
                 </Suspense>
               )}
-              {activeView === 'fxtools' && (
+              {activeView === 'screener' && (
+                <div className="space-y-6">
+                  <BestPairsWidget />
+                </div>
+              )}
+
+              {activeView === 'aiChat' && (
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 backdrop-blur-sm rounded-lg border border-purple-500/30 p-8 text-center">
+                    <div className="text-6xl mb-4">🤖</div>
+                    <h2 className="text-2xl font-bold text-white mb-2">AI Chat</h2>
+                    <p className="text-gray-400 mb-6">
+                      Coming soon: AI-powered conversational guidance for correlation insights,
+                      hedging tactics, and trade ideas.
+                    </p>
+                    <div className="inline-flex items-center gap-2 text-sm text-purple-400">
+                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                      Feature in development
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeView === 'fxdata' && (
                 <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading FX Tools...</div>}>
                   <FXToolsPanel
                     selectedTimezone={selectedTimezone}
@@ -626,4 +676,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-

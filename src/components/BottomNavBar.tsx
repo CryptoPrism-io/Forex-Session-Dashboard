@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { IconCalendarTab, IconChartsTab, IconGuideTab, IconWorldClockTab, IconTarget, IconTradingFlow } from './icons';
+import { IconCalendarTab, IconChartsTab, IconGuideTab, IconWorldClockTab, IconTarget, IconTradingFlow, IconGlobe } from './icons';
 
-type ViewType = 'overview' | 'calendar' | 'charts' | 'guide' | 'clocks' | 'fxdata';
+type ViewType = 'overview' | 'calendar' | 'charts' | 'guide' | 'clocks' | 'fxdata' | 'screener' | 'aiChat';
 
 interface BottomNavBarProps {
   activeView: ViewType;
@@ -55,11 +55,27 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange })
     },
     {
       id: 'fxdata' as ViewType,
-      label: 'FX Data',
+      label: 'FX Tools',
+      icon: IconTarget,
+      activeClass: 'bg-cyan-500/20 border border-cyan-400/40',
+      textClass: 'text-cyan-300',
+      glowColor: '#67e8f9'
+    },
+    {
+      id: 'screener' as ViewType,
+      label: 'Screener',
       icon: IconTradingFlow,
       activeClass: 'bg-pink-500/20 border border-pink-400/40',
       textClass: 'text-pink-300',
       glowColor: '#f9a8d4'
+    },
+    {
+      id: 'aiChat' as ViewType,
+      label: 'AI Chat',
+      icon: IconGlobe,
+      activeClass: 'bg-purple-500/20 border border-purple-400/40',
+      textClass: 'text-purple-300',
+      glowColor: '#c084fc'
     },
   ];
 
