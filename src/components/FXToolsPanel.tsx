@@ -16,7 +16,14 @@ interface FXToolsPanelProps {
   currentDSTStatus?: boolean;
 }
 
-type ToolTab = 'timeline' | 'volume' | 'volatility' | 'position' | 'correlation' | 'ai';
+type ToolTab =
+  | 'timeline'
+  | 'volume'
+  | 'volatility'
+  | 'position'
+  | 'correlation'
+  | 'screener'
+  | 'aiChat';
 
 export function FXToolsPanel({
   selectedTimezone,
@@ -33,7 +40,8 @@ export function FXToolsPanel({
     { id: 'volatility', label: 'Volatility' },
     { id: 'position', label: 'Position Size' },
     { id: 'correlation', label: 'Correlation Matrix' },
-    { id: 'ai', label: 'AI Suggestions' }
+    { id: 'screener', label: 'Screener' },
+    { id: 'aiChat', label: 'AI Chat' }
   ];
 
   return (
@@ -108,17 +116,20 @@ export function FXToolsPanel({
         )}
 
         {activeTab === 'correlation' && (
+          <CorrelationHeatMap />
+        )}
+
+        {activeTab === 'screener' && (
           <div className="space-y-6">
-            {/* Correlation HeatMap Only */}
-            <CorrelationHeatMap />
+            <BestPairsWidget />
           </div>
         )}
 
-        {activeTab === 'ai' && (
+        {activeTab === 'aiChat' && (
           <div className="space-y-6">
             <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 backdrop-blur-sm rounded-lg border border-purple-500/30 p-8 text-center">
               <div className="text-6xl mb-4">🤖</div>
-              <h2 className="text-2xl font-bold text-white mb-2">AI Suggestions</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">AI Chat</h2>
               <p className="text-gray-400 mb-6">
                 Coming soon: AI-powered trading recommendations based on market conditions,
                 volatility, and correlation analysis.
@@ -134,4 +145,3 @@ export function FXToolsPanel({
     </div>
   );
 }
-

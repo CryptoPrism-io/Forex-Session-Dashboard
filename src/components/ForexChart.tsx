@@ -18,7 +18,7 @@ import { PopoverMenu, CheckboxMenuItem, MenuSection, MenuButton } from './Menu';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { RiskCalculator } from './RiskCalculator';
 import { VolatilityPanel } from './VolatilityPanel';
-import { BestPairsWidget } from './BestPairsWidget';
+import { CorrelationHeatMap } from './CorrelationHeatMap';
 
 // Global Forex Trading Volume Profile (UTC, 30-min intervals, 48 points = 24 hours)
 const VOLUME_DATA = [
@@ -749,9 +749,9 @@ const cityBadges = useMemo(
           <VolatilityPanel />
         </div>
       ) : viewMode === 'correlation' ? (
-        // Best Pairs / Correlation
+        // Correlation Matrix only
         <div className="flex-1 overflow-y-auto min-h-0 p-2">
-          <BestPairsWidget />
+          <CorrelationHeatMap />
         </div>
       ) : viewMode === 'ai' ? (
         // AI Suggestions (placeholder)

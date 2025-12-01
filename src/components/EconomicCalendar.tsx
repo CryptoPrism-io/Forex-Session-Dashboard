@@ -1101,7 +1101,6 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
       }}
       isFullWidthRow={(params) => !!params?.rowNode?.data?.isDetailRow}
       fullWidthCellRenderer={(params) => renderDetailRow(params.data)}
-      deltaRowDataMode={true}
       getRowId={getRowId}
     />
   </div>
