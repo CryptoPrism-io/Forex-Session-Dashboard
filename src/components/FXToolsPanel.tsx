@@ -27,6 +27,8 @@ export function FXToolsPanel({
 }: FXToolsPanelProps) {
   const [activeTab, setActiveTab] = useState<ToolTab>('correlation');
 
+  console.log('FXToolsPanel render, activeTab:', activeTab);
+
   const tabs: Array<{ id: ToolTab; label: string }> = [
     { id: 'timeline', label: 'Session Timeline' },
     { id: 'volume', label: 'Session Volume' },
@@ -109,21 +111,8 @@ export function FXToolsPanel({
 
         {activeTab === 'correlation' && (
           <div className="space-y-6">
-            {/* Top Pairs Widget */}
-            <BestPairsWidget />
-
-            {/* Correlation HeatMap */}
-            <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-6">
-              <div className="mb-4">
-                <h2 className="text-2xl font-bold text-white mb-2">
-                  Full Correlation Matrix
-                </h2>
-                <p className="text-sm text-gray-400">
-                  Interactive heatmap showing correlations between all 28 currency pairs
-                </p>
-              </div>
-              <CorrelationHeatMap />
-            </div>
+            {/* Correlation HeatMap Only */}
+            <CorrelationHeatMap />
           </div>
         )}
 
