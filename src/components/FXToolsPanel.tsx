@@ -27,8 +27,6 @@ export function FXToolsPanel({
 }: FXToolsPanelProps) {
   const [activeTab, setActiveTab] = useState<ToolTab>('correlation');
 
-  console.log('FXToolsPanel render, activeTab:', activeTab);
-
   const tabs: Array<{ id: ToolTab; label: string }> = [
     { id: 'timeline', label: 'Session Timeline' },
     { id: 'volume', label: 'Session Volume' },
