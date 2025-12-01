@@ -23,10 +23,9 @@ type ToolTab =
   | 'volatility'
   | 'position'
   | 'correlation'
+  | 'network'
   | 'screener'
   | 'aiChat';
-
-type CorrelationView = 'heatmap' | 'network';
 
 export function FXToolsPanel({
   selectedTimezone,
@@ -35,15 +34,15 @@ export function FXToolsPanel({
   sessionStatus,
   currentDSTStatus
 }: FXToolsPanelProps) {
-  const [activeTab, setActiveTab] = useState<ToolTab>('correlation');
-  const [correlationView, setCorrelationView] = useState<CorrelationView>('network');
+  const [activeTab, setActiveTab] = useState<ToolTab>('network');
 
   const tabs: Array<{ id: ToolTab; label: string }> = [
     { id: 'timeline', label: 'Session Timeline' },
     { id: 'volume', label: 'Session Volume' },
     { id: 'volatility', label: 'Volatility' },
     { id: 'position', label: 'Position Size' },
-    { id: 'correlation', label: 'Correlation Matrix' },
+    { id: 'correlation', label: 'Correlation HeatMap' },
+    { id: 'network', label: 'Network Corr Map' },
     { id: 'screener', label: 'Screener' },
     { id: 'aiChat', label: 'AI Chat' }
   ];
@@ -120,43 +119,11 @@ export function FXToolsPanel({
         )}
 
         {activeTab === 'correlation' && (
-          <div className="space-y-4">
-            {/* View Toggle */}
-            <div className="flex items-center justify-between bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-3">
-              <div className="text-sm text-gray-300">
-                <span className="font-semibold text-white">Correlation Visualization</span>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setCorrelationView('heatmap')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    correlationView === 'heatmap'
-                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
-                      : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50 hover:text-gray-300'
-                  }`}
-                >
-                  🔥 Heatmap
-                </button>
-                <button
-                  onClick={() => setCorrelationView('network')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    correlationView === 'network'
-                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
-                      : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50 hover:text-gray-300'
-                  }`}
-                >
-                  🕸️ Network
-                </button>
-              </div>
-            </div>
+          <CorrelationHeatMap />
+        )}
 
-            {/* Render Selected View */}
-            {correlationView === 'heatmap' ? (
-              <CorrelationHeatMap />
-            ) : (
-              <CorrelationNetworkGraph />
-            )}
-          </div>
+        {activeTab === 'network' && (
+          <CorrelationNetworkGraph />
         )}
 
         {activeTab === 'screener' && (
