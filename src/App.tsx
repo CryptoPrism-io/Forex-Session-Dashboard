@@ -17,7 +17,7 @@ import { useSessionAlerts } from './hooks/useSessionAlerts';
 import { useReducedMotion } from './hooks/useReducedMotion';
 import { TIMEZONES, SESSIONS_STANDARD, SESSIONS_DAYLIGHT } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
-import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconTradingFlow, IconMenu, IconX, IconCalendarTab, IconChartsTab, IconGuideTab, IconWorldClockTab, IconSettings } from './components/icons';
+import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconCalendarTab, IconChartsTab, IconGuideTab, IconWorldClockTab } from './components/icons';
 import { PopoverMenu, MenuButton } from './components/Menu';
 import { isDSTActive } from './utils/dstUtils';
 

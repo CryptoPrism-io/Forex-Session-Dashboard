@@ -126,3 +126,49 @@ export interface AlertConfig {
   soundEnabled: boolean;
   autoDismissSeconds: number;
 }
+
+// FX Data Types (Sprint 2)
+export interface FXPrice {
+  instrument: string;
+  mid: string;
+  time: string;
+  open_mid: string;
+  high_mid: string;
+  low_mid: string;
+  volume: number;
+}
+
+export interface FXVolatility {
+  instrument: string;
+  time: string;
+  volatility_20: string;
+  volatility_50: string;
+  sma_15: string;
+  sma_30: string;
+  sma_50: string;
+  atr: string;
+  bb_upper: string;
+  bb_middle: string;
+  bb_lower: string;
+}
+
+export interface FXCorrelationPair {
+  instrument_1: string;
+  instrument_2: string;
+  correlation: string;
+  date: string;
+}
+
+export interface FXBestPair {
+  instrument_1: string;
+  instrument_2: string;
+  correlation: string;
+  score: string;
+  category: string;
+}
+
+export interface InstrumentInfo {
+  name: string;
+  displayName: string;
+  assetClass: string;
+}

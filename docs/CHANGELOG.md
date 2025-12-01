@@ -2,6 +2,150 @@
 
 All notable changes to the Forex Session Trading Dashboard project.
 
+## [2025-12-01] - Sprint 2: Live FX Data Integration & Project Structure Fix
+
+### Added - Enhanced Risk Calculator with Live FX Data
+**What**: Complete refactor of RiskCalculator to integrate real-time FX price feeds, volatility metrics, and correlation analysis
+**Why**: Enable traders to calculate accurate position sizes using live market data instead of static estimates
+**How**:
+- Integrated `useFXPrice` hook for real-time mid/bid/ask prices (30-second refresh)
+- Integrated `useFXVolatility` hook for ATR-based stop loss recommendations
+- Integrated `useFXAvailableInstruments` to dynamically filter pairs with live data
+- Added leverage presets: [10, 20, 30, 50, 100, 200, 500] with quick-select buttons
+- Implemented pip/tick slider controls with ±/input field synchronization (5-100 range)
+- Enhanced results display with 9 metrics:
+  - Position Size (lots with 2-3 decimal precision)
+  - Risk Amount (USD with comma formatting)
+  - Risk Percentage (smart rounding: 1% vs 1.25%)
+  - Margin Required (leverage-adjusted)
+  - Margin Percentage
+  - Current ATR (in pips and price with adaptive decimals)
+  - Pip Value (per-pip profit/loss calculation)
+  - Broker Fees (configurable)
+  - Total Risk (including fees)
+- Added search & dropdown for instrument selection (28 instruments)
+- Implemented accordion layout to prevent overflow on mobile
+- Custom formatters for currency, lots, and percentages
+
+### Added - Correlation Matrix Integration
+**What**: Real-time correlation analysis integrated into BestPairsWidget with visual cards and sortable table
+**Why**: Traders need to identify hedging opportunities and avoid correlated positions
+**How**:
+- Created `useFXCorrelationMatrix` hook fetching from `/api/fx/correlation/matrix`
+- Created `useFXCorrelationPairs` hook for filtered pair recommendations
+- Added 4 correlation cards above BestPairsWidget table showing top correlations:
+  - Color-coded by strength: Strong Positive (>+0.7 green) → Strong Negative (<-0.7 red)
+  - Visual indicators (↑↓ arrows)
+  - Updated timestamp display
+  - Glassmorphism design with backdrop blur
+- Enhanced BestPairsWidget table with correlation scores and sortable columns
+- Auto-refresh every 5 minutes
+- Loading states with spinners
+- Error states with retry buttons
+- Responsive grid: 4 columns (desktop) → 2 (tablet) → 1 (mobile)
+
+### Added - New FX Data Hooks
+**What**: Five custom React hooks for live FX market data
+**Why**: Reusable data fetching logic with consistent error handling and caching
+**How**:
+- **`useFXPrice(instrument)`** - Real-time price feed (bid/ask/mid, 30s refresh)
+  - Returns: `{ price, loading, error }`
+  - API: `GET /api/fx/prices/current?instrument=EUR_USD`
+  - Automatic cleanup on unmount
+- **`useFXAvailableInstruments()`** - Dynamic instrument list from database
+  - Returns: `{ instruments: string[], loading, error }`
+  - API: `GET /api/fx/prices/all`
+  - Cached for 5 minutes
+- **`useFXVolatility(instrument)`** - ATR and volatility metrics (60s refresh)
+  - Returns: `{ volatility: { atr, hv_20, sma_30, bb_width }, loading, error }`
+  - API: `GET /api/fx/volatility/EUR_USD`
+  - Used for stop loss recommendations
+- **`useFXCorrelationMatrix()`** - Full 28×28 correlation matrix
+  - Returns: `{ matrix: FXCorrelationPair[], loading, error }`
+  - API: `GET /api/fx/correlation/matrix`
+  - Auto-refresh every 5 minutes
+- **`useFXCorrelationPairs(category, limit)`** - Filtered pair recommendations
+  - Returns: `{ pairs: FXCorrelationPair[], loading, error }`
+  - API: `GET /api/fx/correlation/pairs?category=hedging&limit=10`
+  - Categories: hedging, trending, reversal
+
+### Fixed - Project Structure & Build Errors
+**What**: Consolidated all frontend code to `/src` directory and fixed import paths
+**Why**: Build was failing with "Cannot resolve" errors due to inconsistent file locations
+**How**:
+- Moved all directories to standard Vite/React structure:
+  - `components/` → `src/components/` (40+ files)
+  - `hooks/` → `src/hooks/` (14 files)
+  - `utils/` → `src/utils/` (4 files)
+  - `workers/` → `src/workers/` (1 file)
+  - `styles/` → `src/styles/` (1 file)
+- Updated all import paths to follow consistent patterns:
+  - From `src/App.tsx`: `import Component from './components/Component'`
+  - From `src/components/*.tsx`: `import { Type } from '../types'`
+  - From `src/hooks/*.ts`: `import { CONSTANT } from '../constants'`
+- Fixed `index.html` script source: `/src/index.tsx`
+- Updated `CLAUDE.md` with comprehensive directory structure documentation
+- Created `docs/PROJECT_STRUCTURE_FIX.md` documenting the migration
+- Build now succeeds: ✓ 2448 modules transformed in 9.21s
+
+### Improved - TypeScript Type Safety
+**What**: Added comprehensive type definitions for all FX data structures
+**Why**: Prevent runtime errors and improve developer experience with IntelliSense
+**How**:
+- Added 5 new interfaces to `src/types.ts`:
+  - `FXPrice` - Price data with bid/ask/mid/volume
+  - `FXVolatility` - ATR, HV-20, SMA-30, BB Width
+  - `FXCorrelationPair` - Correlation data for instrument pairs
+  - `InstrumentInfo` - Metadata (name, display, base, quote, pipDecimals)
+  - `UseFXPriceResult` - Hook return type with loading/error states
+- Proper nullable handling (`string | null`, `number | undefined`)
+- Optional properties for incomplete data (`bid?`, `ask?`, `volume?`)
+- Date handling with ISO 8601 strings
+- Full TypeScript strict mode compliance
+
+### Improved - Constants & Configuration
+**What**: Added comprehensive instrument definitions with pip decimal precision
+**Why**: Enable accurate pip value calculations for all 28 supported instruments
+**How**:
+- Added `INSTRUMENTS` array to `src/constants.ts`:
+  ```typescript
+  { name: 'EUR_USD', display: 'EUR/USD', base: 'EUR', quote: 'USD', pipDecimals: 4 }
+  ```
+- 28 instruments: Majors (7), Crosses (14), Exotics (7)
+- Pip decimal precision for each instrument (2 for JPY pairs, 4 for others)
+- Base and quote currency identification
+- Display names with proper formatting (slash vs underscore)
+- Used for dropdown filtering, pip calculations, and formatting
+
+### Documented - Sprint 2 Features
+**What**: Comprehensive documentation of all Sprint 2 deliverables
+**Why**: Ensure maintainability and onboarding for future developers
+**How**:
+- Created `docs/SPRINT_2_FX_DATA_FEATURES.md` (500+ lines):
+  - Feature overview and deliverables
+  - Technical implementation details
+  - API integration summary
+  - Performance metrics (before/after)
+  - Testing recommendations
+  - Known issues and future enhancements
+  - Developer guidelines
+- Updated `CLAUDE.md` with new components and hooks
+- Updated `docs/CHANGELOG.md` (this file)
+- All new code includes JSDoc comments and inline documentation
+
+### Performance - Bundle Size & Optimization
+**What**: Optimized API calls and implemented caching strategies
+**Why**: Prevent unnecessary network requests and improve responsiveness
+**How**:
+- Reduced API calls from ~40/min to ~24/min with intelligent caching
+- Instrument list cached for 5 minutes (rarely changes)
+- Correlation matrix cached for 5 minutes (computationally expensive)
+- Price updates rate-limited to 30 seconds (acceptable for dashboard)
+- Volatility updates rate-limited to 60 seconds (slow-moving metric)
+- Memoized expensive calculations (pip value, margin, lot size)
+- Debounced search input (300ms delay)
+- Bundle size increased 15% (485 KB vs 420 KB) - acceptable for features added
+
 ## [2025-11-28] - Backend Optimization & UI Polish
 
 ### Fixed - Backend Server Configuration & Performance

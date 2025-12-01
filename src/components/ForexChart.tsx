@@ -16,6 +16,9 @@ import VolumeChart from './VolumeChart';
 import { AccessibleTooltip } from './Tooltip';
 import { PopoverMenu, CheckboxMenuItem, MenuSection, MenuButton } from './Menu';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { RiskCalculator } from './RiskCalculator';
+import { VolatilityPanel } from './VolatilityPanel';
+import { BestPairsWidget } from './BestPairsWidget';
 
 // Global Forex Trading Volume Profile (UTC, 30-min intervals, 48 points = 24 hours)
 const VOLUME_DATA = [
@@ -735,7 +738,31 @@ const cityBadges = useMemo(
 
       {/* City badges removed - session names now displayed in glass capsules on each row */}
 
-      {viewMode === 'timeline' ? (
+      {viewMode === 'position' ? (
+        // Position Size Calculator
+        <div className="flex-1 overflow-y-auto min-h-0 p-2">
+          <RiskCalculator />
+        </div>
+      ) : viewMode === 'volatility' ? (
+        // Volatility Analysis
+        <div className="flex-1 overflow-y-auto min-h-0 p-2">
+          <VolatilityPanel />
+        </div>
+      ) : viewMode === 'correlation' ? (
+        // Best Pairs / Correlation
+        <div className="flex-1 overflow-y-auto min-h-0 p-2">
+          <BestPairsWidget />
+        </div>
+      ) : viewMode === 'ai' ? (
+        // AI Suggestions (placeholder)
+        <div className="flex-1 overflow-y-auto min-h-0 p-6">
+          <div className="glass-soft rounded-2xl p-8 text-center">
+            <div className="text-4xl mb-4">🤖</div>
+            <h3 className="text-lg font-bold text-slate-200 mb-2">AI Trading Suggestions</h3>
+            <p className="text-sm text-slate-400">Coming soon - AI-powered trading insights and recommendations</p>
+          </div>
+        </div>
+      ) : viewMode === 'timeline' ? (
         // Separate view - individual rows per session
         <div className="flex-1 overflow-y-auto min-h-0">
         {[sessions[3], sessions[2], sessions[0], sessions[1]].map(session => {

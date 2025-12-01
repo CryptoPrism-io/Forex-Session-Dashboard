@@ -55,6 +55,67 @@ User → Vite Dev Server (3000) → React Components → Backend API (5000) → 
                     (Production: Docker/Cloud Run)
 ```
 
+### Directory Structure
+
+**IMPORTANT**: All frontend source code is located in the `/src` directory following standard Vite/React conventions.
+
+```
+Forex-Session-Dashboard/
+├── src/                          # Frontend source code (ALL imports reference this)
+│   ├── components/               # React components
+│   │   ├── AlertsToggle.tsx
+│   │   ├── BestPairsWidget.tsx  # Sprint 2: FX Data
+│   │   ├── BottomNavBar.tsx
+│   │   ├── EconomicCalendar.tsx
+│   │   ├── ForexChart.tsx
+│   │   ├── RiskCalculator.tsx   # Sprint 2: FX Data
+│   │   ├── SessionGuide.tsx
+│   │   ├── VolatilityMeter.tsx  # Sprint 2: FX Data
+│   │   ├── VolatilityPanel.tsx  # Sprint 2: FX Data
+│   │   └── ... (40+ components)
+│   ├── hooks/                    # Custom React hooks
+│   │   ├── useFXCorrelation.ts  # Sprint 2: FX Data
+│   │   ├── useFXPrice.ts        # Sprint 2: FX Data
+│   │   ├── useFXVolatility.ts   # Sprint 2: FX Data
+│   │   ├── usePWAInstall.ts
+│   │   ├── useReducedMotion.ts
+│   │   └── useSessionAlerts.ts
+│   ├── utils/                    # Utility functions
+│   │   ├── dstUtils.ts
+│   │   ├── reportWebVitals.ts
+│   │   └── notificationManager.ts
+│   ├── workers/                  # Web Workers
+│   │   └── sessionWorker.ts
+│   ├── styles/                   # CSS files
+│   │   └── ag-grid-custom.css
+│   ├── App.tsx                   # Main app component
+│   ├── index.tsx                 # Entry point
+│   ├── constants.ts              # App constants & session configs
+│   ├── types.ts                  # TypeScript type definitions
+│   └── vite-env.d.ts            # Vite environment types
+├── server/                       # Backend API (Node.js/Express)
+│   ├── api/calendar/            # Calendar API endpoints
+│   ├── api/fx/                  # FX Data API endpoints (Sprint 1)
+│   ├── db.js                    # PostgreSQL connection
+│   └── server.js                # Express server
+├── public/                      # Static assets
+├── dist/                        # Build output (generated)
+├── index.html                   # HTML entry point
+├── vite.config.ts              # Vite configuration
+└── package.json                # Dependencies
+```
+
+**Import Path Rules:**
+- From `src/App.tsx`: Use `'./components/ComponentName'`, `'./hooks/hookName'`, `'./utils/utilName'`
+- From `src/components/*.tsx`: Use `'../types'`, `'../constants'`, `'../hooks/hookName'`
+- From `src/hooks/*.ts`: Use `'../types'`, `'../constants'`
+- All paths are relative to the `/src` directory
+
+**DO NOT:**
+- Reference components/hooks/utils from root directories (they don't exist there)
+- Use absolute paths like `/components/` or `/hooks/`
+- Import from `../components/` when already in App.tsx (use `./components/`)
+
 ### Frontend Architecture
 
 **Layout Structure: 1:3 Ratio with Collapsible Left Pane**
@@ -76,18 +137,20 @@ User → Vite Dev Server (3000) → React Components → Backend API (5000) → 
 - **Left Pane (w-1/4)**: Current time, timezone selector, active sessions list
   - Auto-collapses on mobile (< 768px), persists state to localStorage
   - Toggle button hidden on desktop, visible on mobile via hamburger icon
-- **Right Pane (flex-1)**: 4 main tabs with tabbed content area
-  - Tab 1: **Calendar** - Economic calendar events (EconomicCalendar.tsx)
-  - Tab 2: **Clock** - 4-clock display (SessionClocks.tsx)
+- **Right Pane (flex-1)**: 6 main tabs with tabbed content area
+  - Tab 1: **Overview** - Active sessions overview (OverviewPanel.tsx)
+  - Tab 2: **Calendar** - Economic calendar events (EconomicCalendar.tsx)
   - Tab 3: **Charts** - Session timeline charts (ForexChart.tsx)
   - Tab 4: **Guide** - Trading session reference tables (SessionGuide.tsx)
+  - Tab 5: **World Clock** - Global time zones (WorldClockPanel.tsx)
+  - Tab 6: **FX Data** - Position calculator, volatility, best pairs (Sprint 2)
 
 **Key Components:**
 
 1. **App.tsx** (main orchestrator)
    - Manages timezone selection and global time state (updates every 1 second)
    - Manages `leftPaneOpen` state with localStorage persistence (for mobile responsiveness)
-   - Manages `activeView` state: 'calendar' | 'clocks' | 'charts' | 'guide'
+   - Manages `activeView` state: 'overview' | 'calendar' | 'clocks' | 'charts' | 'guide' | 'fxdata'
    - Calculates `nowLine` position (current UTC time as percentage of 24 hours)
    - Runs `checkSession()` logic on each update to determine `sessionStatus` for all sessions
    - Passes timezone, nowLine, and sessionStatus down to child components
@@ -122,6 +185,24 @@ User → Vite Dev Server (3000) → React Components → Backend API (5000) → 
    - Shows session times, durations, overlap hours, killzone hours
    - Educational descriptions for each trading concept
    - Fully collapsible sections for better UX
+
+7. **RiskCalculator.tsx** (Sprint 2: position size calculator)
+   - Input: Account balance, risk %, stop loss pips, currency pair
+   - Calculate: Position size in lots based on ATR
+   - Display: Recommended lot size, max risk amount, current ATR
+   - Uses `useFXVolatility` hook to get real-time ATR values
+
+8. **VolatilityPanel.tsx** (Sprint 2: volatility overview)
+   - Table/grid showing all 28 instruments from fx_global database
+   - Columns: Instrument, HV-20, ATR, SMA-30, BB Width
+   - Sortable by any column
+   - Color-coded rows: Green (low), Yellow (medium), Red (high volatility)
+
+9. **BestPairsWidget.tsx** (Sprint 2: pair recommendations)
+   - Display top 10 recommended pairs for hedging/trending/reversal
+   - Fetch from `/api/fx/best-pairs?category=hedging`
+   - Show: Pair 1, Pair 2, Correlation, Score
+   - Gracefully handles empty state (table currently being populated)
 
 ### Animation System (Framer Motion + React Aria)
 
@@ -306,10 +387,11 @@ Deployed via workflow (`.github/workflows/pages.yml`):
   - localStorage: Persists `leftPaneOpen` state for user preference
   - Mobile-first: Left pane closed by default on small screens, toggle via hamburger icon
   - Desktop: Left pane always visible, toggle hidden but accessible
-- **4-Tab Navigation**:
-  - Calendar, Clock, Charts (timeline), Guide (reference tables)
+- **6-Tab Navigation** (Mobile & Desktop):
+  - Overview, Calendar, Charts (timeline), Guide (reference tables), World Clock, FX Data
   - Active tab persists during session but not across page reloads
   - Each tab renders its own component in the right pane content area
+  - FX Data tab (Sprint 2) includes: RiskCalculator, VolatilityPanel, BestPairsWidget
 
 ## Common Development Tasks
 

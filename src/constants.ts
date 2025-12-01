@@ -1,4 +1,4 @@
-import { Timezone, SessionData } from './types';
+import { Timezone, SessionData, InstrumentInfo } from './types';
 
 export const TIMEZONES: Timezone[] = [
   // === MAJOR FOREX TIMEZONES (Quick Select) ===
@@ -380,3 +380,35 @@ export const SESSION_PAIRS_MAP: Record<string, string[]> = {
   'Asia-London Overlap': ['EUR/JPY', 'GBP/JPY', 'EUR/GBP'],
   'Sydney-Asia Overlap': ['AUD/JPY', 'NZD/JPY', 'USD/JPY'],
 };
+
+// FX Instruments (Sprint 2) - 28 instruments from fx_global database
+export const INSTRUMENTS: InstrumentInfo[] = [
+  { name: 'AUD_CHF', displayName: 'AUD/CHF', assetClass: 'FX' },
+  { name: 'AUD_JPY', displayName: 'AUD/JPY', assetClass: 'FX' },
+  { name: 'AUD_NZD', displayName: 'AUD/NZD', assetClass: 'FX' },
+  { name: 'AUD_USD', displayName: 'AUD/USD', assetClass: 'FX' },
+  { name: 'CAD_CHF', displayName: 'CAD/CHF', assetClass: 'FX' },
+  { name: 'CAD_JPY', displayName: 'CAD/JPY', assetClass: 'FX' },
+  { name: 'CHF_JPY', displayName: 'CHF/JPY', assetClass: 'FX' },
+  { name: 'EUR_AUD', displayName: 'EUR/AUD', assetClass: 'FX' },
+  { name: 'EUR_CAD', displayName: 'EUR/CAD', assetClass: 'FX' },
+  { name: 'EUR_CHF', displayName: 'EUR/CHF', assetClass: 'FX' },
+  { name: 'EUR_GBP', displayName: 'EUR/GBP', assetClass: 'FX' },
+  { name: 'EUR_JPY', displayName: 'EUR/JPY', assetClass: 'FX' },
+  { name: 'EUR_NZD', displayName: 'EUR/NZD', assetClass: 'FX' },
+  { name: 'EUR_USD', displayName: 'EUR/USD', assetClass: 'FX' },
+  { name: 'GBP_AUD', displayName: 'GBP/AUD', assetClass: 'FX' },
+  { name: 'GBP_CAD', displayName: 'GBP/CAD', assetClass: 'FX' },
+  { name: 'GBP_CHF', displayName: 'GBP/CHF', assetClass: 'FX' },
+  { name: 'GBP_JPY', displayName: 'GBP/JPY', assetClass: 'FX' },
+  { name: 'GBP_NZD', displayName: 'GBP/NZD', assetClass: 'FX' },
+  { name: 'GBP_USD', displayName: 'GBP/USD', assetClass: 'FX' },
+  { name: 'NZD_USD', displayName: 'NZD/USD', assetClass: 'FX' },
+  { name: 'USD_CAD', displayName: 'USD/CAD', assetClass: 'FX' },
+  { name: 'USD_CHF', displayName: 'USD/CHF', assetClass: 'FX' },
+  { name: 'USD_CNH', displayName: 'USD/CNH', assetClass: 'FX' },
+  { name: 'USD_HKD', displayName: 'USD/HKD', assetClass: 'FX' },
+  { name: 'USD_JPY', displayName: 'USD/JPY', assetClass: 'FX' },
+  { name: 'XAG_USD', displayName: 'XAG/USD', assetClass: 'Commodity' },
+  { name: 'XAU_USD', displayName: 'XAU/USD', assetClass: 'Commodity' },
+];

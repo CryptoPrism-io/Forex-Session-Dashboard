@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { IconCalendarTab, IconChartsTab, IconGuideTab, IconWorldClockTab, IconTarget } from './icons';
+import { IconCalendarTab, IconChartsTab, IconGuideTab, IconWorldClockTab, IconTarget, IconTradingFlow } from './icons';
 
-type ViewType = 'overview' | 'calendar' | 'charts' | 'guide' | 'clocks';
+type ViewType = 'overview' | 'calendar' | 'charts' | 'guide' | 'clocks' | 'fxdata';
 
 interface BottomNavBarProps {
   activeView: ViewType;
@@ -52,6 +52,14 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange })
       activeClass: 'bg-violet-500/20 border border-violet-400/40',
       textClass: 'text-violet-300',
       glowColor: '#c4b5fd'
+    },
+    {
+      id: 'fxdata' as ViewType,
+      label: 'FX Data',
+      icon: IconTradingFlow,
+      activeClass: 'bg-pink-500/20 border border-pink-400/40',
+      textClass: 'text-pink-300',
+      glowColor: '#f9a8d4'
     },
   ];
 
