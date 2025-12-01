@@ -23,10 +23,14 @@ import { BestPairsWidget } from './components/BestPairsWidget';
 import { isDSTActive } from './utils/dstUtils';
 
 const ForexChart = lazy(() => import('./components/ForexChart'));
+const VolumeChart = lazy(() => import('./components/VolumeChart'));
 const EconomicCalendar = lazy(() => import('./components/EconomicCalendar'));
 const SessionGuide = lazy(() => import('./components/SessionGuide'));
 const WorldClockPanel = lazy(() => import('./components/WorldClockPanel'));
-const FXToolsPanel = lazy(() => import('./components/FXToolsPanel').then(m => ({ default: m.FXToolsPanel })));
+const RiskCalculator = lazy(() => import('./components/RiskCalculator').then(m => ({ default: m.RiskCalculator })));
+const VolatilityPanel = lazy(() => import('./components/VolatilityPanel').then(m => ({ default: m.VolatilityPanel })));
+const CorrelationHeatMap = lazy(() => import('./components/CorrelationHeatMap').then(m => ({ default: m.CorrelationHeatMap })));
+const CorrelationNetworkGraph = lazy(() => import('./components/CorrelationNetworkGraph').then(m => ({ default: m.CorrelationNetworkGraph })));
 
 export type SessionStatus = 'OPEN' | 'CLOSED' | 'WARNING';
 
@@ -44,8 +48,10 @@ const App: React.FC = () => {
   const [isTimezoneMenuOpen, setIsTimezoneMenuOpen] = useState(false);
   const [manualDSTOverride, setManualDSTOverride] = useState<boolean | null>(null);
   const [activeView, setActiveView] = useState<
-    'overview' | 'clocks' | 'calendar' | 'charts' | 'guide' | 'fxdata' | 'screener' | 'aiChat'
-  >('overview');
+    | 'overview' | 'clocks' | 'calendar' | 'charts' | 'guide'
+    | 'timeline' | 'volume' | 'volatility' | 'position'
+    | 'correlation' | 'network' | 'screener' | 'aiChat'
+  >('network');
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -342,10 +348,10 @@ const App: React.FC = () => {
         <div className="w-full flex-1 h-full overflow-hidden">
           {/* Main Content Area */}
           <div className="glass-shell backdrop-blur-xl rounded-3xl p-3 sm:p-4 shadow-lg shadow-black/20 flex flex-col overflow-hidden h-full gap-3 sm:gap-4">
-            {/* Desktop Header: Title + Icons (Left) | Navigation Tabs (Right) */}
+            {/* Desktop Header: 3-Column Layout - Left (Title + Icons) | Center (FX Tools Nav) | Right (Help) */}
             <div className="hidden md:flex items-center justify-between gap-4 mb-2.5 flex-shrink-0 border-b border-slate-700/30 pb-3">
-              {/* Left: Title + Screener/AI quick tabs + essential icons */}
-              <div className="flex items-center gap-2">
+              {/* Left: Title + essential icons */}
+              <div className="flex items-center gap-3">
                 {/* Title */}
                 <h1
                   className="text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent whitespace-nowrap"
@@ -357,31 +363,7 @@ const App: React.FC = () => {
                   FX_Saarthi
                 </h1>
 
-                {/* Quick Access Pills */}
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setActiveView('screener')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all border ${
-                      activeView === 'screener'
-                        ? 'bg-pink-500/20 border-pink-400/40 text-pink-200'
-                        : 'bg-slate-800/50 border-slate-700/40 text-slate-300 hover:bg-slate-700/50 hover:border-slate-600/60'
-                    }`}
-                  >
-                    Screener
-                  </button>
-                  <button
-                    onClick={() => setActiveView('aiChat')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all border ${
-                      activeView === 'aiChat'
-                        ? 'bg-purple-500/20 border-purple-400/40 text-purple-200'
-                        : 'bg-slate-800/50 border-slate-700/40 text-slate-300 hover:bg-slate-700/50 hover:border-slate-600/60'
-                    }`}
-                  >
-                    AI Chat
-                  </button>
-                </div>
-
-                {/* Essential Action Icons (no social links - they're in footer) */}
+                {/* Essential Action Icons */}
                 <div className="flex items-center gap-2">
                   <AlertsToggleHeader
                     alertConfig={alertConfig}
@@ -396,90 +378,100 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right: 5-Tab Navigation */}
-              <div className="flex gap-2">
-                {/* Overview Tab - Blue */}
+              {/* Center: FX Tools Navigation */}
+              <div className="flex gap-1.5 flex-wrap justify-center">
                 <button
-                  onClick={() => setActiveView('overview')}
-                  className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px] ${
-                    activeView === 'overview'
-                      ? 'bg-blue-500/20 border border-blue-400/40 text-blue-300 font-bold'
-                      : 'bg-slate-700/20 border border-slate-700/40 text-blue-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
+                  onClick={() => setActiveView('timeline')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                    activeView === 'timeline'
+                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                      : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
                   }`}
-                  title="Overview"
                 >
-                  <IconTarget className="w-5 h-5" />
-                  <span className="hidden lg:inline">Overview</span>
+                  Timeline
                 </button>
-
-                {/* Calendar Tab - Green */}
                 <button
-                  onClick={() => setActiveView('calendar')}
-                  className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px] ${
-                    activeView === 'calendar'
-                      ? 'bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold'
-                      : 'bg-slate-700/20 border border-slate-700/40 text-emerald-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
+                  onClick={() => setActiveView('volume')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                    activeView === 'volume'
+                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                      : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
                   }`}
-                  title="Economic Calendar"
                 >
-                  <IconCalendarTab className="w-5 h-5" />
-                  <span className="hidden lg:inline">Calendar</span>
+                  Volume
                 </button>
-
-                {/* Charts Tab - Cyan */}
                 <button
-                  onClick={() => setActiveView('charts')}
-                  className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px] ${
-                    activeView === 'charts'
-                      ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-bold'
-                      : 'bg-slate-700/20 border border-slate-700/40 text-cyan-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
+                  onClick={() => setActiveView('volatility')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                    activeView === 'volatility'
+                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                      : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
                   }`}
-                  title="Trading Charts"
                 >
-                  <IconChartsTab className="w-5 h-5" />
-                  <span className="hidden lg:inline">Charts</span>
+                  Volatility
                 </button>
-
-                {/* Guide Tab - Amber/Yellow */}
                 <button
-                  onClick={() => setActiveView('guide')}
-                  className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px] ${
-                    activeView === 'guide'
-                      ? 'bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold'
-                      : 'bg-slate-700/20 border border-slate-700/40 text-amber-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
+                  onClick={() => setActiveView('position')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                    activeView === 'position'
+                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                      : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
                   }`}
-                  title="Trading Guide"
                 >
-                  <IconGuideTab className="w-5 h-5" />
-                  <span className="hidden lg:inline">Guide</span>
+                  Position
                 </button>
-
-                {/* World Clock Tab - Violet */}
                 <button
-                  onClick={() => setActiveView('clocks')}
-                  className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px] ${
-                    activeView === 'clocks'
-                      ? 'bg-violet-500/20 border border-violet-400/40 text-violet-300 font-bold'
-                      : 'bg-slate-700/20 border border-slate-700/40 text-violet-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
+                  onClick={() => setActiveView('correlation')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                    activeView === 'correlation'
+                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                      : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
                   }`}
-                  title="World Clock"
                 >
-                  <IconWorldClockTab className="w-5 h-5" />
-                  <span className="hidden lg:inline">World Clock</span>
+                  HeatMap
                 </button>
-
-                {/* FX Tools Tab - Cyan */}
                 <button
-                  onClick={() => setActiveView('fxdata')}
-                  className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px] ${
-                    activeView === 'fxdata'
-                      ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-bold'
-                      : 'bg-slate-700/20 border border-slate-700/40 text-cyan-300 font-light hover:bg-slate-700/40 hover:border-slate-600/60'
+                  onClick={() => setActiveView('network')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                    activeView === 'network'
+                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                      : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
                   }`}
-                  title="FX Tools"
                 >
-                  <IconTarget className="w-5 h-5" />
-                  <span className="hidden lg:inline">FX Tools</span>
+                  Network
+                </button>
+                <button
+                  onClick={() => setActiveView('screener')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                    activeView === 'screener'
+                      ? 'bg-pink-500/20 text-pink-400 border border-pink-500/50'
+                      : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
+                  }`}
+                >
+                  Screener
+                </button>
+                <button
+                  onClick={() => setActiveView('aiChat')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                    activeView === 'aiChat'
+                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
+                      : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
+                  }`}
+                >
+                  AI Chat
+                </button>
+              </div>
+
+              {/* Right: Help Icon */}
+              <div className="flex items-center">
+                <button
+                  onClick={() => setShowHelpModal(true)}
+                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800/50 transition-all"
+                  title="Help & Guide"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </button>
               </div>
             </div>
@@ -616,15 +608,51 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {activeView === 'fxdata' && (
-                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading FX Tools...</div>}>
-                  <FXToolsPanel
+              {/* FX Tools Views */}
+              {activeView === 'timeline' && selectedTimezone && currentTime && (
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
+                  <ForexChart
                     selectedTimezone={selectedTimezone}
                     currentTime={currentTime}
-                    nowLine={nowLine}
-                    sessionStatus={sessionStatus}
-                    currentDSTStatus={currentDSTStatus}
+                    nowLine={nowLine || 0}
+                    sessionStatus={sessionStatus || {}}
+                    currentDSTStatus={currentDSTStatus || false}
                   />
+                </Suspense>
+              )}
+
+              {activeView === 'volume' && selectedTimezone && currentTime && (
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
+                  <VolumeChart
+                    selectedTimezone={selectedTimezone}
+                    currentTime={currentTime}
+                    nowLine={nowLine || 0}
+                    sessionStatus={sessionStatus || {}}
+                  />
+                </Suspense>
+              )}
+
+              {activeView === 'volatility' && (
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
+                  <VolatilityPanel />
+                </Suspense>
+              )}
+
+              {activeView === 'position' && (
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
+                  <RiskCalculator />
+                </Suspense>
+              )}
+
+              {activeView === 'correlation' && (
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
+                  <CorrelationHeatMap />
+                </Suspense>
+              )}
+
+              {activeView === 'network' && (
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
+                  <CorrelationNetworkGraph />
                 </Suspense>
               )}
             </div>
