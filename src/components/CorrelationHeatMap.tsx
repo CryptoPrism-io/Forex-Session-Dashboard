@@ -153,11 +153,11 @@ export function CorrelationHeatMap() {
       {/* HeatMap */}
       <div
         className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-hidden"
-        style={{ height: 'calc(100vh - 300px)' }}
+        style={{ height: 'calc(100vh - 250px)' }}
       >
         <ResponsiveHeatMapCanvas
           data={data}
-          margin={{ top: 80, right: 90, bottom: 20, left: 90 }}
+          margin={{ top: 60, right: 70, bottom: 15, left: 70 }}
 
           // Color scale for correlations (-1 to +1)
           colors={{
@@ -193,11 +193,8 @@ export function CorrelationHeatMap() {
 
           // Cell configuration
           cellOpacity={1}
-          cellBorderWidth={0.5}
-          cellBorderColor={{
-            from: 'color',
-            modifiers: [['darker', 0.4]]
-          }}
+          cellBorderWidth={1}
+          cellBorderColor="rgba(255, 255, 255, 0.15)"
 
           // Interactions
           isInteractive={true}
