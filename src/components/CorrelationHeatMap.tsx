@@ -356,57 +356,49 @@ export function CorrelationHeatMap() {
         />
       </div>
 
-      {/* Info Panel - Moved to Bottom */}
-      <div className="mt-4 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <div className="text-blue-400 text-2xl">ℹ️</div>
-          <div className="flex-1">
-            <h4 className="text-blue-400 font-semibold mb-1">How to Read This HeatMap</h4>
-            <p className="text-gray-300 text-sm mb-2">
-              Each cell shows the correlation between two currency pairs. Hover over cells for details.
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-blue-600 rounded"></div>
-                <span className="text-gray-300">Strong +ve (&gt;0.7)</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-green-500 rounded"></div>
-                <span className="text-gray-300">Moderate +ve</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-                <span className="text-gray-300">Neutral (0)</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-orange-500 rounded"></div>
-                <span className="text-gray-300">Moderate -ve</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-red-600 rounded"></div>
-                <span className="text-gray-300">Strong -ve (&lt;-0.7)</span>
-              </div>
+      {/* Consolidated Info & Legend Panel */}
+      <div className="mt-4 bg-gradient-to-r from-slate-900/50 to-slate-800/50 border border-slate-700/50 rounded-lg p-4">
+        <div className="flex flex-col gap-3">
+          {/* Header Row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 text-sm font-semibold">Correlation Scale</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-slate-400">
+              <span>{matrix?.length || 0} pairs</span>
+              <span>•</span>
+              <span>{instruments.length} instruments</span>
+              <span>•</span>
+              <span className="font-mono">
+                {matrix && matrix[0]
+                  ? new Date((matrix[0] as any).time || (matrix[0] as any).updated_at || (matrix[0] as any).date).toLocaleDateString()
+                  : 'N/A'}
+              </span>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Stats Panel */}
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4">
-          <div className="text-gray-400 text-sm mb-1">Total Pairs</div>
-          <div className="text-2xl font-bold text-white">{matrix?.length || 0}</div>
-        </div>
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4">
-          <div className="text-gray-400 text-sm mb-1">Instruments</div>
-          <div className="text-2xl font-bold text-white">{instruments.length}</div>
-        </div>
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4">
-          <div className="text-gray-400 text-sm mb-1">Last Updated</div>
-          <div className="text-sm font-mono text-white">
-            {matrix && matrix[0]
-              ? new Date((matrix[0] as any).time || (matrix[0] as any).updated_at || (matrix[0] as any).date).toLocaleString()
-              : 'N/A'}
+          {/* Legend - Single Row */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-blue-600 rounded"></div>
+              <span className="text-xs text-slate-300">Strong +ve</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-green-500 rounded"></div>
+              <span className="text-xs text-slate-300">Moderate +ve</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-yellow-500 rounded"></div>
+              <span className="text-xs text-slate-300">Neutral</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-orange-500 rounded"></div>
+              <span className="text-xs text-slate-300">Moderate -ve</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-red-600 rounded"></div>
+              <span className="text-xs text-slate-300">Strong -ve</span>
+            </div>
           </div>
         </div>
       </div>
