@@ -253,7 +253,7 @@ export function CorrelationHeatMap() {
           // Axis configuration (vertical labels - 90 degrees)
           axisTop={{
             tickSize: 5,
-            tickPadding: 5,
+            tickPadding: 8,
             tickRotation: -90,
             legend: '',
             legendOffset: 46,
@@ -263,7 +263,7 @@ export function CorrelationHeatMap() {
           axisBottom={null}
           axisLeft={{
             tickSize: 5,
-            tickPadding: 5,
+            tickPadding: 8,
             tickRotation: 0,
             legend: '',
             legendPosition: 'middle',
@@ -297,10 +297,11 @@ export function CorrelationHeatMap() {
           theme={{
             background: 'transparent',
             text: {
-              fontSize: 9,
+              fontSize: 12,
               fill: '#e5e7eb',
               outlineWidth: 0,
-              outlineColor: 'transparent'
+              outlineColor: 'transparent',
+              fontWeight: 400
             },
             axis: {
               domain: {
@@ -311,8 +312,9 @@ export function CorrelationHeatMap() {
               },
               legend: {
                 text: {
-                  fontSize: 10,
-                  fill: '#9ca3af'
+                  fontSize: 11,
+                  fill: '#9ca3af',
+                  fontWeight: 400
                 }
               },
               ticks: {
@@ -321,8 +323,9 @@ export function CorrelationHeatMap() {
                   strokeWidth: 1
                 },
                 text: {
-                  fontSize: 9,
-                  fill: '#e5e7eb'
+                  fontSize: 12,
+                  fill: '#e5e7eb',
+                  fontWeight: 400
                 }
               }
             },
