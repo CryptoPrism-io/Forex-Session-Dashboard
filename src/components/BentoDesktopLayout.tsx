@@ -42,6 +42,7 @@ interface BentoDesktopLayoutProps {
   installState: 'available' | 'dismissed' | 'installed' | 'unsupported';
   onInstallClick: () => void;
   onNavigatePage?: (pageNum: number) => void;
+  pageViewContent?: React.ReactNode;
 }
 
 const formatSessionTime = (seconds: number): string => {
@@ -71,6 +72,7 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
   installState,
   onInstallClick,
   onNavigatePage,
+  pageViewContent,
 }) => {
   const timeFormatted = currentTime.toLocaleTimeString('en-US', {
     timeZone: selectedTimezone.timezone || selectedTimezone.ianaTimezone,
@@ -95,18 +97,38 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
     ? 'from-amber-400 via-orange-400 to-amber-400'
     : 'from-blue-400 via-indigo-400 to-purple-400';
 
+  const desktopNavbar = (
+    <DesktopNavbar
+      onHelpClick={onHelpClick}
+      alertConfig={alertConfig}
+      onToggleAlerts={onToggleAlerts}
+      onToggleSound={onToggleSound}
+      installState={installState}
+      onInstallClick={onInstallClick}
+      onNavigatePage={onNavigatePage}
+    />
+  );
+
+  if (pageViewContent) {
+    return (
+      <div className="h-full flex flex-col overflow-hidden">
+        {desktopNavbar}
+        <div
+          className="flex-1 p-3 overflow-auto min-h-0"
+          style={{ height: 'calc(100% - 52px)' }}
+        >
+          <div className="h-full min-h-0 w-full">
+            {pageViewContent}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Desktop Navbar */}
-      <DesktopNavbar
-        onHelpClick={onHelpClick}
-        alertConfig={alertConfig}
-        onToggleAlerts={onToggleAlerts}
-        onToggleSound={onToggleSound}
-        installState={installState}
-        onInstallClick={onInstallClick}
-        onNavigatePage={onNavigatePage}
-      />
+      {desktopNavbar}
 
       {/* 2-Column Grid Layout: Left (20%) full height | Right nested grid */}
       <div

@@ -53,7 +53,7 @@ const App: React.FC = () => {
     | 'timeline' | 'volume' | 'volatility' | 'position'
     | 'correlation' | 'network' | 'screener' | 'aiChat'
     | 'page1' | 'page2' | 'page3'
-  >('network');
+  >('page1');
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -276,6 +276,21 @@ const App: React.FC = () => {
     setIsMoreTimezonesOpen(false);
   };
 
+  const renderComingSoonPage = (pageNumber: number) => (
+    <Suspense
+      fallback={
+        <div className="flex h-full items-center justify-center text-xs text-slate-400">
+          Loading page...
+        </div>
+      }
+    >
+      <ComingSoonPage pageNumber={pageNumber} />
+    </Suspense>
+  );
+
+  const pageViewMatch = activeView.match(/^page([23])$/);
+  const activePageNumber = pageViewMatch ? Number(pageViewMatch[1]) : null;
+  const desktopPageViewContent = activePageNumber ? renderComingSoonPage(activePageNumber) : undefined;
 
   // Format session elapsed/remaining time in HH MM SS format
   const formatSessionTime = (seconds: number): string => {
@@ -340,6 +355,7 @@ const App: React.FC = () => {
               onToggleSound={toggleSound}
               installState={installState}
               onInstallClick={handleInstallClick}
+              pageViewContent={desktopPageViewContent}
               onNavigatePage={(pageNum) => setActiveView(`page${pageNum}` as any)}
             />
           </div>
@@ -659,23 +675,9 @@ const App: React.FC = () => {
                 </Suspense>
               )}
 
-              {activeView === 'page1' && (
-                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
-                  <ComingSoonPage pageNumber={1} />
-                </Suspense>
-              )}
-
-              {activeView === 'page2' && (
-                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
-                  <ComingSoonPage pageNumber={2} />
-                </Suspense>
-              )}
-
-              {activeView === 'page3' && (
-                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
-                  <ComingSoonPage pageNumber={3} />
-                </Suspense>
-              )}
+              {activePageNumber === 1 && renderComingSoonPage(1)}
+              {activePageNumber === 2 && renderComingSoonPage(2)}
+              {activePageNumber === 3 && renderComingSoonPage(3)}
             </div>
           </div>
         </div>
