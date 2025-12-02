@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { ResponsiveHeatMapCanvas } from '@nivo/heatmap';
 import { useFXCorrelationMatrix } from '../hooks/useFXCorrelationMatrix';
+import { TooltipPortal } from './TooltipPortal';
 
 interface HeatMapDataPoint {
   x: string;
@@ -23,9 +24,53 @@ interface CustomTooltipProps {
     formattedValue: string;
     color: string;
   };
+  x?: number;
+  y?: number;
 }
 
-const CustomCorrelationTooltip: React.FC<CustomTooltipProps> = ({ cell }) => {
+/**
+ * Calculate tooltip position with boundary detection
+ * Automatically flips position if tooltip would go off-screen
+ */
+const calculateTooltipPosition = (
+  x: number,
+  y: number,
+  tooltipWidth: number = 200,
+  tooltipHeight: number = 120
+): { top: number; left: number; position: 'top' | 'bottom' } => {
+  const OFFSET = 12;
+  const MARGIN = 20;
+
+  // Check space above and below
+  const spaceAbove = y;
+  const spaceBelow = window.innerHeight - y;
+
+  // Determine if tooltip should appear above or below
+  const position = spaceAbove > tooltipHeight + MARGIN ? 'top' : 'bottom';
+
+  // Calculate vertical position
+  const top = position === 'top' ? y - tooltipHeight - OFFSET : y + OFFSET;
+
+  // Calculate horizontal position (centered on cursor)
+  let left = x - tooltipWidth / 2;
+
+  // Constrain to viewport
+  if (left < MARGIN) left = MARGIN;
+  if (left + tooltipWidth > window.innerWidth - MARGIN) {
+    left = window.innerWidth - tooltipWidth - MARGIN;
+  }
+
+  return { top: Math.max(MARGIN, top), left, position };
+};
+
+const CustomCorrelationTooltip: React.FC<CustomTooltipProps> = ({ cell, x = 0, y = 0 }) => {
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ top: number; left: number; position: 'top' | 'bottom' }>({
+    top: y,
+    left: x,
+    position: 'bottom'
+  });
+
   const getCorrelationLabel = (value: number): { label: string; emoji: string; color: string } => {
     if (value > 0.7) return { label: 'Strong Positive', emoji: '🔵', color: 'text-blue-400' };
     if (value > 0.3) return { label: 'Moderate Positive', emoji: '🟢', color: 'text-green-400' };
@@ -34,12 +79,29 @@ const CustomCorrelationTooltip: React.FC<CustomTooltipProps> = ({ cell }) => {
     return { label: 'Strong Negative', emoji: '🔴', color: 'text-red-400' };
   };
 
+  // Update position when tooltip is rendered
+  useEffect(() => {
+    if (tooltipRef.current) {
+      const rect = tooltipRef.current.getBoundingClientRect();
+      const newPosition = calculateTooltipPosition(x, y, rect.width, rect.height);
+      setPosition(newPosition);
+    }
+  }, [x, y]);
+
   const correlation = getCorrelationLabel(cell.value);
 
-  return (
+  const tooltipElement = (
     <div
+      ref={tooltipRef}
       className="bg-gray-900/95 backdrop-blur-sm border border-white/20 rounded-lg p-3 text-xs shadow-xl"
-      style={{ pointerEvents: 'none' }}
+      style={{
+        position: 'fixed',
+        top: `${position.top}px`,
+        left: `${position.left}px`,
+        pointerEvents: 'none',
+        zIndex: 9999,
+        minWidth: '200px'
+      }}
     >
       <div className="font-semibold text-white mb-1">
         {cell.serieId} ↔ {cell.data.x}
@@ -57,6 +119,12 @@ const CustomCorrelationTooltip: React.FC<CustomTooltipProps> = ({ cell }) => {
         {correlation.emoji} {correlation.label}
       </div>
     </div>
+  );
+
+  return (
+    <TooltipPortal isVisible={true}>
+      {tooltipElement}
+    </TooltipPortal>
   );
 };
 
@@ -198,7 +266,13 @@ export function CorrelationHeatMap() {
 
           // Interactions
           isInteractive={true}
-          tooltip={CustomCorrelationTooltip}
+          tooltip={(props: any) => (
+            <CustomCorrelationTooltip
+              {...props}
+              x={props.x}
+              y={props.y}
+            />
+          )}
 
           // Labels (disabled to save space - values visible in tooltips)
           enableLabels={false}
