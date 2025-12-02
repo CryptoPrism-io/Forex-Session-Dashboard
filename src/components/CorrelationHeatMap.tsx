@@ -230,13 +230,13 @@ export function CorrelationHeatMap() {
     <div className="w-full">
       {/* HeatMap */}
       <div
-        className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-y-auto"
-        style={{ height: '600px', maxHeight: 'calc(100vh - 250px)' }}
+        className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-x-auto"
+        style={{ height: '400px', minHeight: '400px' }}
         onMouseMove={handleMouseMove}
       >
         <ResponsiveHeatMapCanvas
           data={data}
-          margin={{ top: 90, right: 450, bottom: 22, left: 450 }}
+          margin={{ top: 100, right: 120, bottom: 30, left: 120 }}
 
           // Color scale for correlations (-1 to +1)
           colors={{
