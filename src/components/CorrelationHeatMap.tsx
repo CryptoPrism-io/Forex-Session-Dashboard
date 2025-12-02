@@ -367,7 +367,7 @@ export function CorrelationHeatMap() {
           {/* Header Row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-slate-400 text-sm font-semibold">Correlation Scale</span>
+              <span className="text-[10px] uppercase tracking-widest text-slate-500">Correlation Scale</span>
             </div>
             <div className="flex items-center gap-3 text-xs text-slate-400">
               <span>{matrix?.length || 0} pairs</span>
