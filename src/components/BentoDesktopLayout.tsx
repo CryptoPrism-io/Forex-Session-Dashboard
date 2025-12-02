@@ -41,6 +41,7 @@ interface BentoDesktopLayoutProps {
   onToggleSound: () => void;
   installState: 'available' | 'dismissed' | 'installed' | 'unsupported';
   onInstallClick: () => void;
+  onNavigatePage?: (pageNum: number) => void;
 }
 
 const formatSessionTime = (seconds: number): string => {
@@ -69,6 +70,7 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
   onToggleSound,
   installState,
   onInstallClick,
+  onNavigatePage,
 }) => {
   const timeFormatted = currentTime.toLocaleTimeString('en-US', {
     timeZone: selectedTimezone.timezone || selectedTimezone.ianaTimezone,
@@ -103,6 +105,7 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
         onToggleSound={onToggleSound}
         installState={installState}
         onInstallClick={onInstallClick}
+        onNavigatePage={onNavigatePage}
       />
 
       {/* 2-Column Grid Layout: Left (20%) full height | Right nested grid */}

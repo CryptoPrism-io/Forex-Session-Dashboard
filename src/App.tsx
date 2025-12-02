@@ -31,6 +31,7 @@ const RiskCalculator = lazy(() => import('./components/RiskCalculator').then(m =
 const VolatilityPanel = lazy(() => import('./components/VolatilityPanel').then(m => ({ default: m.VolatilityPanel })));
 const CorrelationHeatMap = lazy(() => import('./components/CorrelationHeatMap').then(m => ({ default: m.CorrelationHeatMap })));
 const CorrelationNetworkGraph = lazy(() => import('./components/CorrelationNetworkGraph').then(m => ({ default: m.CorrelationNetworkGraph })));
+const ComingSoonPage = lazy(() => import('./components/ComingSoonPage').then(m => ({ default: m.ComingSoonPage })));
 
 export type SessionStatus = 'OPEN' | 'CLOSED' | 'WARNING';
 
@@ -51,6 +52,7 @@ const App: React.FC = () => {
     | 'overview' | 'clocks' | 'calendar' | 'charts' | 'guide'
     | 'timeline' | 'volume' | 'volatility' | 'position'
     | 'correlation' | 'network' | 'screener' | 'aiChat'
+    | 'page1' | 'page2' | 'page3'
   >('network');
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
@@ -338,6 +340,7 @@ const App: React.FC = () => {
               onToggleSound={toggleSound}
               installState={installState}
               onInstallClick={handleInstallClick}
+              onNavigatePage={(pageNum) => setActiveView(`page${pageNum}` as any)}
             />
           </div>
         </div>
@@ -653,6 +656,24 @@ const App: React.FC = () => {
               {activeView === 'network' && (
                 <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
                   <CorrelationNetworkGraph />
+                </Suspense>
+              )}
+
+              {activeView === 'page1' && (
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
+                  <ComingSoonPage pageNumber={1} />
+                </Suspense>
+              )}
+
+              {activeView === 'page2' && (
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
+                  <ComingSoonPage pageNumber={2} />
+                </Suspense>
+              )}
+
+              {activeView === 'page3' && (
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
+                  <ComingSoonPage pageNumber={3} />
                 </Suspense>
               )}
             </div>
