@@ -340,7 +340,6 @@ const App: React.FC = () => {
               onToggleSound={toggleSound}
               installState={installState}
               onInstallClick={handleInstallClick}
-              onNavigatePage={(pageNum) => setActiveView(`page${pageNum}` as any)}
             />
           </div>
         </div>
