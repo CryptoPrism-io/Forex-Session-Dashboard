@@ -43,16 +43,34 @@ const DesktopNavbar: React.FC<DesktopNavbarProps> = ({
 
         {/* Page Navigation Buttons */}
         <div className="flex items-center gap-2 ml-6">
-          {[1, 2, 3].map((pageNum) => (
-            <button
-              key={pageNum}
-              onClick={() => onNavigatePage?.(pageNum)}
-              className="px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-cyan-300 border border-slate-600/40 hover:border-cyan-500/60 rounded-lg bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
-              aria-label={`Navigate to Page ${pageNum}`}
-            >
-              Page {pageNum}
-            </button>
-          ))}
+          <button
+            onClick={() => onNavigatePage?.(1)}
+            className="px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-cyan-300 border border-slate-600/40 hover:border-cyan-500/60 rounded-lg bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
+            aria-label="Navigate to Trading Desk"
+          >
+            Trading Desk
+          </button>
+          <button
+            onClick={() => onNavigatePage?.(2)}
+            className="px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-cyan-300 border border-slate-600/40 hover:border-cyan-500/60 rounded-lg bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
+            aria-label="Navigate to Screener"
+          >
+            Screener
+          </button>
+          <button
+            onClick={() => onNavigatePage?.(3)}
+            className="px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-cyan-300 border border-slate-600/40 hover:border-cyan-500/60 rounded-lg bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
+            aria-label="Navigate to AI Assistant"
+          >
+            AI Assistant
+          </button>
+          <button
+            onClick={() => onNavigatePage?.(4)}
+            className="px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-cyan-300 border border-slate-600/40 hover:border-cyan-500/60 rounded-lg bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
+            aria-label="Navigate to Backtesting"
+          >
+            Backtesting
+          </button>
         </div>
       </div>
 
