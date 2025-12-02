@@ -14,6 +14,7 @@ export interface DesktopNavbarProps {
   onToggleSound: () => void;
   installState: 'available' | 'dismissed' | 'installed' | 'unsupported';
   onInstallClick: () => void;
+  onNavigatePage?: (pageNum: number) => void;
 }
 
 const DesktopNavbar: React.FC<DesktopNavbarProps> = ({
@@ -24,10 +25,11 @@ const DesktopNavbar: React.FC<DesktopNavbarProps> = ({
   onToggleSound,
   installState,
   onInstallClick,
+  onNavigatePage,
 }) => {
   return (
     <nav className="flex-shrink-0 h-[52px] px-4 py-3 border-b border-slate-700/30 backdrop-blur-xl glass-soft flex items-center justify-between">
-      {/* Left: Logo */}
+      {/* Left: Logo + Page Navigation Buttons */}
       <div className="flex items-center gap-4">
         <h1
           className="text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent whitespace-nowrap"
@@ -38,6 +40,20 @@ const DesktopNavbar: React.FC<DesktopNavbarProps> = ({
         >
           FX_Saarthi
         </h1>
+
+        {/* Page Navigation Buttons */}
+        <div className="flex items-center gap-2 ml-6">
+          {[1, 2, 3].map((pageNum) => (
+            <button
+              key={pageNum}
+              onClick={() => onNavigatePage?.(pageNum)}
+              className="px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-cyan-300 border border-slate-600/40 hover:border-cyan-500/60 rounded-lg bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
+              aria-label={`Navigate to Page ${pageNum}`}
+            >
+              Page {pageNum}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Right: Alert Toggle, Install Button, Help Icon, and Profile Icon */}
