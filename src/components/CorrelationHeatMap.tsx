@@ -236,7 +236,7 @@ export function CorrelationHeatMap() {
       >
         <ResponsiveHeatMapCanvas
           data={data}
-          margin={{ top: 90, right: 105, bottom: 22, left: 105 }}
+          margin={{ top: 90, right: 135, bottom: 22, left: 135 }}
 
           // Color scale for correlations (-1 to +1)
           colors={{
