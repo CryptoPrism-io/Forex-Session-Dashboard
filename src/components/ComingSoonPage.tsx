@@ -7,18 +7,23 @@ interface ComingSoonPageProps {
 const pageContent = {
   1: {
     icon: '🚀',
-    title: 'Advanced Analytics',
-    description: 'Deep insights and advanced market analysis tools'
+    title: 'Trading Desk',
+    description: 'Your comprehensive trading dashboard with real-time market data and session tracking'
   },
   2: {
-    icon: '📊',
-    title: 'Market Intelligence',
-    description: 'Real-time market data and predictive analytics'
+    icon: '🔍',
+    title: 'Screener',
+    description: 'Advanced FX pair screener with multi-criteria filtering based on volatility, correlation, momentum, and technical indicators. Filter and rank pairs to find the best trading opportunities.'
   },
   3: {
     icon: '🤖',
-    title: 'AI Insights',
-    description: 'Machine learning powered trading recommendations'
+    title: 'AI Assistant',
+    description: 'Intelligent trading assistant powered by AI. Ask questions about market conditions, get strategy recommendations, and visualize data insights through interactive charts and analysis.'
+  },
+  4: {
+    icon: '📈',
+    title: 'Backtesting',
+    description: 'Comprehensive strategy backtesting engine. Test your trading strategies against historical data and receive detailed performance tearsheets with metrics like Sharpe ratio, max drawdown, win rate, and profit factor.'
   }
 };
 

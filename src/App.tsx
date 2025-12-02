@@ -52,7 +52,7 @@ const App: React.FC = () => {
     | 'overview' | 'clocks' | 'calendar' | 'charts' | 'guide'
     | 'timeline' | 'volume' | 'volatility' | 'position'
     | 'correlation' | 'network' | 'screener' | 'aiChat'
-    | 'page1' | 'page2' | 'page3'
+    | 'page1' | 'page2' | 'page3' | 'page4'
   >('page1');
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
@@ -288,7 +288,7 @@ const App: React.FC = () => {
     </Suspense>
   );
 
-  const pageViewMatch = activeView.match(/^page([23])$/);
+  const pageViewMatch = activeView.match(/^page([234])$/);
   const activePageNumber = pageViewMatch ? Number(pageViewMatch[1]) : null;
   const desktopPageViewContent = activePageNumber ? renderComingSoonPage(activePageNumber) : undefined;
 
@@ -678,6 +678,7 @@ const App: React.FC = () => {
               {activePageNumber === 1 && renderComingSoonPage(1)}
               {activePageNumber === 2 && renderComingSoonPage(2)}
               {activePageNumber === 3 && renderComingSoonPage(3)}
+              {activePageNumber === 4 && renderComingSoonPage(4)}
             </div>
           </div>
         </div>
