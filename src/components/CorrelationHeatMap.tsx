@@ -293,7 +293,7 @@ export function CorrelationHeatMap() {
           animate={true}
           motionConfig="gentle"
 
-          // Theme
+          // Theme (matching WorldClocks styling for consistency)
           theme={{
             background: 'transparent',
             text: {
@@ -301,7 +301,8 @@ export function CorrelationHeatMap() {
               fill: '#e5e7eb',
               outlineWidth: 0,
               outlineColor: 'transparent',
-              fontWeight: 400
+              fontWeight: 600,
+              letterSpacing: 0.3
             },
             axis: {
               domain: {
@@ -313,8 +314,8 @@ export function CorrelationHeatMap() {
               legend: {
                 text: {
                   fontSize: 11,
-                  fill: '#9ca3af',
-                  fontWeight: 400
+                  fill: '#cbd5e1',
+                  fontWeight: 600
                 }
               },
               ticks: {
@@ -325,7 +326,8 @@ export function CorrelationHeatMap() {
                 text: {
                   fontSize: 12,
                   fill: '#e5e7eb',
-                  fontWeight: 400
+                  fontWeight: 600,
+                  letterSpacing: 0.3
                 }
               }
             },
