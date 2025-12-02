@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import { ResponsiveHeatMapCanvas } from '@nivo/heatmap';
 import { useFXCorrelationMatrix } from '../hooks/useFXCorrelationMatrix';
 
@@ -25,53 +25,7 @@ interface CustomTooltipProps {
   };
 }
 
-interface TooltipPosition {
-  mouseX: number;
-  mouseY: number;
-  tooltipWidth: number;
-  tooltipHeight: number;
-}
-
-// Create a portal container for tooltips to avoid clipping
-let tooltipPortal: HTMLDivElement | null = null;
-
-const getOrCreateTooltipPortal = (): HTMLDivElement => {
-  if (!tooltipPortal && typeof document !== 'undefined') {
-    tooltipPortal = document.createElement('div');
-    tooltipPortal.id = 'correlation-tooltip-portal';
-    tooltipPortal.style.position = 'fixed';
-    tooltipPortal.style.pointerEvents = 'none';
-    tooltipPortal.style.zIndex = '9999';
-    document.body.appendChild(tooltipPortal);
-  }
-  return tooltipPortal!;
-};
-
-const calculateTooltipPosition = (mouseX: number, mouseY: number): { top: number; left: number; isAbove: boolean } => {
-  const TOOLTIP_HEIGHT = 120; // Approximate height of tooltip
-  const TOOLTIP_WIDTH = 200; // Approximate width of tooltip
-  const OFFSET = 10; // Distance from cursor
-  const MARGIN = 20; // Margin from viewport edges
-
-  // Calculate if tooltip should appear above or below cursor
-  const spaceBelow = window.innerHeight - mouseY;
-  const spaceAbove = mouseY;
-  const isAbove = spaceBelow < TOOLTIP_HEIGHT + MARGIN && spaceAbove > TOOLTIP_HEIGHT + MARGIN;
-
-  // Calculate vertical position
-  const top = isAbove ? mouseY - TOOLTIP_HEIGHT - OFFSET : mouseY + OFFSET;
-
-  // Calculate horizontal position (center on cursor, constrain to viewport)
-  let left = mouseX - TOOLTIP_WIDTH / 2;
-  if (left < MARGIN) left = MARGIN;
-  if (left + TOOLTIP_WIDTH > window.innerWidth - MARGIN) {
-    left = window.innerWidth - TOOLTIP_WIDTH - MARGIN;
-  }
-
-  return { top, left, isAbove };
-};
-
-const CustomCorrelationTooltip: React.FC<CustomTooltipProps & { mousePos?: { x: number; y: number } }> = ({ cell, mousePos }) => {
+const CustomCorrelationTooltip: React.FC<CustomTooltipProps> = ({ cell }) => {
   const getCorrelationLabel = (value: number): { label: string; emoji: string; color: string } => {
     if (value > 0.7) return { label: 'Strong Positive', emoji: '🔵', color: 'text-blue-400' };
     if (value > 0.3) return { label: 'Moderate Positive', emoji: '🟢', color: 'text-green-400' };
@@ -82,24 +36,10 @@ const CustomCorrelationTooltip: React.FC<CustomTooltipProps & { mousePos?: { x: 
 
   const correlation = getCorrelationLabel(cell.value);
 
-  // Use fixed positioning if we have mouse position
-  const positionStyle = mousePos
-    ? (() => {
-        const { top, left, isAbove } = calculateTooltipPosition(mousePos.x, mousePos.y);
-        return {
-          position: 'fixed' as const,
-          top: `${top}px`,
-          left: `${left}px`,
-          pointerEvents: 'none' as const,
-          zIndex: 9999
-        };
-      })()
-    : { pointerEvents: 'none' as const };
-
   return (
     <div
       className="bg-gray-900/95 backdrop-blur-sm border border-white/20 rounded-lg p-3 text-xs shadow-xl"
-      style={positionStyle}
+      style={{ pointerEvents: 'none' }}
     >
       <div className="font-semibold text-white mb-1">
         {cell.serieId} ↔ {cell.data.x}
@@ -122,15 +62,6 @@ const CustomCorrelationTooltip: React.FC<CustomTooltipProps & { mousePos?: { x: 
 
 export function CorrelationHeatMap() {
   const { matrix, loading, error } = useFXCorrelationMatrix();
-  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    setMousePos(null);
-  }, []);
 
   // Transform matrix data to Nivo format
   const data: HeatMapSeries[] = useMemo(() => {
@@ -223,8 +154,6 @@ export function CorrelationHeatMap() {
       <div
         className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-y-auto"
         style={{ height: '600px', maxHeight: 'calc(100vh - 250px)' }}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
       >
         <ResponsiveHeatMapCanvas
           data={data}
@@ -269,7 +198,7 @@ export function CorrelationHeatMap() {
 
           // Interactions
           isInteractive={true}
-          tooltip={(props) => <CustomCorrelationTooltip {...props} mousePos={mousePos ?? undefined} />}
+          tooltip={CustomCorrelationTooltip}
 
           // Labels (disabled to save space - values visible in tooltips)
           enableLabels={false}
