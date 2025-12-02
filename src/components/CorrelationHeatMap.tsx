@@ -230,7 +230,7 @@ export function CorrelationHeatMap() {
     <div className="w-full">
       {/* HeatMap */}
       <div
-        className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-x-auto"
+        className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-hidden"
         style={{ height: '400px', minHeight: '400px' }}
         onMouseMove={handleMouseMove}
       >
