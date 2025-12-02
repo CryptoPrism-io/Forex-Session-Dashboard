@@ -43,15 +43,18 @@ export default defineConfig(({ mode }) => {
           includeAssets: ['vite.svg'],
           workbox: {
             globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+            navigateFallback: '/Forex-Session-Dashboard/index.html',
+            navigateFallbackDenylist: [/^\/api\//],
+            cleanupOutdatedCaches: true,
             runtimeCaching: [
               {
                 urlPattern: /^https:\/\/cdn\.tailwindcss\.com\/.*/i,
-                handler: 'CacheFirst',
+                handler: 'StaleWhileRevalidate',
                 options: {
                   cacheName: 'tailwind-cdn',
                   expiration: {
                     maxEntries: 10,
-                    maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                    maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
                   },
                   cacheableResponse: {
                     statuses: [0, 200]
@@ -60,12 +63,12 @@ export default defineConfig(({ mode }) => {
               },
               {
                 urlPattern: /^https:\/\/.*\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
-                handler: 'CacheFirst',
+                handler: 'StaleWhileRevalidate',
                 options: {
                   cacheName: 'images',
                   expiration: {
                     maxEntries: 50,
-                    maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                    maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
                   }
                 }
               }
