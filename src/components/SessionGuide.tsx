@@ -42,7 +42,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                     : 'text-slate-400 hover:text-slate-300'
                 }`}
               >
-                ?? Winter
+                ❄️ Winter
               </button>
               <button
                 onClick={() => setGuideTab('daylight')}
@@ -52,7 +52,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
                     : 'text-slate-400 hover:text-slate-300'
                 }`}
               >
-                ?? Summer
+                ☀️ Summer
               </button>
             </div>
           </div>
@@ -62,7 +62,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
         <div>
           <button
             onClick={() => toggleSection('mainSessions')}
-            className="w-full flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
+            className="w-full flex items-center gap-2 mb-2 min-h-touch py-3 hover:opacity-80 transition-opacity"
           >
             <IconChevronDown
               className={`w-4 h-4 transition-transform ${collapsedSections.mainSessions ? '-rotate-90' : ''}`}
@@ -218,7 +218,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
         <div>
           <button
             onClick={() => toggleSection('overlaps')}
-            className="w-full flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
+            className="w-full flex items-center gap-2 mb-2 min-h-touch py-3 hover:opacity-80 transition-opacity"
           >
             <IconChevronDown
               className={`w-4 h-4 transition-transform`}
@@ -316,7 +316,7 @@ const SessionGuide: React.FC<SessionGuideProps> = ({ currentTimezoneLabel, timez
         <div>
           <button
             onClick={() => toggleSection('killzones')}
-            className="w-full flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
+            className="w-full flex items-center gap-2 mb-2 min-h-touch py-3 hover:opacity-80 transition-opacity"
           >
             <IconChevronDown
               className={`w-4 h-4 transition-transform ${collapsedSections.killzones ? '-rotate-90' : ''}`}

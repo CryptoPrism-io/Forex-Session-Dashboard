@@ -207,8 +207,8 @@ export function CorrelationNetworkGraph() {
 
       {/* Network Graph */}
       <div
-        className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-hidden"
-        style={{ height: 'calc(100vh - 400px)' }}
+        className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-hidden min-h-[300px]"
+        style={{ height: 'clamp(300px, calc(100vh - 400px), 600px)' }}
       >
         <ResponsiveNetwork
           data={networkData}
@@ -266,7 +266,7 @@ export function CorrelationNetworkGraph() {
               Each node represents a currency pair. Lines show correlations above the threshold.
               Hover over lines for correlation values. Adjust threshold to filter weak correlations.
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+            <div className="grid grid-cols-2 tablet:grid-cols-4 gap-2 text-xs">
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-blue-600 rounded"></div>
                 <span className="text-gray-300">Strong +ve (&gt;0.7)</span>
@@ -289,7 +289,7 @@ export function CorrelationNetworkGraph() {
       </div>
 
       {/* Stats Panel */}
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mt-4 grid grid-cols-1 tablet:grid-cols-3 gap-3 tablet:gap-4">
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4">
           <div className="text-gray-400 text-sm mb-1">Currency Pairs</div>
           <div className="text-2xl font-bold text-white">{networkData.nodes.length}</div>

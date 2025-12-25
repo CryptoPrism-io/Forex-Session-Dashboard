@@ -81,7 +81,7 @@ export function BestPairsWidget() {
       ) : matrixError ? (
         <div className="text-sm text-red-400 mb-4">Error loading correlation matrix: {matrixError}</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 tablet:grid-cols-2 desktop:grid-cols-4 gap-3 mb-4">
           {topMatrixPairs.map((pair) => {
             const correlation = parseFloat(pair.correlation);
             const absCorr = Math.abs(correlation);
@@ -127,14 +127,16 @@ export function BestPairsWidget() {
         </div>
       ) : error ? (
         <div className="text-red-400">Error: {error}</div>
-      ) : bestPairs.length === 0 ? (
+      ) : bestPairs.length === 0 && topMatrixPairs.length === 0 ? (
         <div className="text-center py-8">
-          <div className="text-gray-400 mb-2">No data available yet</div>
+          <div className="text-gray-400 mb-2">No pair data available yet</div>
           <div className="text-sm text-gray-500">
-            The best pairs tracker table is currently being populated.
-            <br />
-            Check back later for recommendations.
+            Check back later for pair recommendations.
           </div>
+        </div>
+      ) : bestPairs.length === 0 ? (
+        <div className="text-center py-4 text-xs text-gray-500 border-t border-gray-700 mt-2">
+          Additional pair recommendations loading...
         </div>
       ) : (
         <div className="overflow-x-auto">
