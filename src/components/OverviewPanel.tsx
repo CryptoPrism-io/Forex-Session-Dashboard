@@ -70,16 +70,16 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
 
   return (
     <div className="h-full overflow-y-auto pb-4">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 tablet:grid-cols-12 gap-3 tablet:gap-4">
         {/* Left rail: time + sessions */}
-        <div className="col-span-12 md:col-span-8 space-y-4">
+        <div className="col-span-12 tablet:col-span-8 space-y-3 tablet:space-y-4">
           {/* Current Time Display */}
           <div className="glass-soft rounded-3xl p-4 md:p-5 shadow-2xl shadow-black/35">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg" style={{ filter: `drop-shadow(0 0 4px ${timeGlow})` }}>
                 {timeIcon}
               </span>
-              <div className="text-[9px] uppercase tracking-[0.4em] text-slate-500">
+              <div className="text-[11px] uppercase tracking-[0.3em] text-slate-500">
                 Current Time
               </div>
             </div>

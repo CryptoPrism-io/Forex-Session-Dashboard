@@ -59,20 +59,20 @@ const getImpactColor = (impact: string): string => {
 
 const getCurrencyFlag = (currency: string): string => {
   const flagMap: Record<string, string> = {
-    USD: '�YΧ�Y��',
-    EUR: '�YΦ�YΧ',
-    GBP: '�YΪ�Y��',
-    JPY: '�Y���Y��',
-    AUD: '�Y���YΧ',
-    NZD: '�Y���YΨ',
-    CAD: '�Y���Y��',
-    CHF: '�Y���Y��',
-    CNY: '�Y���Y��',
-    INR: '�YΩ�Y��',
-    SGD: '�Y���YΪ',
-    HKD: '�Y���Y��',
+    USD: '🇺🇸',
+    EUR: '🇪🇺',
+    GBP: '🇬🇧',
+    JPY: '🇯🇵',
+    AUD: '🇦🇺',
+    NZD: '🇳🇿',
+    CAD: '🇨🇦',
+    CHF: '🇨🇭',
+    CNY: '🇨🇳',
+    INR: '🇮🇳',
+    SGD: '🇸🇬',
+    HKD: '🇭🇰',
   };
-  return flagMap[currency] || '�YO?';
+  return flagMap[currency] || '🌐';
 };
 
 // Convert UTC time to selected timezone
@@ -171,7 +171,7 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
 
                 <div className="text-xs text-slate-200 font-mono flex gap-2">
                   <span className="text-slate-300">{formatTimeInTimezone(openSession.startUTC, selectedTimezone.offset)}</span>
-                  <span className="text-slate-500">�?"</span>
+                  <span className="text-slate-500">→</span>
                   <span className="text-slate-300">{formatTimeInTimezone(openSession.endUTC, selectedTimezone.offset)}</span>
                 </div>
               </div>
@@ -179,14 +179,14 @@ const WorldClockPanel: React.FC<WorldClockPanelProps> = ({
               {/* Row 2: Elapsed & Remaining Time (Secondary, Compact) */}
               <div className="flex items-center gap-2 text-xs">
                 <div className="flex items-center gap-1">
-                  <span className="text-slate-500">�?� Elapsed:</span>
+                  <span className="text-slate-500">⏱ Elapsed:</span>
                   <span className="text-emerald-300 font-mono">
                     {formatSessionTime(openSession.elapsedSeconds)}
                   </span>
                 </div>
                 <span className="text-slate-600">|</span>
                 <div className="flex items-center gap-1">
-                  <span className="text-slate-500">�?� Remaining:</span>
+                  <span className="text-slate-500">⏱ Remaining:</span>
                   <span className="text-cyan-300 font-mono">
                     {formatSessionTime(openSession.remainingSeconds)}
                   </span>

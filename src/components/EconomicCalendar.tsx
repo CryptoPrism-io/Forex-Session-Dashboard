@@ -899,16 +899,14 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
       </div>
 
       {/* Date Filter Pills */}
-      <div className="text-[8px] font-normal">
-        <DateFilterPills
-          selected={dateRangeFilter}
-          onChange={setDateRangeFilter}
-          showDatePicker={false}
-        />
-      </div>
+      <DateFilterPills
+        selected={dateRangeFilter}
+        onChange={setDateRangeFilter}
+        showDatePicker={false}
+      />
 
       {/* Multi-Select Filter Dropdowns - Desktop Only */}
-      <div className="hidden sm:flex flex-wrap items-center gap-3 mb-3 text-[8px] font-normal">
+      <div className="hidden sm:flex flex-wrap items-center gap-3 mb-3">
         <MultiSelectDropdown
           label="Importance"
           icon={
@@ -952,10 +950,10 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
       </div>
 
       {/* Mobile Filter Button */}
-      <div className="sm:hidden mb-3 text-[8px] font-normal">
+      <div className="sm:hidden mb-3">
         <button
           onClick={() => setIsMobileFilterOpen(true)}
-          className="w-full px-4 py-2.5 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-cyan-400/30 text-xs text-cyan-100 shadow-lg shadow-cyan-500/20 flex items-center justify-between active:scale-95 transition-transform"
+          className="w-full min-h-touch px-4 py-3 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-cyan-400/30 text-sm text-cyan-100 shadow-lg shadow-cyan-500/20 flex items-center justify-between active:scale-95 transition-transform"
         >
           <span className="font-medium">
             {(() => {
@@ -990,8 +988,16 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
 
       {/* Events List */}
       {!loading && !error && filteredData.length === 0 && (
-        <div className="text-center py-8 text-sm text-slate-400">
-          No economic events found for the selected filters.
+        <div className="text-center py-8 text-sm text-slate-400 space-y-3">
+          <p>No economic events found for the selected filters.</p>
+          {(selectedImpacts.length > 0 || selectedCurrencies.length > 0 || selectedEventTypes.length > 0) && (
+            <button
+              onClick={handleResetFilters}
+              className="text-xs text-cyan-400 hover:text-cyan-300 underline"
+            >
+              Reset filters to see all events
+            </button>
+          )}
         </div>
       )}
 
@@ -1052,15 +1058,15 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
                 {/* Data Row: Previous, Forecast, Actual */}
                 <div className="grid grid-cols-3 gap-1.5 sm:gap-3 text-center">
                   <div className="bg-slate-900/40 rounded-lg p-2">
-                    <div className="text-[10px] uppercase text-slate-500 mb-1">Previous</div>
+                    <div className="text-xs uppercase text-slate-500 mb-0.5">Previous</div>
                     <div className="text-sm font-mono text-slate-300">{event.previous || '--'}</div>
                   </div>
                   <div className="bg-slate-900/40 rounded-lg p-2">
-                    <div className="text-[10px] uppercase text-slate-500 mb-1">Forecast</div>
+                    <div className="text-xs uppercase text-slate-500 mb-0.5">Forecast</div>
                     <div className="text-sm font-mono text-slate-300">{event.forecast || '--'}</div>
                   </div>
                   <div className="bg-slate-900/40 rounded-lg p-2">
-                    <div className="text-[10px] uppercase text-slate-500 mb-1">Actual</div>
+                    <div className="text-xs uppercase text-slate-500 mb-0.5">Actual</div>
                     <div className={`text-sm font-mono font-semibold ${
                       !event.actual ? 'text-slate-500' :
                       event.actual_status === 'better' ? 'text-green-400' :

@@ -216,7 +216,7 @@ const PairsToTrade: React.FC<PairsToTradeProps> = ({
               </span>
             </div>
             {/* Category Badge */}
-            <span className="text-[7px] px-1 py-0.5 rounded bg-slate-700/40 text-slate-400 uppercase tracking-wider">
+            <span className="text-[10px] px-1 py-0.5 rounded bg-slate-700/40 text-slate-400 uppercase tracking-wider">
               {pair.category}
             </span>
           </div>
@@ -224,8 +224,8 @@ const PairsToTrade: React.FC<PairsToTradeProps> = ({
           {/* Volume Bar */}
           <div className="mb-1.5">
             <div className="flex items-center justify-between mb-0.5">
-              <span className="text-[7px] uppercase tracking-wide text-slate-500">Volume</span>
-              <span className="text-[8px] font-mono font-bold text-cyan-400">{pair.volume}</span>
+              <span className="text-[10px] uppercase tracking-wide text-slate-500">Volume</span>
+              <span className="text-[11px] font-mono font-bold text-cyan-400">{pair.volume}</span>
             </div>
             <div className="h-1 bg-slate-900/60 rounded-full overflow-hidden">
               <div
@@ -242,12 +242,12 @@ const PairsToTrade: React.FC<PairsToTradeProps> = ({
           {/* Spread + Volatility Badges */}
           <div className="grid grid-cols-2 gap-1">
             <div className="bg-slate-900/40 rounded-lg p-1 text-center">
-              <div className="text-[7px] uppercase tracking-wide text-slate-500">Spread</div>
-              <div className="text-[9px] font-bold text-blue-400 font-mono">{pair.spread}</div>
+              <div className="text-[10px] uppercase tracking-wide text-slate-500">Spread</div>
+              <div className="text-xs font-bold text-blue-400 font-mono">{pair.spread}</div>
             </div>
             <div className={`rounded-lg p-1 text-center border ${getVolatilityColor(pair.volatility)}`}>
-              <div className="text-[7px] uppercase tracking-wide opacity-70">Vol</div>
-              <div className="text-[8px] font-bold">{pair.volatility.replace(' ', '')}</div>
+              <div className="text-[10px] uppercase tracking-wide opacity-70">Vol</div>
+              <div className="text-[11px] font-bold">{pair.volatility.replace(' ', '')}</div>
             </div>
           </div>
         </motion.div>

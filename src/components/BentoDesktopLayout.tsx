@@ -145,7 +145,7 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
           <div className="glass-soft rounded-2xl p-3 shadow-xl shadow-black/30 flex-shrink-0">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-base">{timeIcon}</span>
-              <div className="text-[8px] uppercase tracking-widest text-slate-500 flex-1">Time</div>
+              <div className="text-[11px] uppercase tracking-widest text-slate-500 flex-1">Time</div>
             </div>
             <div className={`text-2xl font-bold bg-gradient-to-r ${timeGradient} bg-clip-text text-transparent font-mono mb-1`}>
               {timeFormatted}
@@ -163,7 +163,7 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
           {/* Active Sessions */}
           {activeSessions.length > 0 && (
             <div className="glass-soft rounded-2xl p-3 shadow-xl shadow-black/30 flex-shrink-0">
-              <h3 className="text-[8px] uppercase tracking-widest text-slate-500 mb-2">Active Now</h3>
+              <h3 className="text-[11px] uppercase tracking-widest text-slate-500 mb-2">Active Now</h3>
               <div className="space-y-2">
                 {activeSessions.map((session) => {
                   const totalSeconds = session.elapsedSeconds + session.remainingSeconds;
@@ -189,7 +189,7 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
                           </span>
                         </div>
                         <span
-                          className="px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider rounded-full"
+                          className="px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider rounded-full"
                           style={{
                             backgroundColor: `${session.color}20`,
                             color: session.color,
@@ -215,13 +215,13 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
                       {/* Time Info */}
                       <div className="grid grid-cols-2 gap-1.5">
                         <div className="bg-slate-900/40 rounded-lg p-1.5 text-center">
-                          <div className="text-[8px] uppercase tracking-wide text-slate-500">Elapsed</div>
+                          <div className="text-[11px] uppercase tracking-wide text-slate-500">Elapsed</div>
                           <div className="text-[10px] font-bold text-emerald-400 font-mono">
                             {formatSessionTime(session.elapsedSeconds)}
                           </div>
                         </div>
                         <div className="bg-slate-900/40 rounded-lg p-1.5 text-center">
-                          <div className="text-[8px] uppercase tracking-wide text-slate-500">Left</div>
+                          <div className="text-[11px] uppercase tracking-wide text-slate-500">Left</div>
                           <div className="text-[10px] font-bold text-amber-400 font-mono">
                             {formatSessionTime(session.remainingSeconds)}
                           </div>
@@ -243,7 +243,7 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
 
           {/* Pairs to Trade */}
           <div className="glass-soft rounded-2xl p-3 shadow-xl shadow-black/30 flex-1 min-h-0 overflow-y-auto">
-            <h3 className="text-[8px] uppercase tracking-widest text-slate-500 mb-2">Pairs to Trade</h3>
+            <h3 className="text-[11px] uppercase tracking-widest text-slate-500 mb-2">Pairs to Trade</h3>
             <PairsToTrade
               activeSessions={activeSessions}
               sessionStatus={sessionStatus}
