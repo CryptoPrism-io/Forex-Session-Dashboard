@@ -1,11 +1,11 @@
-/* Custom AG Grid Dark Theme for Economic Calendar - Glassmorphism Style */
+/* Custom AG Grid Dark Theme for Economic Calendar - Glassmorphism Style - DARKER THEME */
 
 .ag-theme-alpine-dark {
-  --ag-background-color: rgba(15, 23, 42, 0.4);
-  --ag-header-background-color: rgba(30, 41, 59, 0.6);
-  --ag-odd-row-background-color: rgba(15, 23, 42, 0.2);
-  --ag-row-hover-color: rgba(51, 65, 85, 0.4);
-  --ag-border-color: rgba(71, 85, 105, 0.3);
+  --ag-background-color: rgba(5, 10, 20, 0.6);
+  --ag-header-background-color: rgba(10, 15, 28, 0.8);
+  --ag-odd-row-background-color: rgba(8, 12, 22, 0.3);
+  --ag-row-hover-color: rgba(20, 30, 50, 0.5);
+  --ag-border-color: rgba(50, 60, 80, 0.25);
   --ag-header-foreground-color: #e2e8f0;
   --ag-foreground-color: #e2e8f0;
   --ag-font-size: 12px;
@@ -13,7 +13,7 @@
   --ag-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   backdrop-filter: blur(12px);
   border-radius: 12px;
-  border: 1px solid rgba(71, 85, 105, 0.3);
+  border: 1px solid rgba(50, 60, 80, 0.25);
   overflow: hidden;
 }
 
@@ -22,8 +22,8 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  border-bottom: 1px solid rgba(71, 85, 105, 0.4);
-  background: rgba(30, 41, 59, 0.7);
+  border-bottom: 1px solid rgba(50, 60, 80, 0.3);
+  background: rgba(10, 15, 28, 0.85);
 }
 
 .ag-theme-alpine-dark .ag-header-cell-label {
@@ -33,12 +33,12 @@
 }
 
 .ag-theme-alpine-dark .ag-row {
-  border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+  border-bottom: 1px solid rgba(30, 40, 60, 0.25);
   transition: background-color 0.2s ease;
 }
 
 .ag-theme-alpine-dark .ag-row:hover {
-  background-color: rgba(51, 65, 85, 0.3) !important;
+  background-color: rgba(30, 45, 70, 0.35) !important;
 }
 
 .ag-theme-alpine-dark .ag-cell {
@@ -52,22 +52,22 @@
   border-right: none !important;
 }
 
-/* Custom scrollbar for AG Grid */
+/* Custom scrollbar for AG Grid - darker */
 .ag-theme-alpine-dark .ag-body-viewport::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 .ag-theme-alpine-dark .ag-body-viewport::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(5, 10, 20, 0.6);
   border-radius: 4px;
 }
 
 .ag-theme-alpine-dark .ag-body-viewport::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.5);
+  background: rgba(60, 75, 100, 0.5);
   border-radius: 4px;
 }
 
 .ag-theme-alpine-dark .ag-body-viewport::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.7);
+  background: rgba(80, 100, 130, 0.6);
 }

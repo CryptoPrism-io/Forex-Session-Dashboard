@@ -398,7 +398,87 @@ const cityBadges = useMemo(
 
       {/* Tools row 2: modes + filters (timeline/volume only) */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Mobile: Compact dropdown selector with inline filters */}
+        <div className="md:hidden flex items-center gap-2 w-full">
+          <select
+            value={viewMode}
+            onChange={(e) => setViewMode(e.target.value as any)}
+            className="flex-1 px-3 py-2.5 text-sm font-semibold rounded-lg bg-slate-950/90 border border-cyan-400/40 text-cyan-100 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 0.75rem center',
+              backgroundSize: '1.25rem',
+              paddingRight: '2.5rem',
+            }}
+          >
+            <option value="timeline">Session Timeline</option>
+            <option value="volume">Session Volume</option>
+            <option value="volatility">Volatility</option>
+            <option value="position">Position Size</option>
+            <option value="correlation">Correlation Matrix</option>
+            <option value="ai">AI Suggestions</option>
+          </select>
+          {/* Mobile filters - compact icon buttons */}
+          {(viewMode === 'timeline' || viewMode === 'volume') && (
+            <>
+              <PopoverMenu
+                trigger={
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                  </svg>
+                }
+                triggerClassName={`p-2.5 rounded-lg backdrop-blur-md border transition-all duration-200 ${
+                  showEventFilterMenu
+                    ? 'bg-cyan-500/30 border-cyan-400/60 text-cyan-100'
+                    : 'bg-slate-900/40 border-slate-700/30 text-slate-300'
+                }`}
+                menuClassName="w-48"
+                isOpen={showEventFilterMenu}
+                onOpenChange={setShowEventFilterMenu}
+              >
+                <div className="p-3">
+                  <MenuSection title="Layers">
+                    <CheckboxMenuItem
+                      label="Sessions"
+                      checked={visibleLayers.sessions}
+                      onChange={(checked) => setVisibleLayers({ ...visibleLayers, sessions: checked })}
+                    />
+                    <CheckboxMenuItem
+                      label="Overlaps"
+                      checked={visibleLayers.overlaps}
+                      onChange={(checked) => setVisibleLayers({ ...visibleLayers, overlaps: checked })}
+                    />
+                    <CheckboxMenuItem
+                      label="Killzones"
+                      checked={visibleLayers.killzones}
+                      onChange={(checked) => setVisibleLayers({ ...visibleLayers, killzones: checked })}
+                    />
+                    <CheckboxMenuItem
+                      label="Volume"
+                      checked={visibleLayers.volume}
+                      onChange={(checked) => setVisibleLayers({ ...visibleLayers, volume: checked })}
+                    />
+                    <CheckboxMenuItem
+                      label="News"
+                      checked={visibleLayers.news}
+                      onChange={(checked) => setVisibleLayers({ ...visibleLayers, news: checked })}
+                    />
+                  </MenuSection>
+                </div>
+              </PopoverMenu>
+              <button
+                onClick={() => setShowDSTMenu(!showDSTMenu)}
+                className="p-2.5 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-900/40 border border-slate-700/30 text-slate-300"
+              >
+                {isDSTActive ? '☀️' : '🌙'}
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Desktop/Tablet: Full button row */}
+        <div className="hidden md:flex flex-wrap items-center gap-2">
           {[
             { key: 'timeline', label: 'Session Timeline' },
             { key: 'volume', label: 'Session Volume' },
@@ -410,10 +490,10 @@ const cityBadges = useMemo(
             <button
               key={mode.key}
               onClick={() => setViewMode(mode.key as any)}
-              className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
+              className={`px-3 py-2.5 min-h-touch text-xs font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
                 viewMode === mode.key
                   ? 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
-                  : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
+                  : 'bg-slate-900/40 border-slate-700/30 hover:bg-slate-800/50 hover:border-slate-600/40 text-slate-300'
               }`}
             >
               {mode.label}
@@ -421,8 +501,9 @@ const cityBadges = useMemo(
           ))}
         </div>
 
+        {/* Desktop/Tablet filters - hidden on mobile */}
         {(viewMode === 'timeline' || viewMode === 'volume') && (
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
             <PopoverMenu
               trigger={
                 <>
@@ -432,7 +513,7 @@ const cityBadges = useMemo(
                   <span>Filters</span>
                 </>
               }
-              triggerClassName={`px-2.5 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md border flex items-center gap-1 transition-all duration-200 ${
+              triggerClassName={`px-3 py-2.5 min-h-touch text-xs font-semibold rounded-lg backdrop-blur-md border flex items-center gap-1.5 transition-all duration-200 ${
                 showEventFilterMenu
                   ? 'bg-cyan-500/30 border-cyan-400/60 text-cyan-100 shadow-lg shadow-cyan-500/25'
                   : 'bg-slate-700/20 border-slate-600/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-500/60 hover:text-slate-200 hover:shadow-md active:bg-slate-700/60'
@@ -579,7 +660,7 @@ const cityBadges = useMemo(
               <button
                 key={mode.key}
                 onClick={() => setViewMode(mode.key as any)}
-                className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
+                className={`px-3 py-2.5 min-h-touch text-xs font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
                   viewMode === mode.key
                     ? 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
                     : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
@@ -603,7 +684,7 @@ const cityBadges = useMemo(
                   <span>Filters</span>
                 </>
               }
-              triggerClassName={`px-2.5 py-1.5 text-xs font-semibold rounded-lg backdrop-blur-md border flex items-center gap-1 transition-all duration-200 ${
+              triggerClassName={`px-3 py-2.5 min-h-touch text-xs font-semibold rounded-lg backdrop-blur-md border flex items-center gap-1.5 transition-all duration-200 ${
                 showEventFilterMenu
                   ? 'bg-cyan-500/30 border-cyan-400/60 text-cyan-100 shadow-lg shadow-cyan-500/25'
                   : 'bg-slate-700/20 border-slate-600/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-500/60 hover:text-slate-200 hover:shadow-md active:bg-slate-700/60'

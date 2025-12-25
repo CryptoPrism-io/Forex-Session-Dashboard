@@ -48,15 +48,36 @@ export function FXToolsPanel({
   ];
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-900">
+    <div className="w-full h-full flex flex-col bg-black">
       {/* Tools Header */}
-      <div className="px-6 py-3 border-b border-gray-700">
+      <div className="px-6 py-3 border-b border-gray-800/50">
         <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
           TOOLS
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex gap-2 flex-wrap">
+        {/* Tab Navigation - Mobile: dropdown, Desktop: buttons */}
+        {/* Mobile dropdown */}
+        <div className="md:hidden">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value as ToolTab)}
+            className="w-full px-4 py-3 text-sm font-semibold rounded-lg bg-slate-950/90 border border-cyan-400/40 text-cyan-100 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 0.75rem center',
+              backgroundSize: '1.25rem',
+              paddingRight: '2.5rem',
+            }}
+          >
+            {tabs.map((tab) => (
+              <option key={tab.id} value={tab.id}>{tab.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Desktop/Tablet buttons */}
+        <div className="hidden md:flex gap-2 flex-wrap">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -65,7 +86,7 @@ export function FXToolsPanel({
                 px-4 py-2 rounded-lg text-sm font-medium transition-all
                 ${activeTab === tab.id
                   ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
-                  : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50 hover:text-gray-300'
+                  : 'bg-gray-950/70 text-gray-400 border border-gray-800/50 hover:bg-gray-900/70 hover:text-gray-300'
                 }
               `}
             >

@@ -15,6 +15,7 @@ import HelpGuideModal from './components/HelpGuideModal';
 import { usePWAInstall } from './hooks/usePWAInstall';
 import { useSessionAlerts } from './hooks/useSessionAlerts';
 import { useReducedMotion } from './hooks/useReducedMotion';
+import { useViewport } from './utils/breakpoints';
 import { TIMEZONES, SESSIONS_STANDARD, SESSIONS_DAYLIGHT } from './constants';
 import { Timezone, SessionData, ChartBarDetails } from './types';
 import { IconClock, IconGlobe, IconTarget, IconBarChartBig, IconCalendarTab, IconChartsTab, IconGuideTab, IconWorldClockTab } from './components/icons';
@@ -31,6 +32,7 @@ const RiskCalculator = lazy(() => import('./components/RiskCalculator').then(m =
 const VolatilityPanel = lazy(() => import('./components/VolatilityPanel').then(m => ({ default: m.VolatilityPanel })));
 const CorrelationHeatMap = lazy(() => import('./components/CorrelationHeatMap').then(m => ({ default: m.CorrelationHeatMap })));
 const CorrelationNetworkGraph = lazy(() => import('./components/CorrelationNetworkGraph').then(m => ({ default: m.CorrelationNetworkGraph })));
+const FXToolsPanel = lazy(() => import('./components/FXToolsPanel').then(m => ({ default: m.FXToolsPanel })));
 const ComingSoonPage = lazy(() => import('./components/ComingSoonPage').then(m => ({ default: m.ComingSoonPage })));
 
 export type SessionStatus = 'OPEN' | 'CLOSED' | 'WARNING';
@@ -49,27 +51,35 @@ const App: React.FC = () => {
   const [isTimezoneMenuOpen, setIsTimezoneMenuOpen] = useState(false);
   const [manualDSTOverride, setManualDSTOverride] = useState<boolean | null>(null);
   const [activeView, setActiveView] = useState<
-    | 'overview' | 'clocks' | 'calendar' | 'charts' | 'guide'
+    | 'overview' | 'clocks' | 'calendar' | 'charts' | 'guide' | 'fxdata'
     | 'timeline' | 'volume' | 'volatility' | 'position'
     | 'correlation' | 'network' | 'screener' | 'aiChat'
     | 'page1' | 'page2' | 'page3' | 'page4'
   >('page1');
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [showHelpModal, setShowHelpModal] = useState(false);
 
-  // Initialize left pane state from localStorage, default to closed on mobile
+  // Use viewport hook for responsive behavior
+  const { isMobile, isTablet, isDesktop, isLandscape, isTabletPortrait } = useViewport();
+
+  // Initialize left pane state - orientation-aware for tablets
+  // Mobile: closed, Tablet portrait: closed, Tablet landscape: open, Desktop: open
   const [leftPaneOpen, setLeftPaneOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('leftPaneOpen');
       if (saved !== null) return JSON.parse(saved);
     } catch (e) {
       console.warn('Failed to read localStorage:', e);
-      // Clear corrupted data
       localStorage.removeItem('leftPaneOpen');
     }
-    // Default: closed on mobile, open on desktop
-    return typeof window !== 'undefined' && window.innerWidth >= 768;
+    // Default based on viewport
+    const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    const height = typeof window !== 'undefined' ? window.innerHeight : 768;
+    const isLandscapeInit = width > height;
+    // Mobile: closed, Tablet portrait: closed, Tablet landscape/Desktop: open
+    if (width < 768) return false; // Mobile
+    if (width < 1024 && !isLandscapeInit) return false; // Tablet portrait
+    return true; // Tablet landscape or Desktop
   });
 
   // Persist left pane state to localStorage
@@ -126,14 +136,7 @@ const App: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Detect desktop/mobile on resize
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 1024);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  // Note: Desktop/mobile detection now handled by useViewport hook
 
   // Auto-detect timezone based on browser's native timezone
   useEffect(() => {
@@ -325,8 +328,7 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen font-sans text-slate-200 overflow-x-hidden overflow-y-auto" style={{
-      background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%)',
-      backdropFilter: 'blur(10px)'
+      background: 'transparent'
     }}>
       {/* Desktop Bento Grid Layout (>= 1024px) */}
       {isDesktop ? (
@@ -625,6 +627,19 @@ const App: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {/* FX Tools Panel - Mobile aggregated view */}
+              {activeView === 'fxdata' && (
+                <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading FX Tools...</div>}>
+                  <FXToolsPanel
+                    selectedTimezone={selectedTimezone}
+                    currentTime={currentTime}
+                    nowLine={nowLine}
+                    sessionStatus={sessionStatus}
+                    currentDSTStatus={currentDSTStatus}
+                  />
+                </Suspense>
               )}
 
               {/* FX Tools Views */}

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { IconCalendarTab, IconChartsTab, IconGuideTab, IconWorldClockTab, IconTarget, IconTradingFlow, IconGlobe } from './icons';
 
 type ViewType = 'overview' | 'calendar' | 'charts' | 'guide' | 'clocks' | 'fxdata' | 'screener' | 'aiChat';
@@ -8,16 +8,46 @@ interface BottomNavBarProps {
   onViewChange: (view: ViewType) => void;
 }
 
-const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [showScrollButton, setShowScrollButton] = useState(false);
+// Icon component for "More" menu
+const IconMore: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className, style }) => (
+  <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+    <circle cx="12" cy="12" r="1" fill="currentColor" />
+    <circle cx="12" cy="5" r="1" fill="currentColor" />
+    <circle cx="12" cy="19" r="1" fill="currentColor" />
+  </svg>
+);
 
-  const tabs = [
+// Icon for Tools
+const IconTools: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className, style }) => (
+  <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+  </svg>
+);
+
+const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange }) => {
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setShowMoreMenu(false);
+      }
+    };
+    if (showMoreMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMoreMenu]);
+
+  // Primary tabs - 5 main navigation items (no scrolling needed)
+  const primaryTabs = [
     {
       id: 'overview' as ViewType,
-      label: 'Overview',
+      label: 'Home',
       icon: IconTarget,
-      activeClass: 'bg-blue-500/20 border border-blue-400/40',
+      activeClass: 'bg-blue-500/25 border-blue-400/50',
       textClass: 'text-blue-300',
       glowColor: '#60a5fa'
     },
@@ -25,149 +55,168 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange })
       id: 'calendar' as ViewType,
       label: 'Calendar',
       icon: IconCalendarTab,
-      activeClass: 'bg-emerald-500/20 border border-emerald-400/40',
+      activeClass: 'bg-emerald-500/25 border-emerald-400/50',
       textClass: 'text-emerald-300',
       glowColor: '#6ee7b7'
     },
     {
       id: 'charts' as ViewType,
-      label: 'Charts',
+      label: 'Sessions',
       icon: IconChartsTab,
-      activeClass: 'bg-cyan-500/20 border border-cyan-400/40',
+      activeClass: 'bg-cyan-500/25 border-cyan-400/50',
       textClass: 'text-cyan-300',
       glowColor: '#67e8f9'
+    },
+    {
+      id: 'fxdata' as ViewType,
+      label: 'Tools',
+      icon: IconTools,
+      activeClass: 'bg-amber-500/25 border-amber-400/50',
+      textClass: 'text-amber-300',
+      glowColor: '#fcd34d'
+    },
+  ];
+
+  // Secondary items in "More" menu
+  const moreItems = [
+    {
+      id: 'screener' as ViewType,
+      label: 'Screener',
+      icon: IconTradingFlow,
+      textClass: 'text-pink-300',
+      glowColor: '#f9a8d4'
+    },
+    {
+      id: 'clocks' as ViewType,
+      label: 'World Clocks',
+      icon: IconWorldClockTab,
+      textClass: 'text-violet-300',
+      glowColor: '#c4b5fd'
     },
     {
       id: 'guide' as ViewType,
       label: 'Guide',
       icon: IconGuideTab,
-      activeClass: 'bg-amber-500/20 border border-amber-400/40',
       textClass: 'text-amber-300',
       glowColor: '#fcd34d'
     },
     {
-      id: 'clocks' as ViewType,
-      label: 'World',
-      icon: IconWorldClockTab,
-      activeClass: 'bg-violet-500/20 border border-violet-400/40',
-      textClass: 'text-violet-300',
-      glowColor: '#c4b5fd'
-    },
-    {
-      id: 'fxdata' as ViewType,
-      label: 'FX Tools',
-      icon: IconTarget,
-      activeClass: 'bg-cyan-500/20 border border-cyan-400/40',
-      textClass: 'text-cyan-300',
-      glowColor: '#67e8f9'
-    },
-    {
-      id: 'screener' as ViewType,
-      label: 'Screener',
-      icon: IconTradingFlow,
-      activeClass: 'bg-pink-500/20 border border-pink-400/40',
-      textClass: 'text-pink-300',
-      glowColor: '#f9a8d4'
-    },
-    {
       id: 'aiChat' as ViewType,
-      label: 'AI Chat',
+      label: 'AI Assistant',
       icon: IconGlobe,
-      activeClass: 'bg-purple-500/20 border border-purple-400/40',
       textClass: 'text-purple-300',
       glowColor: '#c084fc'
     },
   ];
 
-  const handleScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setShowScrollButton(scrollLeft + clientWidth < scrollWidth - 10);
-    }
-  };
-
-  const scrollRight = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 200, behavior: 'smooth' });
-    }
-  };
+  // Check if current view is in "More" menu
+  const isMoreActive = moreItems.some(item => item.id === activeView);
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 safe-area-inset-bottom">
-      <div className="relative">
-        {/* Horizontal Scrollable Container */}
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/98 backdrop-blur-xl border-t border-slate-800/30 safe-area-inset-bottom">
+      {/* More Menu Popup */}
+      {showMoreMenu && (
         <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          className="flex items-center gap-2 px-2 py-2 overflow-x-auto scrollbar-hide"
-          style={{
-            scrollSnapType: 'x mandatory',
-            WebkitOverflowScrolling: 'touch',
-          }}
+          ref={moreMenuRef}
+          className="absolute bottom-full right-2 mb-2 w-48 bg-slate-950/98 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-2xl shadow-black/60 overflow-hidden"
         >
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeView === tab.id;
-
+          {moreItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeView === item.id;
             return (
               <button
-                key={tab.id}
-                onClick={() => onViewChange(tab.id)}
-                className={`flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-200 min-w-[72px] flex-shrink-0 scroll-snap-align-start ${
-                  isActive ? tab.activeClass : 'hover:bg-slate-800/50'
+                key={item.id}
+                onClick={() => {
+                  onViewChange(item.id);
+                  setShowMoreMenu(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 transition-all ${
+                  isActive
+                    ? 'bg-slate-800/60'
+                    : 'hover:bg-slate-800/40 active:bg-slate-800/60'
                 }`}
               >
                 <Icon
-                  className={`w-6 h-6 transition-colors ${
-                    isActive ? tab.textClass : 'text-slate-400'
-                  }`}
-                  style={
-                    isActive
-                      ? { filter: `drop-shadow(0 0 4px ${tab.glowColor})` }
-                      : undefined
-                  }
+                  className={`w-5 h-5 ${isActive ? item.textClass : 'text-slate-400'}`}
+                  style={isActive ? { filter: `drop-shadow(0 0 4px ${item.glowColor})` } : undefined}
                 />
-                <span
-                  className={`text-[10px] font-medium transition-colors whitespace-nowrap ${
-                    isActive ? tab.textClass : 'text-slate-500'
-                  }`}
-                >
-                  {tab.label}
+                <span className={`text-sm font-medium ${isActive ? item.textClass : 'text-slate-300'}`}>
+                  {item.label}
                 </span>
+                {isActive && (
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-current" style={{ color: item.glowColor }} />
+                )}
               </button>
             );
           })}
         </div>
+      )}
 
-        {/* Fade Effect on Right */}
-        <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-slate-900/95 to-transparent pointer-events-none" />
+      {/* Main Tab Bar - 5 equal-width tabs */}
+      <div className="flex items-stretch justify-around px-1 py-1.5">
+        {primaryTabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeView === tab.id;
 
-        {/* Scroll Button */}
-        {showScrollButton && (
-          <button
-            onClick={scrollRight}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-800/80 backdrop-blur-sm border border-slate-600/50 flex items-center justify-center shadow-lg transition-all hover:bg-slate-700/80"
-            aria-label="Scroll right"
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onViewChange(tab.id)}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 mx-0.5 rounded-xl transition-all duration-200 min-h-[56px] ${
+                isActive
+                  ? `${tab.activeClass} border`
+                  : 'border border-transparent hover:bg-slate-900/50 active:bg-slate-900/70'
+              }`}
+            >
+              <Icon
+                className={`w-6 h-6 transition-colors ${
+                  isActive ? tab.textClass : 'text-slate-400'
+                }`}
+                style={
+                  isActive
+                    ? { filter: `drop-shadow(0 0 6px ${tab.glowColor})` }
+                    : undefined
+                }
+              />
+              <span
+                className={`text-[11px] font-medium transition-colors ${
+                  isActive ? tab.textClass : 'text-slate-500'
+                }`}
+              >
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
+
+        {/* More Button */}
+        <button
+          onClick={() => setShowMoreMenu(!showMoreMenu)}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 mx-0.5 rounded-xl transition-all duration-200 min-h-[56px] ${
+            isMoreActive || showMoreMenu
+              ? 'bg-purple-500/25 border border-purple-400/50'
+              : 'border border-transparent hover:bg-slate-900/50 active:bg-slate-900/70'
+          }`}
+        >
+          <IconMore
+            className={`w-6 h-6 transition-colors ${
+              isMoreActive || showMoreMenu ? 'text-purple-300' : 'text-slate-400'
+            }`}
+            style={
+              isMoreActive || showMoreMenu
+                ? { filter: 'drop-shadow(0 0 6px #c084fc)' }
+                : undefined
+            }
+          />
+          <span
+            className={`text-[11px] font-medium transition-colors ${
+              isMoreActive || showMoreMenu ? 'text-purple-300' : 'text-slate-500'
+            }`}
           >
-            <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        )}
+            More
+          </span>
+        </button>
       </div>
-
-      <style>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scroll-snap-align-start {
-          scroll-snap-align: start;
-        }
-      `}</style>
     </nav>
   );
 };
