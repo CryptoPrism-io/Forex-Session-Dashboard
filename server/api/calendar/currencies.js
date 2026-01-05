@@ -1,4 +1,4 @@
-import pool from '../lib/db.js';
+import { fxPool } from '../../db.js';
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
       ORDER BY currency ASC
     `;
 
-    const result = await pool.query(query);
+    const result = await fxPool.query(query);
 
     return res.status(200).json({
       success: true,
