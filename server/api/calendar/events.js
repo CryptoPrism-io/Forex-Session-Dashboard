@@ -33,10 +33,12 @@ export default async function handler(req, res) {
         impact,
         event,
         actual,
+        actual_status,
         forecast,
         previous,
-        source,
-        event_uid
+        source_scope as source,
+        event_uid,
+        datetime_utc
       FROM economic_calendar_ff
       WHERE date_utc >= $1::date
         AND date_utc < ($2::date + INTERVAL '1 day')
