@@ -64,6 +64,77 @@ All notable changes to the Forex Session Trading Dashboard project.
 - Added soft blur effect for depth
 - Optimized animation performance
 
+## [2025-12-24] - Mobile Layout Improvements
+
+### Fixed - Mobile Layout for OverviewPanel
+**What**: Improved responsive layout for OverviewPanel on mobile devices
+**Why**: Panel was not displaying correctly on smaller screens
+**How**:
+- Adjusted grid layouts for mobile breakpoints
+- Fixed overflow issues on small screens
+
+## [2025-12-20] - Page Navigation & Backtesting
+
+### Added - Multi-Page Navigation System
+**What**: Added Page 1, 2, 3, 4 navigation buttons to top navbar with Backtesting page
+**Why**: Enable navigation between different dashboard sections
+**How**:
+- Added navigation buttons to top navbar
+- Page 1: Full Bento dashboard layout
+- Page 4: Backtesting (Coming Soon)
+- Fixed broken navigation button issues
+- Renamed page navigation for clarity
+
+### Added - ComingSoon Page Enhancement
+**What**: Enhanced ComingSoon page with rich card-based UI design
+**Why**: Provide better placeholder for upcoming features
+**How**:
+- Implemented card-based layout
+- Added feature preview cards
+- Applied glass morphism styling
+
+## [2025-12-15] - Correlation Heatmap & Network Graph
+
+### Added - Nivo Correlation HeatMap
+**What**: Interactive correlation heatmap visualization using Nivo library
+**Why**: Visualize currency pair correlations in an intuitive matrix format
+**How**:
+- Integrated Nivo HeatMap component with FX Tools Panel
+- Added flexible field name handling for correlation matrix API
+- Implemented portal rendering with boundary detection for tooltips
+- Dynamic tooltip positioning near cursor using global mouse tracking
+- Reduced heatmap cell size by 50% for better overview
+- Canvas reduced by 25% to accommodate axis labels
+- Margins optimized for 1920x1080 without scrolling
+
+### Improved - Heatmap Layout & Styling
+**What**: Transformed heatmap to horizontal landscape orientation with improved styling
+**Why**: Better fit for widescreen displays and improved readability
+**How**:
+- Horizontal layout transformation
+- Disabled horizontal scrolling
+- Consolidated info panel into single concise design
+- Improved axis label clarity and spacing
+- Matched axis labels to WorldClocks styling
+- Applied World Clocks title styling to Correlation Scale label
+
+### Added - Interactive Network Graph
+**What**: Network graph visualization for correlation relationships
+**Why**: Alternative visualization showing correlation connections between pairs
+**How**:
+- Added interactive network graph component
+- Added Network Corr Map as separate tab in FX Tools
+- Nodes represent currency pairs, edges represent correlations
+- Color-coded by correlation strength
+
+### Improved - FX Tools Navigation
+**What**: Moved FX Tools navigation to centered top bar
+**Why**: Better accessibility and cleaner layout
+**How**:
+- Centered navigation buttons
+- Cleaned up Correlation Matrix tab (removed Pairs Strategy subtabs)
+- Removed bottom axis for cleaner appearance
+
 ## [2025-12-01] - Sprint 2: Live FX Data Integration & Project Structure Fix
 
 ### Added - Enhanced Risk Calculator with Live FX Data
