@@ -2,6 +2,68 @@
 
 All notable changes to the Forex Session Trading Dashboard project.
 
+## [2026-01-06] - Database Migration to fx_global
+
+### Changed - Database Migration from dbcp to fx_global
+**What**: Migrated all calendar API endpoints to use `fx_global` database instead of `dbcp`
+**Why**: The forex factory scraper writes fresh data to `fx_global`, but the app was reading stale data from `dbcp` (last updated Dec 30, 2025)
+**How**:
+- Updated `env.yaml` to set `POSTGRES_DB: fx_global`
+- Updated `server/routes/calendar.js` to query from fx_global database
+- Fixed schema mismatch: Changed `source` column to `source_scope as source`
+- Added `datetime_utc` column to query results
+- Calendar now shows live 2026 economic events (43 events for Jan 6, 2026)
+
+### Fixed - Calendar API Schema Compatibility
+**What**: Updated SQL queries to match fx_global database schema
+**Why**: fx_global table has `source_scope` column instead of `source`, causing "column does not exist" errors
+**How**:
+- Modified `/events` endpoint query: `source_scope as source`
+- Modified `/today` endpoint query: `source_scope as source`
+- Added `datetime_utc` field to API responses
+- Both endpoints now return data correctly from fx_global
+
+## [2026-01-05] - Build Fix & Cloud Run Recovery
+
+### Fixed - Missing breakpoints.ts Utility
+**What**: Added missing `src/utils/breakpoints.ts` file that was not committed to git
+**Why**: Cloud Run deployment was failing with "Could not resolve './utils/breakpoints' from 'src/App.tsx'"
+**How**:
+- Committed the untracked `breakpoints.ts` file containing:
+  - `BREAKPOINTS` constants (sm: 640, md: 768, lg: 1024, xl: 1280)
+  - `useViewport()` hook for responsive design
+  - `useMediaQuery()` hook for CSS media query detection
+  - `getResponsiveValue()` utility for breakpoint-based values
+  - `TOUCH_TARGET_MIN` constant (44px for accessibility)
+- Build now succeeds on Cloud Run
+
+### Fixed - GCP Billing & Cloud Run Deployment
+**What**: Resolved Cloud Run deployment failures due to disabled GCP billing
+**Why**: Billing was disabled on `social-data-pipeline-and-push` project, causing PERMISSION_DENIED errors
+**How**:
+- Re-enabled billing on GCP project
+- Re-enabled Artifact Registry API
+- Successful deployment after billing propagation (~5 minutes)
+
+## [2025-12-25] - Visual Design Enhancements
+
+### Added - Darker Theme with Grid Pattern
+**What**: Enhanced background with darker theme, grid pattern, and glowing orbs
+**Why**: Improve visual aesthetics with premium dark theme appearance
+**How**:
+- Added animated glowing orbs in background
+- Implemented soft blurred grid pattern overlay
+- Enhanced glass morphism effects
+- Brighter accent colors for better contrast
+
+### Improved - Background Visual Effects
+**What**: Enhanced background orbs with brighter colors and soft blur
+**Why**: Previous orbs were too subtle; needed more visual impact
+**How**:
+- Increased orb brightness and saturation
+- Added soft blur effect for depth
+- Optimized animation performance
+
 ## [2025-12-01] - Sprint 2: Live FX Data Integration & Project Structure Fix
 
 ### Added - Enhanced Risk Calculator with Live FX Data
