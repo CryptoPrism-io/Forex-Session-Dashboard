@@ -58,9 +58,10 @@ router.get('/events', async (req, res) => {
         actual,
         forecast,
         previous,
-        source,
+        source_scope as source,
         event_uid,
-        actual_status
+        actual_status,
+        datetime_utc
       FROM economic_calendar_ff
       WHERE date_utc >= $1::date
         AND date_utc <= $2::date
@@ -204,9 +205,10 @@ router.get('/today', async (req, res) => {
         actual,
         forecast,
         previous,
-        source,
+        source_scope as source,
         event_uid,
-        actual_status
+        actual_status,
+        datetime_utc
       FROM economic_calendar_ff
       WHERE date_utc >= $1::date
         AND date_utc < $2::date
