@@ -8,6 +8,20 @@
 
 ---
 
+## Migration Status
+
+> **Current State (2026-01-19):** Both GitHub Actions and Cloud Run Jobs are running in parallel.
+> All jobs use UPSERT, so no duplicates are created.
+>
+> **Plan:** After 1-2 days of monitoring, disable GitHub Actions scheduled workflows:
+> ```bash
+> gh workflow disable 'ForexFactory Realtime Update (2-3 Minutes)' --repo CryptoPrism-io/ForexFactory-Calendar-Scraper
+> gh workflow disable 'ForexFactory Daily Sync (Month View)' --repo CryptoPrism-io/ForexFactory-Calendar-Scraper
+> gh workflow disable 'CI/CD Pipeline' --repo CryptoPrism-io/DataPipeLine-FX-APP
+> ```
+
+---
+
 ## Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
