@@ -41,14 +41,16 @@ router.get('/events', async (req, res) => {
     const start = startDate || week.start;
     const end = endDate || week.end;
 
-    // Build dynamic query
+    // Build dynamic query with DEDUPLICATION
     // Note: Database stores date_utc (UTC date with rollover) and time_utc (UTC time)
     // Use inclusive range [start, end] to respect exact date boundaries from frontend
-    let query = `
-      SELECT
+    // DEDUPLICATION: Use DISTINCT ON to remove duplicate events (same event + currency + date)
+    // Prefer entries with event_uid (NOT NULL) over those without, then by most recent created_at
+    let baseQuery = `
+      SELECT DISTINCT ON (event, currency, date_utc::date)
         id,
         date,
-        date_utc::date as date_utc,
+        to_char(date_utc, 'YYYY-MM-DD') as date_utc,
         time,
         time_utc,
         time_zone,
@@ -72,20 +74,26 @@ router.get('/events', async (req, res) => {
 
     // Add currency filter if provided
     if (currency) {
-      query += ` AND UPPER(currency) = UPPER($${paramIndex})`;
+      baseQuery += ` AND UPPER(currency) = UPPER($${paramIndex})`;
       params.push(currency);
       paramIndex++;
     }
 
     // Add impact filter if provided
     if (impact) {
-      query += ` AND UPPER(impact) = UPPER($${paramIndex})`;
+      baseQuery += ` AND UPPER(impact) = UPPER($${paramIndex})`;
       params.push(impact);
       paramIndex++;
     }
 
-    // Order by UTC date and time - most recent first
-    query += ` ORDER BY date_utc DESC, time_utc DESC`;
+    // DISTINCT ON requires ORDER BY to start with the DISTINCT columns
+    baseQuery += ` ORDER BY event, currency, date_utc::date, event_uid NULLS LAST, created_at DESC NULLS LAST`;
+
+    // Wrap in subquery to apply final ordering by date/time for display
+    const query = `
+      SELECT * FROM (${baseQuery}) AS deduplicated
+      ORDER BY date_utc DESC, time_utc DESC
+    `;
 
     const result = await pool.query(query, params);
 
@@ -191,27 +199,32 @@ router.get('/today', async (req, res) => {
     const tomorrowISO = tomorrowDate.toISOString().split('T')[0];
 
     // Note: Database stores date_utc (UTC date with rollover) and time_utc (UTC time)
+    // DEDUPLICATION: Use DISTINCT ON to remove duplicate events (same event + currency + date)
+    // Prefer entries with event_uid (NOT NULL) over those without, then by most recent created_at
     const query = `
-      SELECT
-        id,
-        date,
-        to_char(date_utc, 'YYYY-MM-DD') as date_utc,
-        time,
-        time_utc,
-        time_zone,
-        currency,
-        impact,
-        event,
-        actual,
-        forecast,
-        previous,
-        source_scope as source,
-        event_uid,
-        actual_status,
-        datetime_utc
-      FROM economic_calendar_ff
-      WHERE date_utc >= $1::date
-        AND date_utc < $2::date
+      SELECT * FROM (
+        SELECT DISTINCT ON (event, currency, date_utc::date)
+          id,
+          date,
+          to_char(date_utc, 'YYYY-MM-DD') as date_utc,
+          time,
+          time_utc,
+          time_zone,
+          currency,
+          impact,
+          event,
+          actual,
+          forecast,
+          previous,
+          source_scope as source,
+          event_uid,
+          actual_status,
+          datetime_utc
+        FROM economic_calendar_ff
+        WHERE date_utc >= $1::date
+          AND date_utc < $2::date
+        ORDER BY event, currency, date_utc::date, event_uid NULLS LAST, created_at DESC NULLS LAST
+      ) AS deduplicated
       ORDER BY time_utc ASC, event ASC
     `;
 
