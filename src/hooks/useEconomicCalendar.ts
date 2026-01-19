@@ -33,7 +33,9 @@ export interface EconomicCalendarResponse {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-const REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes in milliseconds
+const REFRESH_INTERVAL_NORMAL = 5 * 60 * 1000; // 5 minutes normally
+const REFRESH_INTERVAL_IMMINENT = 30 * 1000; // 30 seconds when events are imminent
+const IMMINENT_THRESHOLD_MS = 5 * 60 * 1000; // Events within 5 minutes are "imminent"
 
 export function useEconomicCalendar(
   startDate?: string,
@@ -88,15 +90,50 @@ export function useEconomicCalendar(
     fetchCalendarData();
   }, [fetchCalendarData]);
 
-  // Auto-refresh every 15 minutes
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      console.log('Auto-refreshing economic calendar data...');
-      fetchCalendarData();
-    }, REFRESH_INTERVAL);
+  // Check if any events are imminent (within 5 minutes of release or just passed)
+  const hasImminentEvents = useCallback(() => {
+    const now = Date.now();
+    return data.some(event => {
+      if (!event.time_utc || !event.date_utc) return false;
+      try {
+        const [hours, minutes] = event.time_utc.split(':').map(Number);
+        if (isNaN(hours) || isNaN(minutes)) return false;
 
+        const eventDate = new Date(event.date_utc);
+        eventDate.setUTCHours(hours, minutes, 0, 0);
+        const eventTime = eventDate.getTime();
+
+        // Check if event is within threshold (before or after release)
+        // Also refresh frequently for 2 minutes after release to catch actual values
+        const timeDiff = eventTime - now;
+        const isImminent = timeDiff > 0 && timeDiff <= IMMINENT_THRESHOLD_MS;
+        const justPassed = timeDiff <= 0 && timeDiff > -2 * 60 * 1000 && !event.actual;
+
+        return isImminent || justPassed;
+      } catch {
+        return false;
+      }
+    });
+  }, [data]);
+
+  // Smart auto-refresh: faster when events are imminent
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval>;
+
+    const scheduleRefresh = () => {
+      const interval = hasImminentEvents() ? REFRESH_INTERVAL_IMMINENT : REFRESH_INTERVAL_NORMAL;
+
+      intervalId = setInterval(() => {
+        console.log(`Auto-refreshing economic calendar (${hasImminentEvents() ? 'imminent mode' : 'normal mode'})...`);
+        fetchCalendarData();
+      }, interval);
+    };
+
+    scheduleRefresh();
+
+    // Re-check interval when data changes (events may become imminent)
     return () => clearInterval(intervalId);
-  }, [fetchCalendarData]);
+  }, [fetchCalendarData, hasImminentEvents]);
 
   return {
     data,
