@@ -646,11 +646,12 @@ const App: React.FC = () => {
               {activeView === 'timeline' && selectedTimezone && currentTime && (
                 <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
                   <ForexChart
-                    selectedTimezone={selectedTimezone}
-                    currentTime={currentTime}
                     nowLine={nowLine || 0}
+                    currentTimezoneLabel={selectedTimezone.label}
+                    timezoneOffset={selectedTimezone.offset}
                     sessionStatus={sessionStatus || {}}
-                    currentDSTStatus={currentDSTStatus || false}
+                    currentTime={currentTime}
+                    isDSTActive={currentDSTStatus || false}
                   />
                 </Suspense>
               )}
@@ -658,10 +659,10 @@ const App: React.FC = () => {
               {activeView === 'volume' && selectedTimezone && currentTime && (
                 <Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-400">Loading...</div>}>
                   <VolumeChart
-                    selectedTimezone={selectedTimezone}
-                    currentTime={currentTime}
                     nowLine={nowLine || 0}
-                    sessionStatus={sessionStatus || {}}
+                    currentTimezoneLabel={selectedTimezone.label}
+                    timezoneOffset={selectedTimezone.offset}
+                    currentTime={currentTime}
                   />
                 </Suspense>
               )}
