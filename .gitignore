@@ -25,3 +25,12 @@ dist-ssr
 
 # Claude Code local settings
 .claude
+.mcp.json
+.playwright-mcp/
+
+# Scraper (separate repo)
+scraper/
+
+# Temp files
+temp-*.json
+nul
