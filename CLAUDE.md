@@ -27,12 +27,14 @@ Forex-Session-Dashboard/
 
 ### Data Pipelines (Nested Repos)
 
-| Directory | Purpose | Repo | Schedule |
-|-----------|---------|------|----------|
-| `scraper/` | ForexFactory economic calendar | [ForexFactory-Calendar-Scraper](https://github.com/CryptoPrism-io/ForexFactory-Calendar-Scraper) | Every 5 min (GitHub Actions) |
-| `fx-pipeline/` | OANDA prices, volatility, correlations | [DataPipeLine-FX-APP](https://github.com/CryptoPrism-io/DataPipeLine-FX-APP) | Hourly (Docker scheduler) |
+| Directory | Purpose | Repo | Cloud Run Schedule |
+|-----------|---------|------|-------------------|
+| `scraper/` | ForexFactory economic calendar | [ForexFactory-Calendar-Scraper](https://github.com/CryptoPrism-io/ForexFactory-Calendar-Scraper) | Every 3 min (Cloud Scheduler) |
+| `fx-pipeline/` | OANDA prices, volatility, correlations | [DataPipeLine-FX-APP](https://github.com/CryptoPrism-io/DataPipeLine-FX-APP) | Hourly + Daily (Cloud Scheduler) |
 
 Both are independent git repos (with their own `.git/`) and are excluded from the main repo via `.gitignore`.
+
+> **See [docs/GCP_RUNNER.md](docs/GCP_RUNNER.md) for complete Cloud Run infrastructure documentation.**
 
 ### Database: fx_global
 
@@ -404,14 +406,26 @@ Example:
 
 ## Deployment Strategy
 
-### Cloud Run (Full-Stack)
-Deployed via GitHub Actions workflow (`.github/workflows/deploy.yml`):
-- Builds React frontend with `VITE_API_BASE_URL` pointing to Cloud Run backend
-- Builds and deploys containerized Node.js backend using `Dockerfile`
-- Uses GCP Workload Identity Federation for secure authentication
-- Serves both frontend (static files) and API from same Cloud Run service
-- Environment: `social-data-pipeline-and-push` project, `us-central1` region
-- Service: `forex-dashboard` (hosted at `https://forex-dashboard-963362833537.us-central1.run.app`)
+> **Full documentation: [docs/GCP_RUNNER.md](docs/GCP_RUNNER.md)**
+
+### Cloud Run Services & Jobs
+
+| Resource | Type | Schedule | Purpose |
+|----------|------|----------|---------|
+| `forex-dashboard` | Service | Always-on | Web app (React + Express API) |
+| `forexfactory-scraper` | Job | Every 3 min | Economic calendar scraping |
+| `fx-pipeline-hourly` | Job | Hourly | OHLC data + volatility |
+| `fx-pipeline-daily` | Job | Daily 00:00 UTC | Correlation analysis |
+
+### Auto-Deployment
+
+All deployments are triggered automatically on push to `main`:
+
+| Repo | Workflow | Deploys |
+|------|----------|---------|
+| `Forex-Session-Dashboard` | `deploy.yml` | forex-dashboard service |
+| `ForexFactory-Calendar-Scraper` | `deploy-cloud-run-job.yml` | forexfactory-scraper job |
+| `DataPipeLine-FX-APP` | `deploy-cloud-run-jobs.yml` | fx-pipeline-hourly + daily jobs |
 
 ### GitHub Pages (Frontend-Only)
 Deployed via workflow (`.github/workflows/pages.yml`):
@@ -423,6 +437,7 @@ Deployed via workflow (`.github/workflows/pages.yml`):
 - `Dockerfile` - Multi-stage: builds React frontend, serves with Node.js backend
 - `env.yaml` - Cloud Run environment variables (VITE_API_BASE_URL, DATABASE_URL)
 - `server/server.js` - Configured to serve React dist/ and handle SPA routing
+- `docs/GCP_RUNNER.md` - Complete Cloud Run infrastructure documentation
 
 ## Important Technical Notes
 
