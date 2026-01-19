@@ -31,6 +31,9 @@ dist-ssr
 # Scraper (separate repo)
 scraper/
 
+# FX Pipeline (separate repo)
+fx-pipeline/
+
 # Temp files
 temp-*.json
 nul

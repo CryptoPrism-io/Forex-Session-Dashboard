@@ -9,8 +9,60 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 The application consists of:
 - **Frontend**: React 19.2 SPA with TypeScript and Recharts
 - **Backend**: Node.js/Express API serving economic calendar data from PostgreSQL
-- **Database**: PostgreSQL Cloud SQL with forex economic calendar events
+- **Database**: PostgreSQL Cloud SQL (fx_global) with forex economic calendar events and FX data
 - **Deployment**: Dual deployment strategy (Cloud Run for full stack, GitHub Pages for frontend-only)
+- **Data Pipelines**: Two nested repos for data ingestion (see below)
+
+## Unified Data Architecture
+
+This repository serves as the control center for all interdependent components:
+
+```
+Forex-Session-Dashboard/
+├── src/                 → Frontend (React)
+├── server/              → Backend API (Express) ───┐
+├── scraper/             → Economic calendar data ──┼──→ fx_global DB
+└── fx-pipeline/         → Prices/Volatility/Corr ──┘
+```
+
+### Data Pipelines (Nested Repos)
+
+| Directory | Purpose | Repo | Schedule |
+|-----------|---------|------|----------|
+| `scraper/` | ForexFactory economic calendar | [ForexFactory-Calendar-Scraper](https://github.com/CryptoPrism-io/ForexFactory-Calendar-Scraper) | Every 5 min (GitHub Actions) |
+| `fx-pipeline/` | OANDA prices, volatility, correlations | [DataPipeLine-FX-APP](https://github.com/CryptoPrism-io/DataPipeLine-FX-APP) | Hourly (Docker scheduler) |
+
+Both are independent git repos (with their own `.git/`) and are excluded from the main repo via `.gitignore`.
+
+### Database: fx_global
+
+All data flows into the `fx_global` PostgreSQL database:
+
+| Table | Source | Purpose |
+|-------|--------|---------|
+| `economic_calendar_ff` | scraper/ | Economic events (dates, currencies, impact, actual/forecast) |
+| `oanda_candles` | fx-pipeline/ | OHLC price data |
+| `volatility_metrics` | fx-pipeline/ | HV, ATR, Bollinger Bands |
+| `correlation_matrix` | fx-pipeline/ | Pairwise correlations |
+| `best_pairs_tracker` | fx-pipeline/ | Trading pair recommendations |
+
+### Working with Data Pipelines
+
+```bash
+# Update scraper code
+cd scraper && git pull origin main
+
+# Update FX pipeline code
+cd fx-pipeline && git pull origin main
+
+# Run scraper manually
+cd scraper/scraper_2.2 && python jobs/realtime_15min.py
+
+# Run FX pipeline job manually
+cd fx-pipeline && docker-compose exec scheduler python /app/jobs/hourly_job.py
+```
+
+Each nested repo has its own `CLAUDE.md` with detailed instructions.
 
 **Key Tech Stack:**
 - React 19.2 with TypeScript
@@ -523,3 +575,89 @@ docker run -p 3000:5000 -e VITE_API_BASE_URL=http://localhost:5000 forex-dashboa
 | Animation not firing | Verify `initial` prop is set on motion component; check variant names match between `variants` and `animate` props |
 | Exit animation skipped | Wrap in `<AnimatePresence>` and add `exit` prop to motion component; ensure unique `key` prop on each element |
 | Reduced motion not working | Check `prefers-reduced-motion` in browser DevTools (Chrome: Rendering tab → Emulate CSS prefers-reduced-motion) |
+
+## Skills & Sub-agents
+
+This project includes custom Skills and Sub-agents to streamline development workflows.
+
+### Directory Structure
+```
+.claude/
+├── skills/
+│   ├── react-component/SKILL.md    # React/TypeScript component patterns
+│   ├── api-endpoint/SKILL.md       # Express.js API patterns
+│   ├── database-query/SKILL.md     # PostgreSQL query patterns
+│   └── design-system/SKILL.md      # Visual design specs (colors, spacing, typography)
+├── agents/
+│   ├── frontend-reviewer.md        # Static code review (reads code)
+│   ├── ux-reviewer.md              # Runtime UI review (uses Playwright)
+│   ├── api-developer.md            # Backend development
+│   └── deployment-manager.md       # DevOps operations
+└── settings.local.json             # Project permissions
+```
+
+### Skills (Procedural Manuals)
+
+Skills are automatically triggered based on keywords in your prompt:
+
+| Skill | Triggers | Purpose |
+|-------|----------|---------|
+| `react-component` | component, react, tsx, ui | TypeScript components, Framer Motion, hooks |
+| `api-endpoint` | api, endpoint, route, express | Express routes, response formats |
+| `database-query` | database, sql, postgres, query | PostgreSQL queries, migrations |
+| `design-system` | design, style, color, theme, visual | Colors, typography, spacing, session themes |
+
+### Sub-agents (Specialist Workers)
+
+Invoke agents explicitly for specialized tasks:
+
+```
+> Use the frontend-reviewer agent to review the SessionClocks component
+> Use the ux-reviewer agent to screenshot localhost:3000 and verify against design-system
+> Use the api-developer agent to create an endpoint for user preferences
+> Use the deployment-manager agent to deploy to Cloud Run
+```
+
+| Agent | Mode | Skills | MCP Tools | Purpose |
+|-------|------|--------|-----------|---------|
+| `frontend-reviewer` | Read-only | react-component | Glob, Grep, LSP | Static code analysis |
+| `ux-reviewer` | Read-only | design-system | **Playwright** | Runtime UI verification |
+| `api-developer` | Full-access | api-endpoint, database-query | Bash | Create/modify API endpoints |
+| `deployment-manager` | Full-access | - | Bash, gcloud | Cloud Run, GitHub Actions |
+
+### Static vs Runtime Review (Key Distinction)
+
+| What | `frontend-reviewer` | `ux-reviewer` |
+|------|---------------------|---------------|
+| **Analyzes** | Code files | Rendered pixels |
+| **Sees** | TypeScript, JSX | Actual UI |
+| **Catches** | Type errors, code smells | Visual bugs, layout issues |
+| **Verifies** | "Is the code correct?" | "Does it look right?" |
+| **Animation** | "Is hook called?" | "Does it animate correctly?" |
+| **Responsive** | Infers from classes | Actually tests viewports |
+| **Requires** | Nothing | Dev server running |
+
+**Recommended workflow:**
+1. Write code
+2. Run `frontend-reviewer` for code quality
+3. Start dev server (`npm run dev`)
+4. Run `ux-reviewer` with Playwright for visual verification
+
+### Context File
+
+The `context.md` file in the project root serves as:
+- Central task tracking document
+- Agent handoff log
+- Architecture decision record
+
+**Update Protocol:**
+1. Before starting work: Check current tasks in `context.md`
+2. After completing work: Update handoff log with findings
+3. When making decisions: Document in Architecture Decisions section
+
+### Best Practices
+
+1. **Use Skills** for repeatable patterns that apply across the project
+2. **Use Agents** for specific workflows requiring focused analysis
+3. **Update context.md** after significant changes for continuity
+4. **Read SKILL.md files** to understand project conventions before making changes
