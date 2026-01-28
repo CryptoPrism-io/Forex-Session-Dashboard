@@ -45,7 +45,10 @@ router.get('/events', async (req, res) => {
     // Note: Database stores date_utc (UTC date with rollover) and time_utc (UTC time)
     // Use inclusive range [start, end] to respect exact date boundaries from frontend
     // DEDUPLICATION: Use DISTINCT ON to remove duplicate events (same event + currency + date)
-    // Prefer entries with event_uid (NOT NULL) over those without, then by most recent created_at
+    // Priority order:
+    // 1. Prefer entries WITH actual data (actual IS NOT NULL)
+    // 2. Then prefer entries with event_uid
+    // 3. Then prefer most recent created_at
     let baseQuery = `
       SELECT DISTINCT ON (event, currency, date_utc::date)
         id,
@@ -87,7 +90,8 @@ router.get('/events', async (req, res) => {
     }
 
     // DISTINCT ON requires ORDER BY to start with the DISTINCT columns
-    baseQuery += ` ORDER BY event, currency, date_utc::date, event_uid NULLS LAST, created_at DESC NULLS LAST`;
+    // Prefer records with actual data, then with event_uid, then most recent
+    baseQuery += ` ORDER BY event, currency, date_utc::date, (actual IS NOT NULL AND actual != '') DESC, event_uid NULLS LAST, created_at DESC NULLS LAST`;
 
     // Wrap in subquery to apply final ordering by date/time for display
     const query = `
@@ -200,7 +204,7 @@ router.get('/today', async (req, res) => {
 
     // Note: Database stores date_utc (UTC date with rollover) and time_utc (UTC time)
     // DEDUPLICATION: Use DISTINCT ON to remove duplicate events (same event + currency + date)
-    // Prefer entries with event_uid (NOT NULL) over those without, then by most recent created_at
+    // Priority: actual data > event_uid > most recent created_at
     const query = `
       SELECT * FROM (
         SELECT DISTINCT ON (event, currency, date_utc::date)
@@ -223,7 +227,7 @@ router.get('/today', async (req, res) => {
         FROM economic_calendar_ff
         WHERE date_utc >= $1::date
           AND date_utc < $2::date
-        ORDER BY event, currency, date_utc::date, event_uid NULLS LAST, created_at DESC NULLS LAST
+        ORDER BY event, currency, date_utc::date, (actual IS NOT NULL AND actual != '') DESC, event_uid NULLS LAST, created_at DESC NULLS LAST
       ) AS deduplicated
       ORDER BY time_utc ASC, event ASC
     `;
