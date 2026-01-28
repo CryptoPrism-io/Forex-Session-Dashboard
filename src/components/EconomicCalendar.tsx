@@ -730,14 +730,14 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
     {
       headerName: 'Date',
       field: 'date',
-      width: 120,
-      cellStyle: { fontFamily: 'monospace', fontSize: '10px', color: '#94a3b8' },
+      width: 100,
+      cellStyle: { fontFamily: 'monospace', fontSize: '9px', color: '#94a3b8' },
       cellRenderer: (params: any) => {
         if (params.data?.isDetailRow) return null;
         return (
           <div>
-            <div>{params.value}</div>
-            <div style={{ color: '#64748b' }}>{params.data.displayTime}</div>
+            <div style={{ fontSize: '9px' }}>{params.value}</div>
+            <div style={{ color: '#64748b', fontSize: '9px' }}>{params.data.displayTime}</div>
           </div>
         );
       },
@@ -767,13 +767,13 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
       headerName: 'Event',
       field: 'event',
       flex: 1,
-      minWidth: 200,
+      minWidth: 180,
       cellRenderer: (params: any) => {
         if (params.data?.isDetailRow) return null;
         return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px' }}>{getCurrencyFlag(params.data.currency)}</span>
-            <span style={{ color: '#e2e8f0', fontWeight: '500' }}>{params.value}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '11px' }}>{getCurrencyFlag(params.data.currency)}</span>
+            <span style={{ color: '#e2e8f0', fontWeight: '500', fontSize: '10px' }}>{params.value}</span>
           </div>
         );
       },
@@ -863,37 +863,37 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
   }, [eventTypes, data]);
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden glass-soft rounded-2xl p-3 shadow-2xl shadow-black/35 text-[11px] font-normal">
+    <div className="w-full h-full flex flex-col overflow-hidden glass-soft rounded-lg sm:rounded-2xl p-0.5 sm:p-2.5 shadow-2xl shadow-black/35 text-[10px] font-normal">
       {/* Header with Filters */}
-      <div className="relative flex flex-wrap items-center justify-between gap-2 mb-2 flex-shrink-0 text-[11px] font-normal">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-xs font-semibold text-slate-100">Economic Calendar</h2>
+      <div className="relative flex flex-wrap items-center justify-between gap-1.5 mb-1.5 flex-shrink-0 text-[10px] font-normal">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <h2 className="text-[11px] font-semibold text-slate-100">Economic Calendar</h2>
           {fullscreenButton}
-          <span className="text-xs text-slate-300/90">
+          <span className="text-[10px] text-slate-300/90">
             ({filteredData.length} events)
           </span>
           {lastUpdatedStamp && (
-            <span className="text-xs text-slate-400 flex items-center gap-1">
+            <span className="text-[9px] text-slate-400 flex items-center gap-1">
               <span aria-hidden="true">•</span>
               Updated {lastUpdatedStamp}
             </span>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 justify-end text-[10px] sm:text-[11px]">
+        <div className="flex flex-wrap items-center gap-1.5 justify-end text-[9px] sm:text-[10px]">
           {/* Timezone Indicator */}
-          <div className="px-3 py-1.5 text-xs font-semibold rounded-full bg-yellow-500/20 border border-yellow-400/40 text-yellow-100 shadow-inner shadow-yellow-500/30">
+          <div className="px-2 py-1 text-[10px] font-semibold rounded-full bg-yellow-500/20 border border-yellow-400/40 text-yellow-100 shadow-inner shadow-yellow-500/30">
             Times: {timezoneLabel}
           </div>
 
           <button
             onClick={refetch}
-            className="w-9 h-9 flex items-center justify-center rounded-full border border-slate-600/50 bg-slate-800/40 hover:border-cyan-400/40 hover:bg-cyan-500/10 text-slate-100 transition-all disabled:opacity-50 disabled:pointer-events-none shadow-inner shadow-black/25"
+            className="w-7 h-7 flex items-center justify-center rounded-full border border-slate-600/50 bg-slate-800/40 hover:border-cyan-400/40 hover:bg-cyan-500/10 text-slate-100 transition-all disabled:opacity-50 disabled:pointer-events-none shadow-inner shadow-black/25"
             title="Refresh feed"
             aria-label="Refresh feed"
             disabled={loading}
           >
-            <IconRefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <IconRefreshCcw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
@@ -950,36 +950,36 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
       </div>
 
       {/* Mobile Filter Button */}
-      <div className="sm:hidden mb-3">
+      <div className="sm:hidden mb-2">
         <button
           onClick={() => setIsMobileFilterOpen(true)}
-          className="w-full min-h-touch px-4 py-3 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-cyan-400/30 text-sm text-cyan-100 shadow-lg shadow-cyan-500/20 flex items-center justify-between active:scale-95 transition-transform"
+          className="w-full px-2 py-1.5 rounded-lg bg-slate-900/60 backdrop-blur-xl border border-cyan-400/30 text-[10px] text-cyan-100 shadow-sm shadow-cyan-500/10 flex items-center justify-between active:scale-95 transition-transform"
         >
           <span className="font-medium">
             {(() => {
               const totalFilters = selectedImpacts.length + selectedCurrencies.length + selectedEventTypes.length;
-              if (totalFilters === 0) return 'All Filters';
+              if (totalFilters === 0) return 'Filters';
               return `Filters (${totalFilters})`;
             })()}
           </span>
-          <span className="text-cyan-400">Edit</span>
+          <span className="text-cyan-400 text-[9px]">Edit</span>
         </button>
       </div>
 
       {/* Loading State */}
       {loading && data.length === 0 && (
-        <div className="flex items-center justify-center py-8">
-          <div className="text-sm text-slate-400">Loading economic events...</div>
+        <div className="flex items-center justify-center py-6">
+          <div className="text-[11px] text-slate-400">Loading economic events...</div>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3 mb-3">
-          <p className="text-xs text-red-400">Error: {error}</p>
+        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-2 mb-2">
+          <p className="text-[10px] text-red-400">Error: {error}</p>
           <button
             onClick={refetch}
-            className="mt-2 px-2 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 rounded text-red-300"
+            className="mt-1.5 px-2 py-0.5 text-[10px] bg-red-500/20 hover:bg-red-500/30 rounded text-red-300"
           >
             Retry
           </button>
@@ -988,12 +988,12 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
 
       {/* Events List */}
       {!loading && !error && filteredData.length === 0 && (
-        <div className="text-center py-8 text-sm text-slate-400 space-y-3">
+        <div className="text-center py-6 text-[11px] text-slate-400 space-y-2">
           <p>No economic events found for the selected filters.</p>
           {(selectedImpacts.length > 0 || selectedCurrencies.length > 0 || selectedEventTypes.length > 0) && (
             <button
               onClick={handleResetFilters}
-              className="text-xs text-cyan-400 hover:text-cyan-300 underline"
+              className="text-[10px] text-cyan-400 hover:text-cyan-300 underline"
             >
               Reset filters to see all events
             </button>
@@ -1002,7 +1002,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
       )}
 
       {/* Mobile Card View (visible on mobile) */}
-      <div className="md:hidden flex-1 overflow-auto space-y-2 pb-4">
+      <div className="md:hidden flex-1 overflow-auto space-y-1 pb-2">
         {Object.entries(eventsByDate)
           .flatMap(([date, events]) =>
             events.map((event, idx) => ({ date, event, idx }))
@@ -1019,32 +1019,32 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
             return (
               <div
                 key={`${date}-${event.id}-${idx}-mobile`}
-                className="glass-soft rounded-2xl p-4 shadow-xl shadow-black/35 hover:border-slate-500/50 transition-all"
+                className="glass-soft rounded-lg p-1.5 shadow-lg shadow-black/30 hover:border-slate-500/50 transition-all"
               >
                 {/* Header Row: Flag + Event Name + Impact */}
-                <div className="flex items-start gap-3 mb-3">
-                  <span className="text-2xl flex-shrink-0">{getCurrencyFlag(event.currency)}</span>
+                <div className="flex items-start gap-2 mb-2">
+                  <span className="text-base flex-shrink-0">{getCurrencyFlag(event.currency)}</span>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-slate-100 mb-1">{event.event}</h3>
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <h3 className="text-[11px] font-semibold text-slate-100 mb-0.5">{event.event}</h3>
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
                       <span>{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                       <span>•</span>
                       <span>{displayTime}</span>
                     </div>
                   </div>
                   <div
-                    className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                    className="w-2 h-2 rounded-full flex-shrink-0 mt-0.5"
                     style={{
                       backgroundColor: impactColor,
-                      boxShadow: `0 0 8px ${impactColor}`,
+                      boxShadow: `0 0 6px ${impactColor}`,
                     }}
                     title={event.impact || 'low'}
                   />
                 </div>
 
                 {/* Time Left Badge */}
-                <div className="mb-3">
-                  <span className={`inline-block px-3 py-1.5 rounded-full text-sm font-semibold ${
+                <div className="mb-2">
+                  <span className={`inline-block px-2 py-1 rounded-full text-[10px] font-semibold ${
                     timeLeft === 'Passed' ? 'bg-slate-700/40 text-slate-400' :
                     timeLeft.includes('d') ? 'bg-slate-700/40 text-slate-300' :
                     parseInt(timeLeft) < 2 ? 'bg-red-500/20 text-red-300 border border-red-400/40' :
@@ -1056,18 +1056,18 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
                 </div>
 
                 {/* Data Row: Previous, Forecast, Actual */}
-                <div className="grid grid-cols-3 gap-1.5 sm:gap-3 text-center">
-                  <div className="bg-slate-900/40 rounded-lg p-2">
-                    <div className="text-xs uppercase text-slate-500 mb-0.5">Previous</div>
-                    <div className="text-sm font-mono text-slate-300">{event.previous || '--'}</div>
+                <div className="grid grid-cols-3 gap-1 text-center">
+                  <div className="bg-slate-900/40 rounded-lg p-1.5">
+                    <div className="text-[9px] uppercase text-slate-500 mb-0.5">Previous</div>
+                    <div className="text-[10px] font-mono text-slate-300">{event.previous || '--'}</div>
                   </div>
-                  <div className="bg-slate-900/40 rounded-lg p-2">
-                    <div className="text-xs uppercase text-slate-500 mb-0.5">Forecast</div>
-                    <div className="text-sm font-mono text-slate-300">{event.forecast || '--'}</div>
+                  <div className="bg-slate-900/40 rounded-lg p-1.5">
+                    <div className="text-[9px] uppercase text-slate-500 mb-0.5">Forecast</div>
+                    <div className="text-[10px] font-mono text-slate-300">{event.forecast || '--'}</div>
                   </div>
-                  <div className="bg-slate-900/40 rounded-lg p-2">
-                    <div className="text-xs uppercase text-slate-500 mb-0.5">Actual</div>
-                    <div className={`text-sm font-mono font-semibold ${
+                  <div className="bg-slate-900/40 rounded-lg p-1.5">
+                    <div className="text-[9px] uppercase text-slate-500 mb-0.5">Actual</div>
+                    <div className={`text-[10px] font-mono font-semibold ${
                       !event.actual ? 'text-slate-500' :
                       event.actual_status === 'better' ? 'text-green-400' :
                       event.actual_status === 'worse' ? 'text-red-400' :
@@ -1116,32 +1116,32 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
         isOpen={isMobileFilterOpen}
         onClose={() => setIsMobileFilterOpen(false)}
         title="Filter Events"
-        maxHeight="85vh"
+        maxHeight="70vh"
       >
-        <div className="p-4 space-y-4">
+        <div className="p-2 space-y-2.5">
           {/* Currency Filter */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-xs uppercase text-slate-400 tracking-wide font-semibold">Currencies</div>
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="text-[9px] uppercase text-slate-400 tracking-wide font-semibold">Currencies</div>
               <button
                 onClick={selectAllCurrencies}
-                className="text-xs text-cyan-400 hover:text-cyan-300 font-medium"
+                className="text-[9px] text-cyan-400 hover:text-cyan-300 font-medium"
               >
-                {selectedCurrencies.length === 0 ? 'All Selected' : 'Select All'}
+                {selectedCurrencies.length === 0 ? 'All' : 'Select All'}
               </button>
             </div>
 
             {/* Search Input */}
             <input
               type="text"
-              placeholder="Search currencies..."
+              placeholder="Search..."
               value={currencySearchQuery}
               onChange={(e) => setCurrencySearchQuery(e.target.value)}
-              className="w-full px-3 py-2 mb-3 text-sm rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+              className="w-full px-2 py-1 mb-1.5 text-[10px] rounded bg-slate-800/60 border border-slate-700/50 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-400/50"
             />
 
             {/* Currency Chips */}
-            <FilterChipGroup columns={3} gap={2}>
+            <FilterChipGroup columns={4} gap={1}>
               {filteredCurrencies.map((currency) => (
                 <FilterChip
                   key={currency}
@@ -1150,9 +1150,9 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
                   isSelected={selectedCurrencies.length === 0 || selectedCurrencies.includes(currency)}
                   onClick={() => toggleCurrency(currency)}
                   variant="currency"
-                  size="md"
+                  size="xs"
                   icon={
-                    <span className="text-sm">{getCurrencyFlag(currency)}</span>
+                    <span className="text-[10px]">{getCurrencyFlag(currency)}</span>
                   }
                 />
               ))}
@@ -1161,24 +1161,24 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
 
           {/* Impact Filter */}
           <div>
-            <div className="text-xs uppercase text-slate-400 tracking-wide font-semibold mb-2">Impact Level (Multi-Select)</div>
-            <FilterChipGroup columns={3} gap={2}>
+            <div className="text-[9px] uppercase text-slate-400 tracking-wide font-semibold mb-1">Impact</div>
+            <FilterChipGroup columns={3} gap={1}>
               <FilterChip
                 label="High"
                 value="high"
                 isSelected={selectedImpacts.includes('high')}
                 onClick={() => toggleImpact('high')}
                 variant="impact"
-                size="md"
+                size="xs"
                 count={impactCounts.high}
               />
               <FilterChip
-                label="Medium"
+                label="Med"
                 value="medium"
                 isSelected={selectedImpacts.includes('medium')}
                 onClick={() => toggleImpact('medium')}
                 variant="impact"
-                size="md"
+                size="xs"
                 count={impactCounts.medium}
               />
               <FilterChip
@@ -1187,7 +1187,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
                 isSelected={selectedImpacts.includes('low')}
                 onClick={() => toggleImpact('low')}
                 variant="impact"
-                size="md"
+                size="xs"
                 count={impactCounts.low}
               />
             </FilterChipGroup>
@@ -1195,8 +1195,8 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
 
           {/* Event Type Filter */}
           <div>
-            <div className="text-xs uppercase text-slate-400 tracking-wide font-semibold mb-2">Event Type (Multi-Select)</div>
-            <FilterChipGroup columns={2} gap={2}>
+            <div className="text-[9px] uppercase text-slate-400 tracking-wide font-semibold mb-1">Event Type</div>
+            <FilterChipGroup columns={3} gap={1}>
               {eventTypes.map(type => (
                 <FilterChip
                   key={type}
@@ -1205,7 +1205,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
                   isSelected={selectedEventTypes.includes(type)}
                   onClick={() => toggleEventType(type)}
                   variant="range"
-                  size="md"
+                  size="xs"
                 />
               ))}
             </FilterChipGroup>
@@ -1215,8 +1215,8 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
         <BottomSheetCTABar
           onApply={applyMobileFilters}
           onReset={handleResetFilters}
-          applyLabel="Apply Filters"
-          resetLabel="Reset All"
+          applyLabel="Apply"
+          resetLabel="Reset"
         />
       </BottomSheetDrawer>
     </div>

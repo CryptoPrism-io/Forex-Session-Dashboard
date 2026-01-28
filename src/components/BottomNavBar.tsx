@@ -41,7 +41,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange })
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMoreMenu]);
 
-  // Primary tabs - 5 main navigation items (no scrolling needed)
+  // Primary tabs - 4 main navigation items (Tools removed - content available in Sessions)
   const primaryTabs = [
     {
       id: 'overview' as ViewType,
@@ -66,14 +66,6 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange })
       activeClass: 'bg-cyan-500/25 border-cyan-400/50',
       textClass: 'text-cyan-300',
       glowColor: '#67e8f9'
-    },
-    {
-      id: 'fxdata' as ViewType,
-      label: 'Tools',
-      icon: IconTools,
-      activeClass: 'bg-amber-500/25 border-amber-400/50',
-      textClass: 'text-amber-300',
-      glowColor: '#fcd34d'
     },
   ];
 

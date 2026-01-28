@@ -38,12 +38,12 @@ export function DateFilterPills({
   const ranges: DateRangeFilter[] = ['today', 'tomorrow', 'thisWeek', 'nextWeek'];
 
   return (
-    <div className="flex flex-wrap gap-2 mb-3">
+    <div className="flex flex-wrap gap-1 mb-2">
       {ranges.map(range => (
         <button
           key={range}
           onClick={() => onChange(range)}
-          className={`px-3.5 py-2 rounded-full text-sm font-semibold transition-all shadow-inner shadow-black/20 border ${
+          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all shadow-inner shadow-black/20 border ${
             selected === range
               ? 'bg-emerald-500/80 text-emerald-50 border-emerald-300/70'
               : 'bg-slate-900/60 text-slate-100 border-slate-700/60 hover:border-emerald-400/50 hover:text-emerald-100'
@@ -55,10 +55,10 @@ export function DateFilterPills({
 
       {showDatePicker && (
         <button
-          className="px-3.5 py-2 rounded-full text-sm font-semibold border border-slate-700/60 bg-slate-900/60 text-slate-100 hover:border-cyan-400/50 hover:text-cyan-100 transition-all shadow-inner shadow-black/20"
+          className="px-2 py-0.5 rounded-full text-[10px] font-semibold border border-slate-700/60 bg-slate-900/60 text-slate-100 hover:border-cyan-400/50 hover:text-cyan-100 transition-all shadow-inner shadow-black/20"
           title="Select custom date range (coming soon)"
         >
-          <span className="mr-1.5">📅</span>
+          <span className="mr-1">📅</span>
           Select Date
         </button>
       )}

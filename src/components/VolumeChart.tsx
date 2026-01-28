@@ -362,15 +362,15 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
   return (
     <div className="w-full mt-4 sm:mt-6 bg-slate-900/40 border border-slate-800/50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-md shadow-black/10 sm:shadow-lg backdrop-blur-none sm:backdrop-blur-xl">
       {/* Header with Title and Session Info */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3 sm:mb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1.5 mb-2 sm:mb-3">
         <div>
-          <h2 className="text-base sm:text-lg md:text-xl font-bold text-slate-100 mb-1">Trading Volume</h2>
+          <h2 className="text-xs sm:text-sm font-bold text-slate-100 mb-0.5">Trading Volume</h2>
         </div>
 
         {/* Session Info - Mobile: below title, Desktop: top right */}
-        <div className="text-xs text-slate-300 space-y-1 max-w-xs sm:max-w-sm bg-slate-800/50 border border-slate-700/50 rounded-lg p-2 sm:p-3">
-          <div className="font-semibold text-slate-200 mb-1 text-[10px] sm:text-xs">Current Session</div>
-          <div className="text-slate-300 text-[10px] sm:text-xs">
+        <div className="text-[10px] text-slate-300 space-y-0.5 max-w-xs sm:max-w-sm bg-slate-800/50 border border-slate-700/50 rounded-lg p-1.5 sm:p-2">
+          <div className="font-semibold text-slate-200 mb-0.5 text-[9px] sm:text-[10px]">Current Session</div>
+          <div className="text-slate-300 text-[9px] sm:text-[10px]">
             <span className="font-medium text-cyan-400">{currentSession.label}</span>
             <span className="text-slate-400 hidden sm:inline"> — {currentSession.desc}</span>
           </div>

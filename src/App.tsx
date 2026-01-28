@@ -55,7 +55,11 @@ const App: React.FC = () => {
     | 'timeline' | 'volume' | 'volatility' | 'position'
     | 'correlation' | 'network' | 'screener' | 'aiChat'
     | 'page1' | 'page2' | 'page3' | 'page4'
-  >('page1');
+  >(() => {
+    // Desktop uses page1 (bento layout), mobile/tablet uses overview
+    const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    return width >= 1024 ? 'page1' : 'overview';
+  });
   const [isMoreTimezonesOpen, setIsMoreTimezonesOpen] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
 
@@ -368,7 +372,7 @@ const App: React.FC = () => {
         {/* LAYOUT: Single column - Full width content area */}
         <div className="w-full flex-1 h-full overflow-hidden">
           {/* Main Content Area */}
-          <div className="glass-shell backdrop-blur-xl rounded-3xl p-3 sm:p-4 shadow-lg shadow-black/20 flex flex-col overflow-hidden h-full gap-3 sm:gap-4">
+          <div className="glass-shell backdrop-blur-xl rounded-lg sm:rounded-3xl p-0.5 sm:p-4 shadow-lg shadow-black/20 flex flex-col overflow-hidden h-full gap-1 sm:gap-4">
             {/* Desktop Header: 3-Column Layout - Left (Title + Icons) | Center (FX Tools Nav) | Right (Help) */}
             <div className="hidden md:flex items-center justify-between gap-4 mb-2.5 flex-shrink-0 border-b border-slate-700/30 pb-3">
               {/* Left: Title + essential icons */}
