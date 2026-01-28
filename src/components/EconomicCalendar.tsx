@@ -133,11 +133,46 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
 
   // Client-side filtering to ensure UI filters even if API returns a superset
   const filteredData = useMemo(() => {
+    // First, build a set of (currency, time_utc) pairs that have at least one event with actual data
+    const hasActualAtTime = new Set<string>();
+    data.forEach(ev => {
+      if (ev.actual && ev.actual !== '--') {
+        hasActualAtTime.add(`${ev.currency}|${ev.time_utc}`);
+      }
+    });
+
+    // Calculate current UTC time to check if event has passed
+    const now = new Date();
+    const utcHour = now.getUTCHours();
+    const utcMin = now.getUTCMinutes();
+    const todayStr = now.toISOString().split('T')[0];
+
     return data.filter(ev => {
       const byCcy = selectedCurrencies.length === 0 || selectedCurrencies.includes(ev.currency);
       const byImpact = selectedImpacts.length === 0 || selectedImpacts.includes((ev.impact ?? '').toLowerCase());
       const byEventType = selectedEventTypes.length === 0 || eventMatchesTypes(ev, selectedEventTypes);
-      return byCcy && byImpact && byEventType;
+
+      // Smart duplicate filter: hide passed events without actuals IF another event at same currency+time has actuals
+      let byDuplicateFilter = true;
+      if (!ev.actual || ev.actual === '--') {
+        const timeKey = `${ev.currency}|${ev.time_utc}`;
+        const hasOtherWithActual = hasActualAtTime.has(timeKey);
+
+        if (hasOtherWithActual && ev.time_utc && ev.time_utc.includes(':')) {
+          // Check if event has passed
+          const [evHour, evMin] = ev.time_utc.split(':').map(Number);
+          const eventDate = ev.date_utc?.split('T')[0] || ev.date;
+          const isPastDate = eventDate < todayStr;
+          const isPastTime = eventDate === todayStr && (evHour < utcHour || (evHour === utcHour && evMin < utcMin));
+
+          if (isPastDate || isPastTime) {
+            // This event has passed, has no actual, but another event at same time has actual - hide it
+            byDuplicateFilter = false;
+          }
+        }
+      }
+
+      return byCcy && byImpact && byEventType && byDuplicateFilter;
     });
   }, [data, selectedCurrencies, selectedImpacts, selectedEventTypes]);
 
