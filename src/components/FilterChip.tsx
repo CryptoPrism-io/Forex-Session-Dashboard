@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 
 export type FilterChipVariant = 'currency' | 'impact' | 'range';
-export type FilterChipSize = 'sm' | 'md' | 'lg';
+export type FilterChipSize = 'xs' | 'sm' | 'md' | 'lg';
 
 interface FilterChipProps {
   label: string;
@@ -56,9 +56,10 @@ export const FilterChip: React.FC<FilterChipProps> = ({
 }) => {
   // Size-specific classes
   const sizeClasses = {
+    xs: 'px-1.5 py-0.5 text-[9px]',
     sm: 'px-2 py-1 text-[10px]',
-    md: 'px-3 py-2 text-xs',
-    lg: 'px-4 py-2.5 text-sm',
+    md: 'px-2.5 py-1.5 text-[10px]',
+    lg: 'px-3 py-2 text-xs',
   };
 
   // Variant-specific colors
@@ -119,9 +120,9 @@ export const FilterChip: React.FC<FilterChipProps> = ({
 
       {/* Checkmark indicator when selected */}
       {isSelected && (
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-cyan-400 rounded-full flex items-center justify-center shadow-md">
+        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-cyan-400 rounded-full flex items-center justify-center shadow-sm">
           <svg
-            className="w-2.5 h-2.5 text-slate-900"
+            className="w-2 h-2 text-slate-900"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -146,7 +147,7 @@ export const FilterChip: React.FC<FilterChipProps> = ({
  */
 interface FilterChipGroupProps {
   children: ReactNode;
-  columns?: 2 | 3 | 4;
+  columns?: 2 | 3 | 4 | 5;
   gap?: 1 | 2 | 3;
   className?: string;
 }
@@ -159,14 +160,15 @@ export const FilterChipGroup: React.FC<FilterChipGroupProps> = ({
 }) => {
   const colClasses = {
     2: 'grid-cols-2',
-    3: 'grid-cols-2 sm:grid-cols-3',
-    4: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4',
+    3: 'grid-cols-3',
+    4: 'grid-cols-4',
+    5: 'grid-cols-5',
   };
 
   const gapClasses = {
     1: 'gap-1',
-    2: 'gap-2',
-    3: 'gap-3',
+    2: 'gap-1.5',
+    3: 'gap-2',
   };
 
   return (

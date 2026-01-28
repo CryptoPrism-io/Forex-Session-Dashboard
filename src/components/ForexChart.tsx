@@ -388,11 +388,11 @@ const cityBadges = useMemo(
   return (
     <div
       ref={chartContainerRef}
-      className="relative w-full h-full glass-soft rounded-2xl p-3 shadow-2xl shadow-black/35 hover:border-slate-500/50 transition-all duration-300 sm:backdrop-blur-2xl backdrop-blur-none overflow-hidden flex flex-col"
+      className="relative w-full h-full glass-soft rounded-lg sm:rounded-2xl p-0.5 sm:p-3 shadow-2xl shadow-black/35 hover:border-slate-500/50 transition-all duration-300 sm:backdrop-blur-2xl backdrop-blur-none overflow-hidden flex flex-col"
     >
       {/* Tools header row 1 */}
-      <div className="flex items-center justify-between mb-1">
-        <h3 className="text-[10px] uppercase tracking-widest text-slate-500">TOOLS</h3>
+      <div className="flex items-center justify-between mb-0.5">
+        <h3 className="text-[9px] uppercase tracking-widest text-slate-500">TOOLS</h3>
         {fullscreenButton}
       </div>
 
@@ -403,7 +403,7 @@ const cityBadges = useMemo(
           <select
             value={viewMode}
             onChange={(e) => setViewMode(e.target.value as any)}
-            className="flex-1 px-3 py-2.5 text-sm font-semibold rounded-lg bg-slate-950/90 border border-cyan-400/40 text-cyan-100 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+            className="flex-1 px-2 py-1.5 text-[10px] font-semibold rounded-lg bg-slate-950/90 border border-cyan-400/40 text-cyan-100 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
               backgroundRepeat: 'no-repeat',
@@ -428,7 +428,7 @@ const cityBadges = useMemo(
                     <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
                   </svg>
                 }
-                triggerClassName={`p-2.5 rounded-lg backdrop-blur-md border transition-all duration-200 ${
+                triggerClassName={`p-1.5 rounded-lg backdrop-blur-md border transition-all duration-200 ${
                   showEventFilterMenu
                     ? 'bg-cyan-500/30 border-cyan-400/60 text-cyan-100'
                     : 'bg-slate-900/40 border-slate-700/30 text-slate-300'
@@ -469,7 +469,7 @@ const cityBadges = useMemo(
               </PopoverMenu>
               <button
                 onClick={() => setShowDSTMenu(!showDSTMenu)}
-                className="p-2.5 text-xs font-semibold rounded-lg backdrop-blur-md bg-slate-900/40 border border-slate-700/30 text-slate-300"
+                className="p-1.5 text-[10px] font-semibold rounded-lg backdrop-blur-md bg-slate-900/40 border border-slate-700/30 text-slate-300"
               >
                 {isDSTActive ? '☀️' : '🌙'}
               </button>
@@ -836,11 +836,11 @@ const cityBadges = useMemo(
         </div>
       ) : viewMode === 'ai' ? (
         // AI Suggestions (placeholder)
-        <div className="flex-1 overflow-y-auto min-h-0 p-6">
-          <div className="glass-soft rounded-2xl p-8 text-center">
-            <div className="text-4xl mb-4">🤖</div>
-            <h3 className="text-lg font-bold text-slate-200 mb-2">AI Trading Suggestions</h3>
-            <p className="text-sm text-slate-400">Coming soon - AI-powered trading insights and recommendations</p>
+        <div className="flex-1 overflow-y-auto min-h-0 p-4">
+          <div className="glass-soft rounded-xl p-6 text-center">
+            <div className="text-xl mb-3">🤖</div>
+            <h3 className="text-sm font-bold text-slate-200 mb-1.5">AI Trading Suggestions</h3>
+            <p className="text-[11px] text-slate-400">Coming soon - AI-powered trading insights and recommendations</p>
           </div>
         </div>
       ) : viewMode === 'timeline' ? (
@@ -853,17 +853,17 @@ const cityBadges = useMemo(
           return (
             <div key={session.name} className="mb-5 last:mb-0">
               <div className="flex items-center gap-3 mb-1.5">
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/40 backdrop-blur-xl border border-slate-600/40 shadow-inner shadow-black/10 glass-soft">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-800/40 backdrop-blur-xl border border-slate-600/40 shadow-inner shadow-black/10 glass-soft">
                   <div
-                    className="w-2.5 h-2.5 rounded-full"
+                    className="w-2 h-2 rounded-full"
                     style={{
                       backgroundColor: statusColors.color,
-                      boxShadow: `0 0 6px ${statusColors.glow}`,
+                      boxShadow: `0 0 4px ${statusColors.glow}`,
                       animation: status === 'WARNING' ? 'pulse-glow 1.5s infinite' : 'none',
                     }}
                   />
-                  <span className="text-xs font-normal text-slate-100 uppercase" style={{ letterSpacing: '0.15em' }}>{session.name}</span>
-                  <span className="text-[10px] font-light text-slate-400 ml-1">
+                  <span className="text-[10px] font-normal text-slate-100 uppercase" style={{ letterSpacing: '0.1em' }}>{session.name}</span>
+                  <span className="text-[9px] font-light text-slate-400 ml-0.5">
                     {getTimezoneOffsetLabel(SESSION_CITY_REFERENCES.find(c => c.label === session.name)?.timezone || 'UTC')}
                   </span>
                 </div>
@@ -911,7 +911,7 @@ const cityBadges = useMemo(
                       : { opacity: { duration: 0.2 }, boxShadow: { duration: 0.2 } }
                   }
                 >
-                  <div className="absolute -top-5 -translate-x-1/2 text-xs text-yellow-300 font-bold whitespace-nowrap">
+                  <div className="absolute -top-4 -translate-x-1/2 text-[9px] text-yellow-300 font-bold whitespace-nowrap">
                     Now
                   </div>
                 </motion.div>
@@ -919,25 +919,25 @@ const cityBadges = useMemo(
             </div>
           );
         })}
-        <p className="mt-3 text-[11px] text-slate-500 text-right italic">{timezoneAxisNote}</p>
+        <p className="mt-2 text-[9px] text-slate-500 text-right italic">{timezoneAxisNote}</p>
         </div>
       ) : viewMode === 'unified' ? (
         // Unified view - clean timeline with elegant overlaps
         <div className="flex-1 overflow-y-auto min-h-0 px-1">
           {/* Time Ruler - Bold GMT markers */}
-          <div className="relative h-8 mb-2 px-2">
-            <div className="flex justify-between items-end border-b border-slate-700/40 pb-1">
+          <div className="relative h-6 mb-1.5 px-1.5">
+            <div className="flex justify-between items-end border-b border-slate-700/40 pb-0.5">
               {[0, 4, 8, 12, 16, 20].map(hour => (
                 <div key={hour} className="flex flex-col items-center">
-                  <span className="text-sm font-bold text-slate-300 tabular-nums">
+                  <span className="text-[10px] font-bold text-slate-300 tabular-nums">
                     {String(hour).padStart(2, '0')}
                   </span>
-                  <span className="text-[9px] text-slate-600 font-medium">GMT</span>
+                  <span className="text-[8px] text-slate-600 font-medium">GMT</span>
                 </div>
               ))}
               <div className="flex flex-col items-center">
-                <span className="text-sm font-bold text-slate-300 tabular-nums">00</span>
-                <span className="text-[9px] text-slate-600 font-medium">GMT</span>
+                <span className="text-[10px] font-bold text-slate-300 tabular-nums">00</span>
+                <span className="text-[8px] text-slate-600 font-medium">GMT</span>
               </div>
             </div>
           </div>
@@ -1115,12 +1115,12 @@ const cityBadges = useMemo(
           </div>
 
           {/* Compact legend - no status badges, just session identification */}
-          <div className="mt-2 flex flex-wrap gap-3 text-xs px-2">
+          <div className="mt-1.5 flex flex-wrap gap-2 text-[9px] px-1.5">
             {[sessions[3], sessions[2], sessions[0], sessions[1]].map(session => {
               return (
-                <div key={session.name} className="flex items-center gap-1.5">
+                <div key={session.name} className="flex items-center gap-1">
                   <div
-                    className="w-2.5 h-2.5 rounded-sm"
+                    className="w-2 h-2 rounded-sm"
                     style={{
                       backgroundColor: session.main.color,
                       opacity: 0.7,
@@ -1131,7 +1131,7 @@ const cityBadges = useMemo(
               );
             })}
           </div>
-          <p className="mt-2 text-[10px] text-slate-500 text-right italic px-2">{timezoneAxisNote}</p>
+          <p className="mt-1.5 text-[8px] text-slate-500 text-right italic px-1.5">{timezoneAxisNote}</p>
         </div>
       ) : (
         // Volume view - Trading Volume Chart
@@ -1146,7 +1146,7 @@ const cityBadges = useMemo(
             visibleLayers={visibleLayers}
             chartContainerRef={chartContainerRef}
           />
-          <p className="mt-3 text-[11px] text-slate-500 text-right italic">{timezoneAxisNote}</p>
+          <p className="mt-2 text-[9px] text-slate-500 text-right italic">{timezoneAxisNote}</p>
         </div>
       )}
     </div>

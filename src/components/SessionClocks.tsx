@@ -121,17 +121,17 @@ const ClockCard: React.FC<ClockCardProps> = ({ label, timezone, accent, compact,
     : {};
 
   const indicatorStyle: React.CSSProperties = {
-    width: 10,
-    height: 10,
+    width: compact ? 6 : 8,
+    height: compact ? 6 : 8,
     borderRadius: '9999px',
     background: isActive ? accent : 'rgba(148, 163, 184, 0.4)',
-    boxShadow: isActive ? `0 0 12px ${accent}` : undefined,
+    boxShadow: isActive ? `0 0 8px ${accent}` : undefined,
     animation: isWarning ? 'pulse-glow 1.5s infinite' : undefined,
   };
 
-  const labelClass = `${compact ? 'text-xs' : 'text-sm'} font-semibold ${isActive ? 'text-slate-100' : 'text-slate-400'}`;
-  const timeClass = `${compact ? 'text-xs' : 'text-sm'} font-mono ${isActive ? 'text-slate-100' : 'text-slate-300'}`;
-  const dateClass = `${compact ? 'text-[10px]' : 'text-[11px]'} ${isActive ? 'text-slate-400' : 'text-slate-500'}`;
+  const labelClass = `${compact ? 'text-[10px]' : 'text-xs'} font-semibold ${isActive ? 'text-slate-100' : 'text-slate-400'}`;
+  const timeClass = `${compact ? 'text-[10px]' : 'text-xs'} font-mono ${isActive ? 'text-slate-100' : 'text-slate-300'}`;
+  const dateClass = `${compact ? 'text-[9px]' : 'text-[10px]'} ${isActive ? 'text-slate-400' : 'text-slate-500'}`;
 
   return (
     <div

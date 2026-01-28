@@ -62,13 +62,13 @@ export function BestPairsWidget() {
   }, [category]);
 
   return (
-    <div className="p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg shadow-xl border border-gray-700">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-white">Best Pairs for Trading</h2>
+    <div className="p-4 bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg shadow-xl border border-gray-700">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-bold text-white">Best Pairs for Trading</h2>
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="px-3 py-1 bg-gray-800 text-white border border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+          className="px-2 py-0.5 bg-gray-800 text-white border border-gray-600 rounded-md text-[10px] focus:ring-2 focus:ring-blue-500"
         >
           <option value="hedging">Hedging</option>
           <option value="trending">Trending</option>
@@ -77,11 +77,11 @@ export function BestPairsWidget() {
       </div>
 
       {matrixLoading ? (
-        <div className="text-sm text-slate-400 mb-4">Loading correlation matrix...</div>
+        <div className="text-[11px] text-slate-400 mb-3">Loading correlation matrix...</div>
       ) : matrixError ? (
-        <div className="text-sm text-red-400 mb-4">Error loading correlation matrix: {matrixError}</div>
+        <div className="text-[11px] text-red-400 mb-3">Error loading correlation matrix: {matrixError}</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 tablet:grid-cols-2 desktop:grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 tablet:grid-cols-2 desktop:grid-cols-4 gap-2 mb-3">
           {topMatrixPairs.map((pair) => {
             const correlation = parseFloat(pair.correlation);
             const absCorr = Math.abs(correlation);
@@ -94,23 +94,23 @@ export function BestPairsWidget() {
             return (
               <div
                 key={`${pair.pair1}_${pair.pair2}_${pair.time}`}
-                className="glass-soft rounded-2xl p-3 border border-slate-700/40 bg-slate-900/40"
+                className="glass-soft rounded-xl p-2 border border-slate-700/40 bg-slate-900/40"
               >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs uppercase tracking-wide text-slate-500">
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[10px] uppercase tracking-wide text-slate-500">
                     {pair.pair1.replace('_', '/')} vs {pair.pair2.replace('_', '/')}
                   </span>
-                  <span className="text-[11px] text-slate-500">
+                  <span className="text-[9px] text-slate-500">
                     {pair.window_size || '1h'}
                   </span>
                 </div>
-                <div className="text-2xl font-bold">
+                <div className="text-sm font-bold">
                   <span className={corrColor}>{correlation.toFixed(3)}</span>
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1">
+                <div className="text-[9px] text-slate-400 mt-0.5">
                   {correlation > 0 ? 'moving together' : 'moving opposite'}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1">
+                <div className="text-[9px] text-slate-500 mt-0.5">
                   {pair.time ? new Date(pair.time).toLocaleString() : ''}
                 </div>
               </div>

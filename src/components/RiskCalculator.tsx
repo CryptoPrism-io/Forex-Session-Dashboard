@@ -638,55 +638,55 @@ export function RiskCalculator() {
         {/* Results */}
         <div className="pt-3 border-t border-slate-700/30">
           {loading ? (
-            <div className="text-slate-400 text-xs text-center py-4">Loading volatility data...</div>
+            <div className="text-slate-400 text-[10px] text-center py-3">Loading volatility data...</div>
           ) : error ? (
-            <div className="text-red-400 text-xs text-center py-4">Error: {error}</div>
+            <div className="text-red-400 text-[10px] text-center py-3">Error: {error}</div>
           ) : calculations.isValid ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5">
-              <div className="glass-soft rounded-lg px-2.5 py-2 text-center border border-cyan-500/20 bg-cyan-500/5">
-                <div className="text-[9px] uppercase tracking-wide text-slate-500 mb-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1">
+              <div className="glass-soft rounded-lg px-2 py-1.5 text-center border border-cyan-500/20 bg-cyan-500/5">
+                <div className="text-[8px] uppercase tracking-wide text-slate-500 mb-0.5">
                   Position Size
                 </div>
-                <div className="text-lg font-bold text-cyan-300">
+                <div className="text-sm font-bold text-cyan-300">
                   {formatLots(calculations.positionSizeLots)}
-                  <span className="text-[10px] font-normal text-slate-400 ml-0.5">lots</span>
+                  <span className="text-[9px] font-normal text-slate-400 ml-0.5">lots</span>
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1">
+                <div className="text-[9px] text-slate-400 mt-0.5">
                   Fee ${formatCurrency(calculations.positionSizeLots * 4)}
                 </div>
               </div>
-              <div className="glass-soft rounded-lg px-2.5 py-2 text-center border border-slate-700/20">
-                <div className="text-[9px] uppercase tracking-wide text-slate-500 mb-1">
+              <div className="glass-soft rounded-lg px-2 py-1.5 text-center border border-slate-700/20">
+                <div className="text-[8px] uppercase tracking-wide text-slate-500 mb-0.5">
                   Max Risk
                 </div>
-                <div className="text-lg font-bold text-emerald-400">
+                <div className="text-sm font-bold text-emerald-400">
                   ${calculations.riskAmount}
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1">
+                <div className="text-[9px] text-slate-400 mt-0.5">
                   {formatPercent(riskPercent)}
                 </div>
               </div>
-              <div className="glass-soft rounded-lg px-2.5 py-2 text-center border border-blue-500/20 bg-blue-500/5">
-                <div className="text-[9px] uppercase tracking-wide text-slate-500 mb-1">
+              <div className="glass-soft rounded-lg px-2 py-1.5 text-center border border-blue-500/20 bg-blue-500/5">
+                <div className="text-[8px] uppercase tracking-wide text-slate-500 mb-0.5">
                   Margin Needed
                 </div>
-                <div className="text-lg font-bold text-blue-300">
+                <div className="text-sm font-bold text-blue-300">
                   ${formatCurrency(calculations.margin)}
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1">
+                <div className="text-[9px] text-slate-400 mt-0.5">
                   {accountBalanceValue > 0
                     ? formatPercent((calculations.margin / accountBalanceValue) * 100)
                     : 'N/A'}
                 </div>
               </div>
-              <div className="glass-soft rounded-lg px-2.5 py-2 text-center border border-slate-700/20">
-                <div className="text-[9px] uppercase tracking-wide text-slate-500 mb-1">
+              <div className="glass-soft rounded-lg px-2 py-1.5 text-center border border-slate-700/20">
+                <div className="text-[8px] uppercase tracking-wide text-slate-500 mb-0.5">
                   ATR (instrument)
                 </div>
-                <div className="text-lg font-bold text-amber-300">
+                <div className="text-sm font-bold text-amber-300">
                   {atrDisplay}
                 </div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
+                <div className="text-[9px] text-slate-400 mt-0.5">
                   {atrPipDisplay}
                 </div>
               </div>

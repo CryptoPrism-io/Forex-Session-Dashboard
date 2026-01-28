@@ -142,15 +142,15 @@ export const BottomSheetDrawer: React.FC<BottomSheetDrawerProps> = ({
           >
             {/* Handle bar (swipe indicator) */}
             {showHandle && (
-              <div className="flex justify-center pt-3 pb-2">
-                <div className="w-12 h-1 bg-slate-600 rounded-full" />
+              <div className="flex justify-center pt-2 pb-1">
+                <div className="w-8 h-0.5 bg-slate-600 rounded-full" />
               </div>
             )}
 
             {/* Title */}
             {title && (
-              <div className="px-4 py-3 border-b border-slate-700/30">
-                <h3 className="text-base font-semibold text-slate-100">
+              <div className="px-2 py-1.5 border-b border-slate-700/30">
+                <h3 className="text-[11px] font-semibold text-slate-100">
                   {title}
                 </h3>
               </div>
@@ -189,11 +189,11 @@ export const BottomSheetCTABar: React.FC<BottomSheetCTABarProps> = ({
   applyDisabled = false,
 }) => {
   return (
-    <div className="sticky bottom-0 left-0 right-0 bg-slate-900/98 backdrop-blur-xl border-t border-slate-700/50 p-3 flex gap-2">
+    <div className="sticky bottom-0 left-0 right-0 bg-slate-900/98 backdrop-blur-xl border-t border-slate-700/50 p-2 flex gap-1.5">
       {onReset && (
         <button
           onClick={onReset}
-          className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border border-slate-600/60 bg-slate-800/40 text-slate-300 hover:bg-slate-800/60 hover:border-slate-500 transition-all active:scale-95"
+          className="flex-1 px-2 py-1.5 text-[10px] font-semibold rounded border border-slate-600/60 bg-slate-800/40 text-slate-300 hover:bg-slate-800/60 hover:border-slate-500 transition-all active:scale-95"
         >
           {resetLabel}
         </button>
@@ -202,7 +202,7 @@ export const BottomSheetCTABar: React.FC<BottomSheetCTABarProps> = ({
         <button
           onClick={onApply}
           disabled={applyDisabled}
-          className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg bg-cyan-500/90 text-white hover:bg-cyan-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/30"
+          className="flex-1 px-2 py-1.5 text-[10px] font-semibold rounded bg-cyan-500/90 text-white hover:bg-cyan-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-cyan-500/30"
         >
           {applyLabel}
         </button>
