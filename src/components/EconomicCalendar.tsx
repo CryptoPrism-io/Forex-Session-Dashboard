@@ -41,6 +41,35 @@ const convertUTCToTimezone = (utcTimeString: string | undefined, targetOffsetHou
   return `${hh}:${mm}`;
 };
 
+// Calculate the correct local date when timezone conversion crosses midnight
+// Returns day offset: 0 = same day, 1 = next day, -1 = previous day
+const getDateOffset = (utcTimeString: string | undefined, targetOffsetHours: number): number => {
+  if (!utcTimeString) return 0;
+
+  const [hStr = '0', mStr = '0'] = utcTimeString.split(':');
+  const utcMinutes = (parseInt(hStr, 10) || 0) * 60 + (parseInt(mStr, 10) || 0);
+
+  // Apply target timezone offset
+  const offsetMinutes = Math.round(targetOffsetHours * 60);
+  const targetMinutes = utcMinutes + offsetMinutes;
+
+  // Check if we crossed midnight
+  if (targetMinutes >= 24 * 60) return 1;  // Rolled to next day
+  if (targetMinutes < 0) return -1;         // Rolled to previous day
+  return 0;                                  // Same day
+};
+
+// Get the correct local date formatted for display
+const getLocalDateDisplay = (utcDateString: string, utcTimeString: string | undefined, targetOffsetHours: number): string => {
+  const dateOffset = getDateOffset(utcTimeString, targetOffsetHours);
+  const utcDate = new Date(utcDateString);
+
+  // Adjust date by the offset
+  utcDate.setDate(utcDate.getDate() + dateOffset);
+
+  return utcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
 // Helper function to convert Date to ISO string respecting timezone offset
 const toLocalISO = (d: Date, offsetHours: number): string => {
   const offsetMs = Math.round(offsetHours * 60) * 60 * 1000; // supports 5.5, etc.
@@ -545,8 +574,8 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
 
           return {
             id: `${date}-${event.id}-${idx}`,
-            date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            dateTime: new Date(date).getTime(),
+            date: getLocalDateDisplay(date, event.time_utc, selectedTimezone.offset),
+            dateTime: new Date(date).getTime() + getDateOffset(event.time_utc, selectedTimezone.offset) * 86400000,
             displayTime,
             timeLeft,
             timeLeftMinutes,
@@ -1062,7 +1091,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
                   <div className="flex-1 min-w-0">
                     <h3 className="text-[11px] font-semibold text-slate-100 mb-0.5">{event.event}</h3>
                     <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                      <span>{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                      <span>{getLocalDateDisplay(date, event.time_utc, selectedTimezone.offset)}</span>
                       <span>•</span>
                       <span>{displayTime}</span>
                     </div>
