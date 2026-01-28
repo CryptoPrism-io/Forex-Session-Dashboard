@@ -1,44 +1,44 @@
-/* Custom AG Grid Dark Theme for Economic Calendar - Glassmorphism Style - DARKER THEME */
+/* Custom AG Grid Dark Theme for Economic Calendar - Minimal Black/White */
 
 .ag-theme-alpine-dark {
-  --ag-background-color: rgba(5, 10, 20, 0.6);
-  --ag-header-background-color: rgba(10, 15, 28, 0.8);
-  --ag-odd-row-background-color: rgba(8, 12, 22, 0.3);
-  --ag-row-hover-color: rgba(20, 30, 50, 0.5);
-  --ag-border-color: rgba(50, 60, 80, 0.25);
-  --ag-header-foreground-color: #e2e8f0;
-  --ag-foreground-color: #e2e8f0;
+  --ag-background-color: #000000;
+  --ag-header-background-color: #0a0a0a;
+  --ag-odd-row-background-color: #050505;
+  --ag-row-hover-color: #1a1a1a;
+  --ag-border-color: #262626;
+  --ag-header-foreground-color: #fafafa;
+  --ag-foreground-color: #fafafa;
   --ag-font-size: 12px;
   --ag-header-font-size: 12px;
   --ag-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  backdrop-filter: blur(12px);
-  border-radius: 12px;
-  border: 1px solid rgba(50, 60, 80, 0.25);
+  border-radius: 8px;
+  border: 1px solid #262626;
   overflow: hidden;
 }
 
 .ag-theme-alpine-dark .ag-header {
-  backdrop-filter: blur(16px);
   position: sticky;
   top: 0;
   z-index: 10;
-  border-bottom: 1px solid rgba(50, 60, 80, 0.3);
-  background: rgba(10, 15, 28, 0.85);
+  border-bottom: 1px solid #262626;
+  background: #0a0a0a;
 }
 
 .ag-theme-alpine-dark .ag-header-cell-label {
   font-weight: 600;
   font-size: var(--ag-header-font-size);
-  color: #cbd5e1;
+  color: #a3a3a3;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .ag-theme-alpine-dark .ag-row {
-  border-bottom: 1px solid rgba(30, 40, 60, 0.25);
-  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #1a1a1a;
+  transition: background-color 0.15s ease;
 }
 
 .ag-theme-alpine-dark .ag-row:hover {
-  background-color: rgba(30, 45, 70, 0.35) !important;
+  background-color: #1a1a1a !important;
 }
 
 .ag-theme-alpine-dark .ag-cell {
@@ -52,22 +52,34 @@
   border-right: none !important;
 }
 
-/* Custom scrollbar for AG Grid - darker */
+/* Custom scrollbar for AG Grid */
 .ag-theme-alpine-dark .ag-body-viewport::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 .ag-theme-alpine-dark .ag-body-viewport::-webkit-scrollbar-track {
-  background: rgba(5, 10, 20, 0.6);
-  border-radius: 4px;
+  background: #0a0a0a;
 }
 
 .ag-theme-alpine-dark .ag-body-viewport::-webkit-scrollbar-thumb {
-  background: rgba(60, 75, 100, 0.5);
-  border-radius: 4px;
+  background: #262626;
+  border-radius: 3px;
 }
 
 .ag-theme-alpine-dark .ag-body-viewport::-webkit-scrollbar-thumb:hover {
-  background: rgba(80, 100, 130, 0.6);
+  background: #404040;
+}
+
+/* Detail row styling */
+.ag-theme-alpine-dark .ag-cell-detail {
+  background: #0a0a0a;
+  border: none;
+}
+
+/* Expander cell */
+.ag-theme-alpine-dark .ag-cell-expander {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

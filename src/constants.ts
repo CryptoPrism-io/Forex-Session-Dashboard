@@ -105,7 +105,7 @@ export const SESSIONS_STANDARD: SessionData[] = [
       key: 'sydney_session',
       name: "Sydney Session",
       range: [21, 30], // 9pm to 6am UTC (standard time)
-      color: "hsl(195, 74%, 62%)",
+      color: "#525252",
       opacity: 0.7,
       tooltip: {
         title: "Sydney Session",
@@ -121,7 +121,7 @@ export const SESSIONS_STANDARD: SessionData[] = [
       key: 'tokyo_session',
       name: "Asian Session (Tokyo)",
       range: [23, 32], // 11pm to 8am UTC (no DST in Japan)
-      color: "hsl(320, 82%, 60%)",
+      color: "#525252",
       opacity: 0.7,
       tooltip: {
         title: "Asian Session (Tokyo)",
@@ -137,7 +137,7 @@ export const SESSIONS_STANDARD: SessionData[] = [
       key: 'london_session',
       name: "London Session",
       range: [8, 17], // 8am to 5pm UTC (GMT, no daylight saving)
-      color: "hsl(45, 100%, 50%)",
+      color: "#525252",
       opacity: 0.7,
       tooltip: {
         title: "London Session",
@@ -150,7 +150,7 @@ export const SESSIONS_STANDARD: SessionData[] = [
       key: 'asia_london_overlap',
       name: "Asia-London Overlap",
       range: [8, 9],
-      color: "hsl(255, 80%, 70%)",
+      color: "#737373",
       opacity: 0.9,
       tooltip: {
         title: "Asia-London Overlap",
@@ -163,7 +163,7 @@ export const SESSIONS_STANDARD: SessionData[] = [
       key: 'london_killzone',
       name: "London Killzone",
       range: [7, 10],
-      color: "hsl(0, 80%, 60%)",
+      color: "#ef4444",
       opacity: 0.8,
       tooltip: {
         title: "London Killzone (LKZ)",
@@ -179,7 +179,7 @@ export const SESSIONS_STANDARD: SessionData[] = [
       key: 'ny_session',
       name: "New York Session",
       range: [13, 22], // 1pm to 10pm UTC (EST, UTC-5)
-      color: "hsl(120, 60%, 50%)",
+      color: "#525252",
       opacity: 0.7,
       tooltip: {
         title: "New York Session",
@@ -192,7 +192,7 @@ export const SESSIONS_STANDARD: SessionData[] = [
       key: 'london_ny_overlap',
       name: "London-NY Overlap",
       range: [13, 17],
-      color: "hsl(20, 100%, 60%)",
+      color: "#f97316",
       opacity: 0.9,
       tooltip: {
         title: "London-NY Overlap",
@@ -205,7 +205,7 @@ export const SESSIONS_STANDARD: SessionData[] = [
       key: 'ny_am_killzone',
       name: "NY AM Killzone",
       range: [12, 15],
-      color: "hsl(0, 80%, 60%)",
+      color: "#ef4444",
       opacity: 0.8,
       tooltip: {
         title: "NY AM Killzone",
@@ -218,7 +218,7 @@ export const SESSIONS_STANDARD: SessionData[] = [
       key: 'ny_pm_killzone',
       name: "NY PM Killzone",
       range: [18, 20],
-      color: "hsl(0, 60%, 55%)",
+      color: "#dc2626",
       opacity: 0.6,
       tooltip: {
         title: "NY PM Killzone",
@@ -238,7 +238,7 @@ export const SESSIONS_DAYLIGHT: SessionData[] = [
       key: 'sydney_session',
       name: "Sydney Session",
       range: [20, 29], // 8pm to 5am UTC (AEDT, UTC+11)
-      color: "hsl(195, 74%, 62%)",
+      color: "#525252",
       opacity: 0.7,
       tooltip: {
         title: "Sydney Session",
@@ -254,7 +254,7 @@ export const SESSIONS_DAYLIGHT: SessionData[] = [
       key: 'tokyo_session',
       name: "Asian Session (Tokyo)",
       range: [23, 32], // 11pm to 8am UTC (JST, no DST)
-      color: "hsl(320, 82%, 60%)",
+      color: "#525252",
       opacity: 0.7,
       tooltip: {
         title: "Asian Session (Tokyo)",
@@ -270,7 +270,7 @@ export const SESSIONS_DAYLIGHT: SessionData[] = [
       key: 'london_session',
       name: "London Session",
       range: [7, 16], // 7am to 4pm UTC (BST, UTC+1)
-      color: "hsl(45, 100%, 50%)",
+      color: "#525252",
       opacity: 0.7,
       tooltip: {
         title: "London Session",
@@ -283,7 +283,7 @@ export const SESSIONS_DAYLIGHT: SessionData[] = [
       key: 'asia_london_overlap',
       name: "Asia-London Overlap",
       range: [7, 8],
-      color: "hsl(255, 80%, 70%)",
+      color: "#737373",
       opacity: 0.9,
       tooltip: {
         title: "Asia-London Overlap",
@@ -296,7 +296,7 @@ export const SESSIONS_DAYLIGHT: SessionData[] = [
       key: 'london_killzone',
       name: "London Killzone",
       range: [6, 9],
-      color: "hsl(0, 80%, 60%)",
+      color: "#ef4444",
       opacity: 0.8,
       tooltip: {
         title: "London Killzone (LKZ)",
@@ -312,7 +312,7 @@ export const SESSIONS_DAYLIGHT: SessionData[] = [
       key: 'ny_session',
       name: "New York Session",
       range: [12, 21], // 12pm to 9pm UTC (EDT, UTC-4)
-      color: "hsl(120, 60%, 50%)",
+      color: "#525252",
       opacity: 0.7,
       tooltip: {
         title: "New York Session",
@@ -325,7 +325,7 @@ export const SESSIONS_DAYLIGHT: SessionData[] = [
       key: 'london_ny_overlap',
       name: "London-NY Overlap",
       range: [12, 16],
-      color: "hsl(20, 100%, 60%)",
+      color: "#f97316",
       opacity: 0.9,
       tooltip: {
         title: "London-NY Overlap",
@@ -338,7 +338,7 @@ export const SESSIONS_DAYLIGHT: SessionData[] = [
       key: 'ny_am_killzone',
       name: "NY AM Killzone",
       range: [11, 14],
-      color: "hsl(0, 80%, 60%)",
+      color: "#ef4444",
       opacity: 0.8,
       tooltip: {
         title: "NY AM Killzone",
@@ -351,7 +351,7 @@ export const SESSIONS_DAYLIGHT: SessionData[] = [
       key: 'ny_pm_killzone',
       name: "NY PM Killzone",
       range: [17, 19],
-      color: "hsl(0, 60%, 55%)",
+      color: "#dc2626",
       opacity: 0.6,
       tooltip: {
         title: "NY PM Killzone",
