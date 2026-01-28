@@ -246,4 +246,92 @@ router.get('/today', async (req, res) => {
   }
 });
 
+// POST /api/calendar/cleanup - Remove stale "month" records when "week" equivalents exist
+// This is an admin endpoint to deduplicate the database
+router.post('/cleanup', async (req, res) => {
+  try {
+    console.log('🔍 Starting calendar cleanup...');
+
+    // Step 1: Count duplicates
+    const beforeCount = await pool.query(`
+      SELECT COUNT(*) as duplicate_count
+      FROM economic_calendar_ff m
+      WHERE m.source_scope = 'month'
+        AND EXISTS (
+          SELECT 1 FROM economic_calendar_ff w
+          WHERE w.source_scope = 'week'
+            AND w.event = m.event
+            AND w.currency = m.currency
+            AND w.date_utc::date = m.date_utc::date
+            AND w.time_utc = m.time_utc
+        )
+    `);
+
+    const duplicateCount = parseInt(beforeCount.rows[0].duplicate_count);
+
+    if (duplicateCount === 0) {
+      return res.json({
+        success: true,
+        message: 'No cleanup needed - no duplicates found',
+        deleted: 0
+      });
+    }
+
+    // Step 2: Create backup
+    await pool.query(`DROP TABLE IF EXISTS economic_calendar_ff_cleanup_003`);
+    await pool.query(`
+      CREATE TABLE economic_calendar_ff_cleanup_003 AS
+      SELECT m.*
+      FROM economic_calendar_ff m
+      WHERE m.source_scope = 'month'
+        AND EXISTS (
+          SELECT 1 FROM economic_calendar_ff w
+          WHERE w.source_scope = 'week'
+            AND w.event = m.event
+            AND w.currency = m.currency
+            AND w.date_utc::date = m.date_utc::date
+            AND w.time_utc = m.time_utc
+        )
+    `);
+
+    // Step 3: Delete stale records
+    const deleteResult = await pool.query(`
+      DELETE FROM economic_calendar_ff m
+      USING economic_calendar_ff w
+      WHERE m.source_scope = 'month'
+        AND w.source_scope = 'week'
+        AND w.event = m.event
+        AND w.currency = m.currency
+        AND w.date_utc::date = m.date_utc::date
+        AND w.time_utc = m.time_utc
+    `);
+
+    // Step 4: Get final stats
+    const stats = await pool.query(`
+      SELECT
+        (SELECT COUNT(*) FROM economic_calendar_ff WHERE source_scope = 'week') as week_records,
+        (SELECT COUNT(*) FROM economic_calendar_ff WHERE source_scope = 'month') as month_records,
+        (SELECT COUNT(*) FROM economic_calendar_ff) as total_records
+    `);
+
+    console.log(`✅ Cleanup complete: deleted ${deleteResult.rowCount} stale records`);
+
+    res.json({
+      success: true,
+      message: 'Cleanup complete',
+      deleted: deleteResult.rowCount,
+      backed_up: duplicateCount,
+      stats: stats.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Error during cleanup:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Cleanup failed',
+      message: error.message
+    });
+  }
+});
+
 export default router;
