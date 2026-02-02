@@ -9,6 +9,7 @@ import { IconSettings } from './icons';
 // Lazy load heavy components
 const ForexChart = React.lazy(() => import('./ForexChart'));
 const EconomicCalendar = React.lazy(() => import('./EconomicCalendar'));
+const PriceTicker = React.lazy(() => import('./PriceTicker').then(m => ({ default: m.PriceTicker })));
 
 interface BentoDesktopLayoutProps {
   selectedTimezone: Timezone;
@@ -153,7 +154,7 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
             <div className="text-[10px] text-slate-400 mb-1.5">{dateFormatted}</div>
             <button
               onClick={onTimezoneSettingsClick}
-              className="w-full px-2 py-1.5 text-[10px] font-medium rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/30 transition-all flex items-center justify-between gap-1"
+              className="w-full px-2 py-1.5 text-[10px] font-medium rounded-lg bg-white/10 border border-neutral-500/40 text-neutral-200 hover:bg-white/20 transition-all flex items-center justify-between gap-1"
             >
               <span className="truncate">{selectedTimezone.label}</span>
               <IconSettings className="w-3 h-3 flex-shrink-0" />
@@ -286,9 +287,27 @@ const BentoDesktopLayout: React.FC<BentoDesktopLayoutProps> = ({
             </Suspense>
           </div>
 
-          <div className="col-span-2 overflow-hidden">
-            <div className="h-full glass-soft rounded-2xl p-3 shadow-xl shadow-black/30">
-              <h3 className="text-[10px] uppercase tracking-widest text-slate-500 mb-2">World Clocks</h3>
+          {/* Bottom section - Price Ticker + World Clocks stacked */}
+          <div className="overflow-hidden flex flex-col gap-2">
+            {/* Price Ticker */}
+            <div className="glass-soft rounded-2xl p-2.5 shadow-xl shadow-black/30 flex-1 min-h-0 overflow-y-auto">
+              <Suspense fallback={
+                <div className="animate-pulse">
+                  <div className="h-3 bg-slate-700/50 rounded w-1/4 mb-2"></div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="h-10 bg-slate-700/30 rounded-lg"></div>
+                    ))}
+                  </div>
+                </div>
+              }>
+                <PriceTicker compact maxItems={4} showFilters={false} />
+              </Suspense>
+            </div>
+
+            {/* World Clocks */}
+            <div className="glass-soft rounded-2xl p-2.5 shadow-xl shadow-black/30">
+              <h3 className="text-[10px] uppercase tracking-widest text-slate-500 mb-1.5">World Clocks</h3>
               <SessionClocks compact sessionStatus={sessionStatus} />
             </div>
           </div>
