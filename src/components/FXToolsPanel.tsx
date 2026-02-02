@@ -4,6 +4,7 @@ import { VolatilityPanel } from './VolatilityPanel';
 import { BestPairsWidget } from './BestPairsWidget';
 import { CorrelationHeatMap } from './CorrelationHeatMap';
 import { CorrelationNetworkGraph } from './CorrelationNetworkGraph';
+import { CorrelationInsights } from './CorrelationInsights';
 import { PriceTicker } from './PriceTicker';
 import ForexChart from './ForexChart';
 import VolumeChart from './VolumeChart';
@@ -149,7 +150,13 @@ export function FXToolsPanel({
         )}
 
         {activeTab === 'correlation' && (
-          <CorrelationHeatMap />
+          <div className="space-y-6">
+            <CorrelationInsights />
+            <div className="border-t border-slate-700/50 pt-6">
+              <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wide mb-4">Correlation Matrix</h3>
+              <CorrelationHeatMap />
+            </div>
+          </div>
         )}
 
         {activeTab === 'network' && (
