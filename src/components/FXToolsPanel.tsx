@@ -4,6 +4,7 @@ import { VolatilityPanel } from './VolatilityPanel';
 import { BestPairsWidget } from './BestPairsWidget';
 import { CorrelationHeatMap } from './CorrelationHeatMap';
 import { CorrelationNetworkGraph } from './CorrelationNetworkGraph';
+import { PriceTicker } from './PriceTicker';
 import ForexChart from './ForexChart';
 import VolumeChart from './VolumeChart';
 import { Timezone } from '../types';
@@ -18,6 +19,7 @@ interface FXToolsPanelProps {
 }
 
 type ToolTab =
+  | 'prices'
   | 'timeline'
   | 'volume'
   | 'volatility'
@@ -34,9 +36,10 @@ export function FXToolsPanel({
   sessionStatus,
   currentDSTStatus
 }: FXToolsPanelProps) {
-  const [activeTab, setActiveTab] = useState<ToolTab>('network');
+  const [activeTab, setActiveTab] = useState<ToolTab>('prices');
 
   const tabs: Array<{ id: ToolTab; label: string }> = [
+    { id: 'prices', label: 'Live Prices' },
     { id: 'timeline', label: 'Session Timeline' },
     { id: 'volume', label: 'Session Volume' },
     { id: 'volatility', label: 'Volatility' },
@@ -98,6 +101,12 @@ export function FXToolsPanel({
 
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto p-6">
+        {activeTab === 'prices' && (
+          <div className="space-y-6">
+            <PriceTicker />
+          </div>
+        )}
+
         {activeTab === 'timeline' && selectedTimezone && currentTime && (
           <div className="space-y-6">
             <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-4">
