@@ -1,5 +1,5 @@
 import express from 'express';
-import { getCurrentPrice, getAllPrices } from '../api/fx/prices.js';
+import { getCurrentPrice, getAllPrices, getSparklines } from '../api/fx/prices.js';
 import { getVolatility, getAllVolatility } from '../api/fx/volatility.js';
 import { getCandles } from '../api/fx/candles.js';
 import { getCorrelationMatrix, getCorrelationPairs } from '../api/fx/correlation.js';
@@ -10,6 +10,7 @@ const router = express.Router();
 // Price endpoints
 router.get('/prices/current', getCurrentPrice);  // GET /api/fx/prices/current?instrument=EUR_USD
 router.get('/prices/all', getAllPrices);         // GET /api/fx/prices/all
+router.get('/prices/sparklines', getSparklines); // GET /api/fx/prices/sparklines?hours=24
 
 // Volatility endpoints
 router.get('/volatility/:instrument', getVolatility);  // GET /api/fx/volatility/EUR_USD

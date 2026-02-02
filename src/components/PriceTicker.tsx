@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useFXPrices } from '../hooks/useFXPrices';
+import { useFXSparklines } from '../hooks/useFXSparklines';
+import { Sparkline } from './Sparkline';
 import { FXPrice } from '../types';
 
 // Major pairs to show by default
@@ -19,6 +21,7 @@ type FilterType = 'all' | 'majors' | 'crosses' | 'metals';
 
 interface PriceCardProps {
   price: FXPrice;
+  sparklineData?: number[];
   compact?: boolean;
 }
 
@@ -56,7 +59,7 @@ function formatChange(value: number, instrument: string): string {
   return value >= 0 ? `+${value.toFixed(5)}` : value.toFixed(5);
 }
 
-function PriceCard({ price, compact = false }: PriceCardProps) {
+function PriceCard({ price, sparklineData, compact = false }: PriceCardProps) {
   const change = useMemo(
     () => calculateChange(price.open_mid, price.mid),
     [price.open_mid, price.mid]
@@ -70,10 +73,15 @@ function PriceCard({ price, compact = false }: PriceCardProps) {
     return (
       <div className={`glass-soft rounded-lg p-2 transition-all hover:scale-[1.02] ${bgGlow} hover:shadow-lg`}>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] font-semibold text-slate-300 tracking-wide">
-            {formatInstrument(price.instrument)}
-          </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[10px] font-semibold text-slate-300 tracking-wide">
+              {formatInstrument(price.instrument)}
+            </span>
+            {sparklineData && sparklineData.length > 1 && (
+              <Sparkline data={sparklineData} width={40} height={14} strokeWidth={1} />
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <span className="text-xs font-bold text-white font-mono">
               {formatPrice(price.mid, price.instrument)}
             </span>
@@ -100,9 +108,14 @@ function PriceCard({ price, compact = false }: PriceCardProps) {
         </span>
       </div>
 
-      {/* Price */}
-      <div className="text-lg font-bold text-white font-mono mb-1">
-        {formatPrice(price.mid, price.instrument)}
+      {/* Price + Sparkline Row */}
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <div className="text-lg font-bold text-white font-mono">
+          {formatPrice(price.mid, price.instrument)}
+        </div>
+        {sparklineData && sparklineData.length > 1 && (
+          <Sparkline data={sparklineData} width={60} height={24} strokeWidth={1.5} />
+        )}
       </div>
 
       {/* Change */}
@@ -132,10 +145,17 @@ interface PriceTickerProps {
   compact?: boolean;
   maxItems?: number;
   showFilters?: boolean;
+  showSparklines?: boolean;
 }
 
-export function PriceTicker({ compact = false, maxItems, showFilters = true }: PriceTickerProps) {
+export function PriceTicker({
+  compact = false,
+  maxItems,
+  showFilters = true,
+  showSparklines = true
+}: PriceTickerProps) {
   const { prices, loading, error, lastUpdated } = useFXPrices(30000); // Refresh every 30s
+  const { sparklines } = useFXSparklines(24, 300000); // 24h data, refresh every 5min
   const [filter, setFilter] = useState<FilterType>('majors');
 
   const filteredPrices = useMemo(() => {
@@ -232,7 +252,12 @@ export function PriceTicker({ compact = false, maxItems, showFilters = true }: P
             : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
         }`}>
           {filteredPrices.map((price) => (
-            <PriceCard key={price.instrument} price={price} compact={compact} />
+            <PriceCard
+              key={price.instrument}
+              price={price}
+              sparklineData={showSparklines ? sparklines[price.instrument] : undefined}
+              compact={compact}
+            />
           ))}
         </div>
       ) : (
