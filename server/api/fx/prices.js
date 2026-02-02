@@ -115,3 +115,60 @@ export async function getAllPrices(req, res) {
     });
   }
 }
+
+/**
+ * GET /api/fx/prices/sparklines?hours=24
+ * Fetches sparkline data (last N hours of close prices) for all instruments
+ *
+ * Query params:
+ * - hours: Number (default: 24, max: 168) - Hours of data to return
+ *
+ * Returns:
+ * {
+ *   success: true,
+ *   hours: 24,
+ *   data: {
+ *     'EUR_USD': [1.185, 1.186, 1.184, ...],
+ *     'GBP_USD': [1.367, 1.368, 1.366, ...],
+ *     ...
+ *   }
+ * }
+ */
+export async function getSparklines(req, res) {
+  try {
+    const { hours = 24 } = req.query;
+    const parsedHours = Math.min(parseInt(hours) || 24, 168); // Max 1 week
+
+    // Query last N hours of candles for all instruments
+    const result = await fxPool.query(`
+      SELECT instrument, time, close_mid
+      FROM oanda_candles
+      WHERE granularity = 'H1'
+        AND time >= NOW() - INTERVAL '${parsedHours} hours'
+      ORDER BY instrument, time ASC
+    `);
+
+    // Group by instrument
+    const sparklines = {};
+    for (const row of result.rows) {
+      if (!sparklines[row.instrument]) {
+        sparklines[row.instrument] = [];
+      }
+      sparklines[row.instrument].push(parseFloat(row.close_mid));
+    }
+
+    res.json({
+      success: true,
+      hours: parsedHours,
+      count: Object.keys(sparklines).length,
+      data: sparklines
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching sparklines:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+}
