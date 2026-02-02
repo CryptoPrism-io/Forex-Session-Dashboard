@@ -24,6 +24,14 @@ const IconTools: React.FC<{ className?: string; style?: React.CSSProperties }> =
   </svg>
 );
 
+// Icon for Prices/FX
+const IconPrices: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className, style }) => (
+  <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="1" x2="12" y2="23" />
+    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  </svg>
+);
+
 const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange }) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
@@ -41,63 +49,71 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, onViewChange })
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMoreMenu]);
 
-  // Primary tabs - 4 main navigation items (Tools removed - content available in Sessions)
+  // Primary tabs - 4 main navigation items (minimal black/white theme)
   const primaryTabs = [
     {
       id: 'overview' as ViewType,
       label: 'Home',
       icon: IconTarget,
-      activeClass: 'bg-blue-500/25 border-blue-400/50',
-      textClass: 'text-blue-300',
-      glowColor: '#60a5fa'
+      activeClass: 'bg-white/10 border-white/30',
+      textClass: 'text-white',
+      glowColor: '#ffffff'
     },
     {
       id: 'calendar' as ViewType,
       label: 'Calendar',
       icon: IconCalendarTab,
-      activeClass: 'bg-emerald-500/25 border-emerald-400/50',
-      textClass: 'text-emerald-300',
-      glowColor: '#6ee7b7'
+      activeClass: 'bg-white/10 border-white/30',
+      textClass: 'text-white',
+      glowColor: '#ffffff'
     },
     {
       id: 'charts' as ViewType,
       label: 'Sessions',
       icon: IconChartsTab,
-      activeClass: 'bg-cyan-500/25 border-cyan-400/50',
-      textClass: 'text-cyan-300',
-      glowColor: '#67e8f9'
+      activeClass: 'bg-white/10 border-white/30',
+      textClass: 'text-white',
+      glowColor: '#ffffff'
+    },
+    {
+      id: 'fxdata' as ViewType,
+      label: 'Prices',
+      icon: IconPrices,
+      activeClass: 'bg-emerald-500/20 border-emerald-400/40',
+      textClass: 'text-emerald-300',
+      glowColor: '#34d399'
     },
   ];
 
-  // Secondary items in "More" menu
+  // Secondary items in "More" menu (minimal black/white theme)
   const moreItems = [
     {
       id: 'screener' as ViewType,
       label: 'Screener',
       icon: IconTradingFlow,
-      textClass: 'text-pink-300',
-      glowColor: '#f9a8d4'
+      textClass: 'text-neutral-300',
+      glowColor: '#d4d4d4'
     },
     {
       id: 'clocks' as ViewType,
       label: 'World Clocks',
       icon: IconWorldClockTab,
-      textClass: 'text-violet-300',
-      glowColor: '#c4b5fd'
+      textClass: 'text-neutral-300',
+      glowColor: '#d4d4d4'
     },
     {
       id: 'guide' as ViewType,
       label: 'Guide',
       icon: IconGuideTab,
-      textClass: 'text-amber-300',
-      glowColor: '#fcd34d'
+      textClass: 'text-neutral-300',
+      glowColor: '#d4d4d4'
     },
     {
       id: 'aiChat' as ViewType,
       label: 'AI Assistant',
       icon: IconGlobe,
-      textClass: 'text-purple-300',
-      glowColor: '#c084fc'
+      textClass: 'text-neutral-300',
+      glowColor: '#d4d4d4'
     },
   ];
 
