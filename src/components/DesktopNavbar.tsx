@@ -32,10 +32,10 @@ const DesktopNavbar: React.FC<DesktopNavbarProps> = ({
       {/* Left: Logo + Page Navigation Buttons */}
       <div className="flex items-center gap-3">
         <h1
-          className="text-sm font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent whitespace-nowrap"
+          className="text-sm font-bold tracking-tight bg-gradient-to-r from-neutral-100 via-white to-neutral-200 bg-clip-text text-transparent whitespace-nowrap"
           style={{
-            textShadow: '0 0 8px rgba(34, 211, 238, 0.2), 0 0 12px rgba(59, 130, 246, 0.1)',
-            filter: 'drop-shadow(0 0 2px rgba(34, 211, 238, 0.15))'
+            textShadow: '0 0 8px rgba(255, 255, 255, 0.2), 0 0 12px rgba(255, 255, 255, 0.1)',
+            filter: 'drop-shadow(0 0 2px rgba(255, 255, 255, 0.15))'
           }}
         >
           FX_Saarthi
@@ -45,28 +45,28 @@ const DesktopNavbar: React.FC<DesktopNavbarProps> = ({
         <div className="flex items-center gap-1.5 ml-4">
           <button
             onClick={() => onNavigatePage?.(1)}
-            className="px-2 py-1 text-[10px] font-medium text-slate-300 hover:text-cyan-300 border border-slate-600/40 hover:border-cyan-500/60 rounded-md bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
+            className="px-2 py-1 text-[10px] font-medium text-slate-300 hover:text-white border border-slate-600/40 hover:border-neutral-400/60 rounded-md bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
             aria-label="Navigate to Trading Desk"
           >
             Trading Desk
           </button>
           <button
             onClick={() => onNavigatePage?.(2)}
-            className="px-2 py-1 text-[10px] font-medium text-slate-300 hover:text-cyan-300 border border-slate-600/40 hover:border-cyan-500/60 rounded-md bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
+            className="px-2 py-1 text-[10px] font-medium text-slate-300 hover:text-white border border-slate-600/40 hover:border-neutral-400/60 rounded-md bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
             aria-label="Navigate to Screener"
           >
             Screener
           </button>
           <button
             onClick={() => onNavigatePage?.(3)}
-            className="px-2 py-1 text-[10px] font-medium text-slate-300 hover:text-cyan-300 border border-slate-600/40 hover:border-cyan-500/60 rounded-md bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
+            className="px-2 py-1 text-[10px] font-medium text-slate-300 hover:text-white border border-slate-600/40 hover:border-neutral-400/60 rounded-md bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
             aria-label="Navigate to AI Assistant"
           >
             AI Assistant
           </button>
           <button
             onClick={() => onNavigatePage?.(4)}
-            className="px-2 py-1 text-[10px] font-medium text-slate-300 hover:text-cyan-300 border border-slate-600/40 hover:border-cyan-500/60 rounded-md bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
+            className="px-2 py-1 text-[10px] font-medium text-slate-300 hover:text-white border border-slate-600/40 hover:border-neutral-400/60 rounded-md bg-slate-700/10 hover:bg-slate-700/30 transition-all duration-200"
             aria-label="Navigate to Backtesting"
           >
             Backtesting
@@ -93,7 +93,7 @@ const DesktopNavbar: React.FC<DesktopNavbarProps> = ({
         {/* Help Icon */}
         <button
           onClick={onHelpClick}
-          className="p-1.5 rounded-md bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60 hover:text-cyan-300 transition-all duration-200"
+          className="p-1.5 rounded-md bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60 hover:text-white transition-all duration-200"
           title="Help & Documentation"
           aria-label="Help & Documentation"
         >
@@ -104,7 +104,7 @@ const DesktopNavbar: React.FC<DesktopNavbarProps> = ({
         {onProfileClick && (
           <button
             onClick={onProfileClick}
-            className="p-1.5 rounded-md bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60 hover:text-cyan-300 transition-all duration-200"
+            className="p-1.5 rounded-md bg-slate-700/20 border border-slate-700/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-600/60 hover:text-white transition-all duration-200"
             title="User Profile"
             aria-label="User Profile"
           >

@@ -94,7 +94,7 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
                 <span className="px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded-full bg-slate-700/40 border border-slate-600/40 text-slate-400">
                   {timeOfDay}
                 </span>
-                <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-200">
+                <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-white/10 border border-white/30 text-white">
                   {selectedTimezone.label}
                 </span>
               </div>
@@ -111,7 +111,7 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
                     Active Sessions
                   </h3>
                 </div>
-                <span className="text-[9px] uppercase tracking-wide text-cyan-400/80 font-medium">
+                <span className="text-[9px] uppercase tracking-wide text-neutral-400 font-medium">
                   Status
                 </span>
               </div>
@@ -199,12 +199,12 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({
           <div className="hidden md:block glass-soft rounded-xl p-2.5 shadow-xl shadow-black/30">
             <div className="flex items-center justify-between mb-1">
               <div className="text-sm">📊</div>
-              <div className="text-[9px] uppercase tracking-wide font-semibold text-cyan-300/60">
+              <div className="text-[9px] uppercase tracking-wide font-semibold text-neutral-400">
                 Status
               </div>
             </div>
             <div className="text-[9px] text-slate-400 mb-0.5">Active Sessions</div>
-            <div className="text-sm font-bold text-cyan-300">
+            <div className="text-sm font-bold text-white">
               {activeSessions.length}
               <span className="text-[10px] font-normal text-slate-400 ml-1">/ 4</span>
             </div>
