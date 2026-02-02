@@ -33,7 +33,7 @@ const VOLUME_DATA = [
 ];
 
 const SESSION_CITY_REFERENCES = [
-  { label: 'Sydney', timezone: 'Australia/Sydney', accent: '#38bdf8' },
+  { label: 'Sydney', timezone: 'Australia/Sydney', accent: '#a3a3a3' },
   { label: 'Tokyo', timezone: 'Asia/Tokyo', accent: '#f472b6' },
   { label: 'London', timezone: 'Europe/London', accent: '#facc15' },
   { label: 'New York', timezone: 'America/New_York', accent: '#34d399' },
@@ -403,7 +403,7 @@ const cityBadges = useMemo(
           <select
             value={viewMode}
             onChange={(e) => setViewMode(e.target.value as any)}
-            className="flex-1 px-2 py-1.5 text-[10px] font-semibold rounded-lg bg-slate-950/90 border border-cyan-400/40 text-cyan-100 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+            className="flex-1 px-2 py-1.5 text-[10px] font-semibold rounded-lg bg-slate-950/90 border border-neutral-500/40 text-neutral-100 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
               backgroundRepeat: 'no-repeat',
@@ -430,7 +430,7 @@ const cityBadges = useMemo(
                 }
                 triggerClassName={`p-1.5 rounded-lg backdrop-blur-md border transition-all duration-200 ${
                   showEventFilterMenu
-                    ? 'bg-cyan-500/30 border-cyan-400/60 text-cyan-100'
+                    ? 'bg-white/15 border-neutral-400/60 text-neutral-100'
                     : 'bg-slate-900/40 border-slate-700/30 text-slate-300'
                 }`}
                 menuClassName="w-48"
@@ -492,7 +492,7 @@ const cityBadges = useMemo(
               onClick={() => setViewMode(mode.key as any)}
               className={`px-3 py-2.5 min-h-touch text-xs font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
                 viewMode === mode.key
-                  ? 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
+                  ? 'bg-white/15 border-neutral-400/50 text-neutral-100 shadow-lg shadow-white/10'
                   : 'bg-slate-900/40 border-slate-700/30 hover:bg-slate-800/50 hover:border-slate-600/40 text-slate-300'
               }`}
             >
@@ -515,7 +515,7 @@ const cityBadges = useMemo(
               }
               triggerClassName={`px-3 py-2.5 min-h-touch text-xs font-semibold rounded-lg backdrop-blur-md border flex items-center gap-1.5 transition-all duration-200 ${
                 showEventFilterMenu
-                  ? 'bg-cyan-500/30 border-cyan-400/60 text-cyan-100 shadow-lg shadow-cyan-500/25'
+                  ? 'bg-white/15 border-neutral-400/60 text-neutral-100 shadow-lg shadow-cyan-500/25'
                   : 'bg-slate-700/20 border-slate-600/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-500/60 hover:text-slate-200 hover:shadow-md active:bg-slate-700/60'
               }`}
               menuClassName="w-48"
@@ -662,7 +662,7 @@ const cityBadges = useMemo(
                 onClick={() => setViewMode(mode.key as any)}
                 className={`px-3 py-2.5 min-h-touch text-xs font-semibold rounded-lg backdrop-blur-md transition-all duration-300 border ${
                   viewMode === mode.key
-                    ? 'bg-cyan-500/30 border-cyan-400/50 text-cyan-100 shadow-lg shadow-cyan-500/20'
+                    ? 'bg-white/15 border-neutral-400/50 text-neutral-100 shadow-lg shadow-white/10'
                     : 'bg-slate-700/20 border-slate-600/40 hover:bg-slate-700/40 hover:border-slate-500/60 text-slate-300'
                 }`}
               >
@@ -686,7 +686,7 @@ const cityBadges = useMemo(
               }
               triggerClassName={`px-3 py-2.5 min-h-touch text-xs font-semibold rounded-lg backdrop-blur-md border flex items-center gap-1.5 transition-all duration-200 ${
                 showEventFilterMenu
-                  ? 'bg-cyan-500/30 border-cyan-400/60 text-cyan-100 shadow-lg shadow-cyan-500/25'
+                  ? 'bg-white/15 border-neutral-400/60 text-neutral-100 shadow-lg shadow-cyan-500/25'
                   : 'bg-slate-700/20 border-slate-600/40 text-slate-300 hover:bg-slate-700/40 hover:border-slate-500/60 hover:text-slate-200 hover:shadow-md active:bg-slate-700/60'
               }`}
               menuClassName="w-48"

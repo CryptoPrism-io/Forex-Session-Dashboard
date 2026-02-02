@@ -379,10 +379,10 @@ const App: React.FC = () => {
               <div className="flex items-center gap-3">
                 {/* Title */}
                 <h1
-                  className="text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent whitespace-nowrap"
+                  className="text-xl font-bold tracking-tight bg-gradient-to-r from-neutral-100 via-white to-neutral-200 bg-clip-text text-transparent whitespace-nowrap"
                   style={{
-                    textShadow: '0 0 10px rgba(34, 211, 238, 0.25), 0 0 16px rgba(59, 130, 246, 0.15)',
-                    filter: 'drop-shadow(0 0 3px rgba(34, 211, 238, 0.2))'
+                    textShadow: '0 0 10px rgba(255, 255, 255, 0.25), 0 0 16px rgba(255, 255, 255, 0.15)',
+                    filter: 'drop-shadow(0 0 3px rgba(255, 255, 255, 0.2))'
                   }}
                 >
                   FX_Saarthi
@@ -409,7 +409,7 @@ const App: React.FC = () => {
                   onClick={() => setActiveView('timeline')}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                     activeView === 'timeline'
-                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                      ? 'bg-white/10 text-white border border-white/30'
                       : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
                   }`}
                 >
@@ -419,7 +419,7 @@ const App: React.FC = () => {
                   onClick={() => setActiveView('volume')}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                     activeView === 'volume'
-                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                      ? 'bg-white/10 text-white border border-white/30'
                       : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
                   }`}
                 >
@@ -429,7 +429,7 @@ const App: React.FC = () => {
                   onClick={() => setActiveView('volatility')}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                     activeView === 'volatility'
-                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                      ? 'bg-white/10 text-white border border-white/30'
                       : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
                   }`}
                 >
@@ -439,7 +439,7 @@ const App: React.FC = () => {
                   onClick={() => setActiveView('position')}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                     activeView === 'position'
-                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                      ? 'bg-white/10 text-white border border-white/30'
                       : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
                   }`}
                 >
@@ -449,7 +449,7 @@ const App: React.FC = () => {
                   onClick={() => setActiveView('correlation')}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                     activeView === 'correlation'
-                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                      ? 'bg-white/10 text-white border border-white/30'
                       : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
                   }`}
                 >
@@ -459,7 +459,7 @@ const App: React.FC = () => {
                   onClick={() => setActiveView('network')}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                     activeView === 'network'
-                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                      ? 'bg-white/10 text-white border border-white/30'
                       : 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700/50'
                   }`}
                 >
@@ -508,16 +508,16 @@ const App: React.FC = () => {
                 <div className="flex items-center justify-between gap-2">
                   {/* Title Pill - Floating Card Style */}
                   <div
-                    className="flex-1 flex items-center justify-center px-4 py-2 rounded-full backdrop-blur-xl border border-cyan-400/30 shadow-lg shadow-cyan-500/20"
+                    className="flex-1 flex items-center justify-center px-4 py-2 rounded-full backdrop-blur-xl border border-white/30 shadow-lg shadow-white/10"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)',
+                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
                     }}
                   >
                     <h1
-                      className="text-base font-bold tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-400 bg-clip-text text-transparent"
+                      className="text-base font-bold tracking-tight bg-gradient-to-r from-neutral-100 via-white to-neutral-200 bg-clip-text text-transparent"
                       style={{
-                        textShadow: '0 0 10px rgba(34, 211, 238, 0.3)',
-                        filter: 'drop-shadow(0 0 3px rgba(34, 211, 238, 0.25))'
+                        textShadow: '0 0 10px rgba(255, 255, 255, 0.3)',
+                        filter: 'drop-shadow(0 0 3px rgba(255, 255, 255, 0.25))'
                       }}
                     >
                       FX_Saarthi

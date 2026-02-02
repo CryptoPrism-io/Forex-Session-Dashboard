@@ -512,7 +512,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
   };
 
   const currencyTintMap: Record<string, string> = {
-    USD: 'bg-cyan-500/20 text-cyan-100',
+    USD: 'bg-neutral-600/20 text-neutral-200',
     EUR: 'bg-blue-500/20 text-blue-100',
     GBP: 'bg-pink-500/20 text-pink-100',
     JPY: 'bg-rose-500/20 text-rose-100',
@@ -711,7 +711,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
                         ? 'text-emerald-400'
                         : item.status === 'worse'
                         ? 'text-rose-400'
-                        : 'text-cyan-300'
+                        : 'text-white'
                       : 'text-slate-200'
                   }`}
                 >
@@ -769,7 +769,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
         return (
           <button
             aria-label="Toggle details"
-            className="w-7 h-7 rounded-full bg-slate-900/60 border border-slate-700/60 flex items-center justify-center text-slate-300 hover:text-cyan-300 transition-colors"
+            className="w-7 h-7 rounded-full bg-slate-900/60 border border-slate-700/60 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               handleRowToggle(params.data.id);
@@ -818,7 +818,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
       cellStyle: (params: any) => {
         if (params.data?.isDetailRow) return { display: 'none' };
         const timeLeft = params.value;
-        let color = '#22d3ee'; // cyan-400
+        let color = '#d4d4d4'; // cyan-400
         if (timeLeft === 'Passed') color = '#64748b'; // slate-500
         else if (timeLeft === '--') color = '#64748b';
         else if (timeLeft.includes('d')) color = '#94a3b8'; // slate-400
@@ -952,7 +952,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
 
           <button
             onClick={refetch}
-            className="w-7 h-7 flex items-center justify-center rounded-full border border-slate-600/50 bg-slate-800/40 hover:border-cyan-400/40 hover:bg-cyan-500/10 text-slate-100 transition-all disabled:opacity-50 disabled:pointer-events-none shadow-inner shadow-black/25"
+            className="w-7 h-7 flex items-center justify-center rounded-full border border-slate-600/50 bg-slate-800/40 hover:border-neutral-500/40 hover:bg-neutral-600/10 text-slate-100 transition-all disabled:opacity-50 disabled:pointer-events-none shadow-inner shadow-black/25"
             title="Refresh feed"
             aria-label="Refresh feed"
             disabled={loading}
@@ -1017,7 +1017,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
       <div className="sm:hidden mb-2">
         <button
           onClick={() => setIsMobileFilterOpen(true)}
-          className="w-full px-2 py-1.5 rounded-lg bg-slate-900/60 backdrop-blur-xl border border-cyan-400/30 text-[10px] text-cyan-100 shadow-sm shadow-cyan-500/10 flex items-center justify-between active:scale-95 transition-transform"
+          className="w-full px-2 py-1.5 rounded-lg bg-slate-900/60 backdrop-blur-xl border border-neutral-500/30 text-[10px] text-neutral-200 shadow-sm shadow-neutral-500/10 flex items-center justify-between active:scale-95 transition-transform"
         >
           <span className="font-medium">
             {(() => {
@@ -1026,7 +1026,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
               return `Filters (${totalFilters})`;
             })()}
           </span>
-          <span className="text-cyan-400 text-[9px]">Edit</span>
+          <span className="text-neutral-300 text-[9px]">Edit</span>
         </button>
       </div>
 
@@ -1057,7 +1057,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
           {(selectedImpacts.length > 0 || selectedCurrencies.length > 0 || selectedEventTypes.length > 0) && (
             <button
               onClick={handleResetFilters}
-              className="text-[10px] text-cyan-400 hover:text-cyan-300 underline"
+              className="text-[10px] text-neutral-300 hover:text-white underline"
             >
               Reset filters to see all events
             </button>
@@ -1113,7 +1113,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
                     timeLeft.includes('d') ? 'bg-slate-700/40 text-slate-300' :
                     parseInt(timeLeft) < 2 ? 'bg-red-500/20 text-red-300 border border-red-400/40' :
                     parseInt(timeLeft) < 6 ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40' :
-                    'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40'
+                    'bg-neutral-600/20 text-white border border-neutral-500/40'
                   }`}>
                     {timeLeft === 'Passed' ? '✓ Passed' : `⏱ ${timeLeft}`}
                   </span>
@@ -1135,7 +1135,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
                       !event.actual ? 'text-slate-500' :
                       event.actual_status === 'better' ? 'text-green-400' :
                       event.actual_status === 'worse' ? 'text-red-400' :
-                      'text-cyan-300'
+                      'text-white'
                     }`}>
                       {event.actual || '--'}
                     </div>
@@ -1189,7 +1189,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
               <div className="text-[9px] uppercase text-slate-400 tracking-wide font-semibold">Currencies</div>
               <button
                 onClick={selectAllCurrencies}
-                className="text-[9px] text-cyan-400 hover:text-cyan-300 font-medium"
+                className="text-[9px] text-neutral-300 hover:text-white font-medium"
               >
                 {selectedCurrencies.length === 0 ? 'All' : 'Select All'}
               </button>
@@ -1201,7 +1201,7 @@ const EconomicCalendar: React.FC<EconomicCalendarProps> = ({ selectedTimezone, f
               placeholder="Search..."
               value={currencySearchQuery}
               onChange={(e) => setCurrencySearchQuery(e.target.value)}
-              className="w-full px-2 py-1 mb-1.5 text-[10px] rounded bg-slate-800/60 border border-slate-700/50 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-400/50"
+              className="w-full px-2 py-1 mb-1.5 text-[10px] rounded bg-slate-800/60 border border-slate-700/50 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-neutral-400/50"
             />
 
             {/* Currency Chips */}
