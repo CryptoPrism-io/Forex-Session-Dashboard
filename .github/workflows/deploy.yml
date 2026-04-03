@@ -53,14 +53,14 @@ jobs:
           VITE_BASE_PATH: /
         run: npm run build
 
-      # Deploy to Cloud Run using gcloud with env.yaml
+      # Deploy to Cloud Run using gcloud with GitHub secrets
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy ${{ env.SERVICE }} \
             --source . \
             --platform managed \
             --region ${{ env.REGION }} \
-            --env-vars-file env.yaml \
+            --set-env-vars "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }},POSTGRES_PORT=${{ secrets.POSTGRES_PORT }},POSTGRES_DB=${{ secrets.POSTGRES_DB }},POSTGRES_USER=${{ secrets.POSTGRES_USER }},POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }},POSTGRES_POOL_SIZE=${{ secrets.POSTGRES_POOL_SIZE }},VITE_API_BASE_URL=https://forex-dashboard-963362833537.us-central1.run.app,VITE_ALPHA_VANTAGE_KEY=,NODE_ENV=production" \
             --memory 512Mi \
             --cpu 1 \
             --allow-unauthenticated \
