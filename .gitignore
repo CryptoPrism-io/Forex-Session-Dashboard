@@ -37,3 +37,9 @@ fx-pipeline/
 # Temp files
 temp-*.json
 nul
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+env.yaml
