@@ -37,3 +37,12 @@ fx-pipeline/
 # Temp files
 temp-*.json
 nul
+
+# Secrets — added by env-leak cleanup
+.env
+.env.*
+*.env
+*.env.backup
+*.env.production
+*.env.local
+
