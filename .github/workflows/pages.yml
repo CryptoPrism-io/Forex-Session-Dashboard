@@ -32,9 +32,20 @@ jobs:
 
       - name: Build project for GitHub Pages
         env:
-          VITE_API_BASE_URL: https://forex-dashboard-963362833537.us-central1.run.app
+          # AWS Lightsail backend. VITE_* vars are baked in at build time, so a
+          # backend URL change requires a rebuild here, not just a redeploy.
+          VITE_API_BASE_URL: https://forex-dashboard.8xy5d1tats0s8.us-east-1.cs.amazonlightsail.com
           VITE_BASE_PATH: /Forex-Session-Dashboard/
         run: npm run build
+
+      - name: Fail if the dead Cloud Run URL is still in the bundle
+        run: |
+          if grep -rq "run\.app" dist/; then
+            echo "::error::Built bundle still references a Cloud Run URL — the API base did not get rewritten."
+            grep -ro "https://[a-z0-9.-]*run\.app" dist/ | sort -u
+            exit 1
+          fi
+          echo "OK: no Cloud Run references in dist/"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

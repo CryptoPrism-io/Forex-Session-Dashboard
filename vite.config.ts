@@ -5,10 +5,12 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
-    // For production, use Cloud Run backend or fallback to relative path
-    // For dev, use localhost
+    // Production points at the AWS Lightsail backend. The previous fallback here
+    // was the Cloud Run URL, which died with GCP billing on 2026-07-22 — keeping a
+    // dead host as the default meant a missing env var silently shipped a broken
+    // bundle rather than failing the build.
     const apiBaseUrl = mode === 'production'
-      ? env.VITE_API_BASE_URL || 'https://forex-dashboard-963362833537.us-central1.run.app'
+      ? env.VITE_API_BASE_URL || 'https://forex-dashboard.8xy5d1tats0s8.us-east-1.cs.amazonlightsail.com'
       : 'http://localhost:5000';
 
     // Determine base path: GitHub Pages vs Cloud Run vs Dev
@@ -46,6 +48,12 @@ export default defineConfig(({ mode }) => {
             navigateFallback: '/Forex-Session-Dashboard/index.html',
             navigateFallbackDenylist: [/^\/api\//],
             cleanupOutdatedCaches: true,
+            // The backend URL is baked into the bundle, so a client still running
+            // the pre-migration service worker keeps calling the dead Cloud Run
+            // host and looks like a data outage. Take over immediately on update
+            // instead of waiting for every tab to close.
+            skipWaiting: true,
+            clientsClaim: true,
             runtimeCaching: [
               {
                 urlPattern: /^https:\/\/cdn\.tailwindcss\.com\/.*/i,
@@ -104,8 +112,11 @@ export default defineConfig(({ mode }) => {
         })
       ],
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        // GEMINI_API_KEY was inlined here into a bundle served from a PUBLIC
+        // GitHub Pages site. Nothing in src/ reads it, so it was pure exposure:
+        // any build environment that happened to set the variable would have
+        // published a live server key. Removed deliberately — if the frontend
+        // ever needs an AI call, proxy it through the backend instead.
         'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl)
       },
       resolve: {

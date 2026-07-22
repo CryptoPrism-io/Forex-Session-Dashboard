@@ -1,0 +1,143 @@
+name: Deploy backend to Lightsail
+
+# Replaces the retired Cloud Run pipeline (deploy.yml). The image is built ON THE
+# RUNNER so releasing never depends on a local Docker daemon — the failure mode
+# that made every pratyaksha release a multi-hour session.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # required for AWS OIDC
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPO: forex-dashboard-api
+  SERVICE: forex-dashboard
+  CONTAINER: api
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC, keyless)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::405633560616:role/gha-forex-dashboard-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        id: build
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          IMAGE="$REGISTRY/$ECR_REPO:${GITHUB_SHA::12}"
+          docker build -f server/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Lightsail
+        env:
+          IMAGE: ${{ steps.build.outputs.image }}
+        run: |
+          set -euo pipefail
+
+          # Secrets are read at deploy time and injected as container env.
+          # They are never baked into the image and never committed.
+          CREDS=$(aws secretsmanager get-secret-value \
+            --secret-id /cryptoprism/forex/POSTGRES \
+            --query SecretString --output text)
+
+          jq -n \
+            --arg image "$IMAGE" \
+            --arg container "$CONTAINER" \
+            --argjson creds "$CREDS" \
+            '{
+              ($container): {
+                image: $image,
+                environment: ($creds + {
+                  NODE_ENV: "production",
+                  PORT: "8080",
+                  ALLOWED_ORIGINS: "https://cryptoprism-io.github.io"
+                }),
+                ports: { "8080": "HTTP" }
+              }
+            }' > containers.json
+
+          jq -n --arg container "$CONTAINER" \
+            '{
+              containerName: $container,
+              containerPort: 8080,
+              healthCheck: {
+                path: "/health",
+                intervalSeconds: 10,
+                timeoutSeconds: 5,
+                healthyThreshold: 2,
+                unhealthyThreshold: 3,
+                successCodes: "200"
+              }
+            }' > endpoint.json
+
+          aws lightsail create-container-service-deployment \
+            --service-name "$SERVICE" \
+            --containers file://containers.json \
+            --public-endpoint file://endpoint.json
+
+          rm -f containers.json endpoint.json
+
+      - name: Wait for deployment to become ACTIVE
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 40); do
+            STATE=$(aws lightsail get-container-service-deployments \
+              --service-name "$SERVICE" \
+              --query 'deployments[0].state' --output text)
+            echo "attempt $i: $STATE"
+            case "$STATE" in
+              ACTIVE)  echo "deployment ACTIVE"; exit 0 ;;
+              FAILED)  echo "::error::Lightsail deployment FAILED"
+                       aws lightsail get-container-log --service-name "$SERVICE" \
+                         --container-name "$CONTAINER" --query 'logEvents[-40:]' --output text || true
+                       exit 1 ;;
+            esac
+            sleep 15
+          done
+          echo "::error::Timed out waiting for deployment"; exit 1
+
+      # A health check that only proves the process booted is worthless — this
+      # asserts the API actually returns real rows from the database.
+      - name: Verify live endpoints return real data
+        run: |
+          set -euo pipefail
+          BASE=$(aws lightsail get-container-services --service-name "$SERVICE" \
+            --query 'containerServices[0].url' --output text | sed 's:/*$::')
+          echo "base: $BASE"
+
+          HEALTH=$(curl -fsS --retry 5 --retry-delay 6 --retry-all-errors "$BASE/health")
+          echo "health: $HEALTH"
+          echo "$HEALTH" | jq -e '.status == "healthy"' > /dev/null
+
+          EVENTS=$(curl -fsS "$BASE/api/calendar/today?date=$(date -u +%F)")
+          COUNT=$(echo "$EVENTS" | jq -r '.count // 0')
+          echo "calendar events today: $COUNT"
+          echo "$EVENTS" | jq -e '.success == true' > /dev/null
+
+          CORS=$(curl -fsS -o /dev/null -w '%{http_code}' -X OPTIONS \
+            -H 'Origin: https://cryptoprism-io.github.io' \
+            -H 'Access-Control-Request-Method: GET' \
+            "$BASE/api/calendar/today")
+          echo "CORS preflight: $CORS"

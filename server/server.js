@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import calendarRoutes from './routes/calendar.js';
@@ -10,20 +11,44 @@ import pool from './db.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+// Container platforms inject PORT; 8080 is the Lightsail/App Runner convention.
+const PORT = process.env.PORT || 8080;
 
 // Get directory name for ES modules
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Middleware
+// The frontend is served from GitHub Pages, so this is a genuinely cross-origin
+// API. `origin: '*'` together with `credentials: true` is rejected outright by
+// browsers, so the allow-list has to be explicit. Override with ALLOWED_ORIGINS
+// (comma-separated) rather than editing this file.
+const DEFAULT_ORIGINS = [
+  'https://cryptoprism-io.github.io',
+];
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+const originAllowList = allowedOrigins.length ? allowedOrigins : DEFAULT_ORIGINS;
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? '*' : /^https?:\/\/localhost:\d+$/,
-  credentials: true
+  origin(origin, callback) {
+    // Same-origin/curl/server-to-server requests send no Origin header.
+    if (!origin) return callback(null, true);
+    if (originAllowList.includes(origin)) return callback(null, true);
+    if (/^https?:\/\/localhost:\d+$/.test(origin)) return callback(null, true);
+    return callback(null, false);
+  },
+  credentials: true,
 }));
 app.use(express.json());
 
-// Serve static files from public folder (React frontend)
-app.use(express.static(path.join(__dirname, 'public')));
+// A frontend bundle is only present in the legacy single-container image. When
+// the backend runs standalone (the AWS deployment) this directory does not exist.
+const staticDir = path.join(__dirname, 'public');
+const hasBundledFrontend = fs.existsSync(path.join(staticDir, 'index.html'));
+if (hasBundledFrontend) {
+  app.use(express.static(staticDir));
+}
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -34,12 +59,15 @@ app.use((req, res, next) => {
 // Health check endpoint
 app.get('/health', async (req, res) => {
   try {
-    // Test database connection
-    await pool.query('SELECT NOW()');
+    // Read a real row from a real table. `SELECT NOW()` only proves a socket is
+    // open — a green check that never touched application data is exactly how the
+    // June migration outage stayed invisible for days.
+    const { rows } = await pool.query('SELECT count(*)::int AS events FROM economic_calendar_ff');
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
-      database: 'connected'
+      database: 'connected',
+      calendar_events: rows[0].events
     });
   } catch (error) {
     res.status(500).json({
@@ -55,9 +83,18 @@ app.get('/health', async (req, res) => {
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/fx', fxRoutes);
 
-// Serve React app for all other routes (SPA routing)
+// Serve React app for all other routes (SPA routing) when the bundle is present.
+// Standalone API deployments must return a JSON 404 instead of trying to send a
+// file that isn't there — otherwise every unmatched path 500s.
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  if (hasBundledFrontend) {
+    return res.sendFile(path.join(staticDir, 'index.html'));
+  }
+  return res.status(404).json({
+    success: false,
+    error: 'Not found',
+    message: `No such route: ${req.method} ${req.path}. This host serves the API only.`,
+  });
 });
 
 // Error handler
