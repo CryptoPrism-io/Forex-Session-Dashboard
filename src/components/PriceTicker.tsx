@@ -154,9 +154,21 @@ export function PriceTicker({
   showFilters = true,
   showSparklines = true
 }: PriceTickerProps) {
-  const { prices, loading, error, lastUpdated } = useFXPrices(30000); // Refresh every 30s
+  const { prices, loading, error, lastUpdated, freshness } = useFXPrices(30000); // Refresh every 30s
   const { sparklines } = useFXSparklines(24, 300000); // 24h data, refresh every 5min
   const [filter, setFilter] = useState<FilterType>('majors');
+
+  // The API reports how old the underlying candles are. Treat anything the
+  // backend flags as stale as not-live, rather than presenting last-known
+  // prices as current quotes.
+  const isStale = freshness?.stale === true && prices.length > 0;
+  const staleSince = freshness?.last_updated ? new Date(freshness.last_updated) : null;
+  const staleAgeLabel = useMemo(() => {
+    const hours = freshness?.age_hours;
+    if (hours == null) return 'unknown age';
+    if (hours < 48) return `${Math.round(hours)}h old`;
+    return `${Math.round(hours / 24)} days old`;
+  }, [freshness?.age_hours]);
 
   const filteredPrices = useMemo(() => {
     let filtered: FXPrice[];
@@ -213,14 +225,23 @@ export function PriceTicker({
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm">💱</span>
+          <span className="text-sm">{isStale ? '⚠️' : '💱'}</span>
           <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-            Live Prices
+            {isStale ? 'Prices — Stale' : 'Live Prices'}
           </h3>
-          {lastUpdated && (
-            <span className="text-[9px] text-slate-500">
-              Updated {lastUpdated.toLocaleTimeString()}
+          {/* When the feed is stale, the fetch time is misleading: it advances
+              every 30s while the underlying candles never change. Show the age
+              of the data itself instead. */}
+          {isStale ? (
+            <span className="text-[9px] text-amber-400/90">
+              Last data {staleAgeLabel}
             </span>
+          ) : (
+            lastUpdated && (
+              <span className="text-[9px] text-slate-500">
+                Updated {lastUpdated.toLocaleTimeString()}
+              </span>
+            )
           )}
         </div>
 
@@ -243,6 +264,23 @@ export function PriceTicker({
           </div>
         )}
       </div>
+
+      {/* Stale-feed banner. Deliberately prominent: a trader glancing at this
+          panel must not mistake last-known candles for current quotes. */}
+      {isStale && (
+        <div
+          role="status"
+          className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2"
+        >
+          <span className="text-xs leading-none pt-0.5">⚠️</span>
+          <p className="text-[10px] leading-relaxed text-amber-200/90">
+            <span className="font-semibold">These are not live prices.</span>{' '}
+            The OANDA feed stopped updating
+            {staleSince ? ` on ${staleSince.toLocaleDateString()}` : ''} ({staleAgeLabel}).
+            Values below are the last candles recorded — do not trade on them.
+          </p>
+        </div>
+      )}
 
       {/* Price Grid */}
       {filteredPrices.length > 0 ? (
@@ -268,7 +306,11 @@ export function PriceTicker({
 
       {/* Data source note */}
       <div className="text-[9px] text-slate-600 text-center">
-        Data from OANDA · Hourly candles · Auto-refreshes every 30s
+        {isStale
+          ? `Data from OANDA · Hourly candles · Feed stalled${
+              staleSince ? ` since ${staleSince.toLocaleDateString()}` : ''
+            } — these are the last known prices, not current quotes`
+          : 'Data from OANDA · Hourly candles · Auto-refreshes every 30s'}
       </div>
     </div>
   );
