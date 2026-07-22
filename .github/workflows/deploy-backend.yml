@@ -127,17 +127,36 @@ jobs:
             --query 'containerServices[0].url' --output text | sed 's:/*$::')
           echo "base: $BASE"
 
-          HEALTH=$(curl -fsS --retry 5 --retry-delay 6 --retry-all-errors "$BASE/health")
+          # A deployment reports ACTIVE slightly before the load balancer is
+          # routing every path, so the first request after cutover can 503 even
+          # though the container is healthy. Every check retries rather than
+          # failing the release on that race.
+          RETRY=(--retry 6 --retry-delay 10 --retry-all-errors --max-time 60)
+
+          HEALTH=$(curl -fsS "${RETRY[@]}" "$BASE/health")
           echo "health: $HEALTH"
           echo "$HEALTH" | jq -e '.status == "healthy"' > /dev/null
 
-          EVENTS=$(curl -fsS "$BASE/api/calendar/today?date=$(date -u +%F)")
+          EVENTS=$(curl -fsS "${RETRY[@]}" "$BASE/api/calendar/today?date=$(date -u +%F)")
           COUNT=$(echo "$EVENTS" | jq -r '.count // 0')
           echo "calendar events today: $COUNT"
           echo "$EVENTS" | jq -e '.success == true' > /dev/null
+          # The calendar pipeline is live, so a zero-row day means something is
+          # actually wrong upstream — don't let an empty 200 pass as success.
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::/api/calendar/today returned 0 events — calendar data is not reaching the API."
+            exit 1
+          fi
 
-          CORS=$(curl -fsS -o /dev/null -w '%{http_code}' -X OPTIONS \
+          PRICES=$(curl -fsS "${RETRY[@]}" "$BASE/api/fx/prices/all")
+          echo "prices freshness: $(echo "$PRICES" | jq -c '.freshness')"
+          # Assert the staleness signal exists. If this field ever goes missing the
+          # UI would silently render months-old candles as live prices.
+          echo "$PRICES" | jq -e 'has("freshness")' > /dev/null
+
+          CORS_HDRS=$(curl -fsS "${RETRY[@]}" -o /dev/null -D - -X OPTIONS \
             -H 'Origin: https://cryptoprism-io.github.io' \
             -H 'Access-Control-Request-Method: GET' \
             "$BASE/api/calendar/today")
-          echo "CORS preflight: $CORS"
+          echo "$CORS_HDRS" | grep -i '^access-control-allow-origin' \
+            || { echo "::error::CORS preflight returned no Access-Control-Allow-Origin"; exit 1; }
