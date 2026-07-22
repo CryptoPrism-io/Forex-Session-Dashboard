@@ -24,7 +24,11 @@ const SocialLinks: React.FC = () => {
     {
       name: 'Website',
       icon: IconWebsite,
-      url: 'https://forex-dashboard-963362833537.us-central1.run.app',
+      // Was the Cloud Run URL, which died with GCP billing on 2026-07-22 and
+      // now 503s. This sits alongside the @cryptoprism social handles, so the
+      // company site is what "our website" should point at — not the app's own
+      // former backend host.
+      url: 'https://cryptoprism.io',
       label: 'Visit our website'
     }
   ];
