@@ -1,4 +1,5 @@
 import { fxPool } from '../../db.js';
+import { describeFreshness, newestOf } from '../lib/freshness.js';
 
 /**
  * GET /api/fx/prices/current?instrument=EUR_USD
@@ -56,6 +57,7 @@ export async function getCurrentPrice(req, res) {
 
     res.json({
       success: true,
+      freshness: describeFreshness(result.rows[0]?.time ?? null),
       data: result.rows[0]
     });
 
@@ -104,6 +106,7 @@ export async function getAllPrices(req, res) {
     res.json({
       success: true,
       count: result.rows.length,
+      freshness: describeFreshness(newestOf(result.rows, 'time')),
       data: result.rows
     });
 
@@ -157,10 +160,19 @@ export async function getSparklines(req, res) {
       sparklines[row.instrument].push(parseFloat(row.close_mid));
     }
 
+    // The window query above returns nothing while the FX pipeline is stalled.
+    // Ask the table for its newest row regardless of window, so the client can
+    // distinguish "no data in this window" from "pipeline is months behind"
+    // instead of rendering an empty chart as if it were a flat market.
+    const latest = await fxPool.query(`
+      SELECT max(time) AS newest FROM oanda_candles WHERE granularity = 'H1'
+    `);
+
     res.json({
       success: true,
       hours: parsedHours,
       count: Object.keys(sparklines).length,
+      freshness: describeFreshness(latest.rows[0]?.newest ?? null),
       data: sparklines
     });
 

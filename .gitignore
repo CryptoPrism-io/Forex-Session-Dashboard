@@ -46,3 +46,6 @@ nul
 *.env.production
 *.env.local
 
+
+# Cloud Run env file — superseded by AWS Secrets Manager (/cryptoprism/forex/*)
+env.yaml
