@@ -742,3 +742,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 [⬆ Back to Top](#-forex-session-trading-dashboard)
 
 </div>
+
+_Last reviewed: 2026-10-16_
